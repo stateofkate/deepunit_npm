@@ -1,0 +1,25 @@
+{
+  "name": "captain-hooker",
+  "version": "1.0.2",
+  "description": "Plunder",
+  "main": "dist/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc --watch",
+    "build": "tsc",
+    "start": "ts-node src/main.ts",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "nodemon": "^3.0.1",
+    "typescript": "^5.1.6"
+  },
+  "bin": "./dist/main.js",
+  "files": [
+    "dist/main.js"
+  ]
+}
