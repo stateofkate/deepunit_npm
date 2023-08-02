@@ -418,59 +418,19 @@ function runJestTest(file: string) {
     let result;
     try {
         result = execSync(`npx jest --json ${file} --passWithNoTests`, { stdio: ['pipe', 'pipe', 'pipe'] });
-        /*console.log('###### heres the result')
-        console.log(result)
-        console.log("ran successfully")*/
+        process.chdir(rootDir);
     } catch (error: any) {
+        process.chdir(rootDir);
         result = error
-        /*console.log('error result')
-        console.log('###### done')*/
         if (error.stdout) {
             result = JSON.parse(error.stdout.toString())
             /*console.log(result)*/
-            return result
         } else {
             // If there's no stdout, rethrow the error
-            /*console.error("no stdout, something went wrong in runJestTest()")*/
             throw error;
         }
-        /*if (error.stdout) {
-            // If there's stdout, return it (this should be the JSON output from Jest)
-            return error.stdout.toString();
-        } else {
-            // If there's no stdout, rethrow the error
-            throw error;
-        }*/
     }
     return result;
-    /*
-    console.log("$$$$$$ done")
-    stdout = result.toString();
-    //stderr = result.stderr.toString();
-    process.chdir(rootDir);
-
-    const errorMessages: string[] = [];
-    if (stderr) {
-        errorMessages.push(stderr);
-    }
-
-    try {
-        const outputJson = JSON.parse(stdout);
-        console.log("####### output")
-        console.log(outputJson)
-        process.exit()
-        for (const suite of outputJson.testResults) {
-            for (const assertion of suite.assertionResults) {
-                if (assertion.status === 'failed') {
-                    //errorMessages.push(...assertion.failureMessages);
-                }
-            }
-        }
-    } catch {
-        errorMessages.push(`Failed to parse test output: ${stdout}`);
-    }
-
-    return errorMessages;*/
 }
 function runTestErrorOutput(file: string): string[] {
     let relativeTestFilePath = file;
