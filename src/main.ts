@@ -272,9 +272,9 @@ function getTestName(file: string): string {
 }
 type generateTestData = {
     diffs: string;
-    frontend_framework: string;
+    frontendFramework: string;
     testingFramework: string;
-    script_target: string;
+    scriptTarget: string;
     version: string;
     tsFile?: {[key: string]: string};
     htmlFile?: {[key: string]: string};
@@ -289,12 +289,16 @@ async function generateTest(
     testFile: string,
     testVersion: string
 ): Promise<undefined | any> {
+    console.log('started')
+    console.log(testFile)
+    console.log(testVersion)
+    console.log('done')
     const headers = {'Content-Type': 'application/json'};
     let data: generateTestData = {
         diffs,
-        frontend_framework: frontendFramework,
+        frontendFramework: frontendFramework,
         testingFramework: testingFramework,
-        script_target: scriptTarget,
+        scriptTarget: scriptTarget,
         version
     };
     if (tsFile && tsFileContent) {
@@ -303,10 +307,10 @@ async function generateTest(
     if (htmlFile && htmlFileContent) {
         data.htmlFile = {[htmlFile]: htmlFileContent};
     }
-    if (testFile && testVersion) {
+    if (testFile || testVersion) {
         data.testFile = {[testFile]: testVersion};
     }
-
+console.log(data)
     console.log(`Generating test for tsFile: ${tsFile}, htmlFile: ${htmlFile}`);
 
     const maxRetries = 2;
@@ -335,10 +339,7 @@ async function generateTest(
 function prettyPrintJson(jsonObj: Record<string, any>, doProd= true) {
     debug(JSON.stringify(jsonObj, null, 2), doProd);
 }
-const errorPattern = {
-    'jasmine': /Error: (.*?):(.*?)\n/,
-    'jest': /FAIL.*\n.*\n.*\n(.*)/
-}[testingFramework];
+const errorPattern = /Error: (.*?):(.*?)\n/;
 
 async function fixErrors(
     file: string,
@@ -353,19 +354,33 @@ async function fixErrors(
     if (!errorPattern) {
         throw new Error(`Unsupported testing framework: ${testingFramework}`);
     }
-
-    while (attempts < 7) {
-        console.log(' ', '##########################################################', '################### Begin fixing error ###################', '##########################################################');
-        const matches = await runTestErrorOutput(file);
+    let matches = await runTestErrorOutput(file);
+    while (attempts < 1 && matches.length>0) {
+        console.log(' ', '##########################################################\n', '################### Begin fixing error ###################\n', '##########################################################');
+        if(attempts>0) {
+            matches = await runTestErrorOutput(file);
+        }
 
         if (!matches) {
+            console.log(matches)
             console.log(`Fixed all errors for ${file}`);
             return [true, errors, false, null];
         }
 
+        console.log(matches.length)
         const match = matches.pop();
+        console.log(matches.length)
         if(match === undefined) {
+            console.log(match)
+            console.log('that was the match')
+            console.log(matches)
             console.log("match was undefined, I don't think this could ever happen, but if it did it could cause an infinite loop")
+            continue;
+        } else if(match.includes('Your test suite must contain at least one test.')) {
+            //never fix the empty test error
+            if(matches.length<=1) {
+                break;
+            }
             continue;
         }
         const errorString = testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
@@ -388,11 +403,12 @@ async function fixErrors(
 
         try {
             const response = await axios.post(fixErrorApiPath, data, { headers });
+            console.log(response)
             fixedTestCode = response.data.fixed_test;
         } catch (error) {
             return [false, errors, true, null];
         }
-
+        console.log(fixedTestCode)
         fs.writeFileSync(file, fixedTestCode);
 
         attempts++;
@@ -450,8 +466,16 @@ function runTestErrorOutput(file: string): string[] {
         stdout = result.toString();
         process.chdir(rootDir);
         return stdout.match(errorPattern) || [];
-    } else if (frontendFramework === 'react') {
-        return runJestTest(file)
+    } else if (testingFramework === 'jest') {
+        const result = runJestTest(file)
+        console.log(result)
+        if(result.numFailedTestSuites === 0) {
+            console.log('is 0')
+            return [];
+        } else {
+            console.log('mapping didnt work')
+            return result.testResults.map((testResult: any) => testResult.message);
+        }
     } else {
         throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
     }
@@ -792,6 +816,8 @@ function writeTestsToFiles(tests: Record<string, string>, skip: boolean) {
     if (skip) {
         return;
     }
+    console.log(tests)
+    console.log('its saving')
     for (const [testFilePath, testCode] of Object.entries(tests)) {
         save(testFilePath, testCode);
     }
@@ -801,7 +827,7 @@ function save(testFilePath: string, testCode: string) {
     console.log(process.cwd());
     console.log(testFilePath);
     console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
-    execSync(`git stash push -- ${testFilePath}`);
+    execSync(`git stash push ${testFilePath}`);
     fs.writeFileSync(testFilePath, testCode);
 }
 async function main() {
@@ -824,7 +850,9 @@ async function main() {
     } else {
         changedFiles = getChangedFiles();
     }
+    console.log(changedFiles)
     const filteredChangedFiles = filterFiles(changedFiles);
+    console.log(filteredChangedFiles)
     const filesByDirectory = groupFilesByDirectory(filteredChangedFiles);
 
     let failingTests: string[] = [];
@@ -842,8 +870,9 @@ async function main() {
             if(file === undefined) {
                 continue;
             }
-            console.log("#### testname: " +file)
+            console.log("##### file: " +file)
             const testFile = getTestName(file);
+            console.log("##### testname: " +testFile)
 
             if (firstRun && frontendFramework === "angular") {
                 checkIfAngularTestsPass(testFile);
@@ -877,17 +906,25 @@ async function main() {
                 filesToPass.push(htmlFile)
             }
             const diff = getDiff(filesToPass);
-            const tsFileContent = getFileContent(tsFile);
+            let tsFileContent = getFileContent(tsFile);
             const htmlFileContent = getFileContent(htmlFile);
+            // @ts-ignore
+            tsFileContent = tsFileContent?.split('fs.writeFileSync(testFilePath, testCode);\n' +
+                '}')[1]
+            console.log(tsFileContent)
+            console.log('tsFile: '+ tsFile)
+
 
             const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion);
+            console.log(response)
             let tests;
             if (!response) {
                 apiErrors.push(testFile);
                 continue;
             }
             try {
-                const tests = response['tests'];
+                const tests = response.tests;
+                // todo: fix the issue with which files  so we can
                 writeTestsToFiles(tests, false);
             } catch (error) {
                 console.error("Caught error trying to writeTestsToFiles")
