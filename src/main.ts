@@ -5,6 +5,7 @@ import {execSync} from "child_process";
 import axios from "axios";
 import * as readline from "readline";
 import ts from "typescript";
+import {mockedGenerationConst} from "./main.consts";
 
 console.log("Arrr matey, the world I be plundering!");
 console.log("Arrr matey, the world I be plundering!");
@@ -31,16 +32,22 @@ let ignoreDirectories: string[] = ['dumper'];  // Add paths to directories to ne
 let defaultIgnore: string[] = ['node_modules', '.angular', '.idea', 'dist', 'git_hooks'];  // Paths that most projects will never want to unit test
 let ignoredFiles: string[] = ['index.html', 'index.tsx', 'polyfills.ts', 'test.ts', 'main.ts', 'environments/environment.ts', 'environments/environment.prod.ts'];  // ignore file paths ending in these names
 let configFilePath: string = "deepunit.config.json";
+let extraConfigFilePath: string = "deepunit.extra.config.json";
+let mockGenerationApiResponse: boolean = false;
+let mockFixingApiResponse: boolean = false;
+const mockedGeneration = mockedGenerationConst;
 
 // Api paths
-let useProd: boolean = false;
 let prodBase: string = "https://dumper.adaptable.app";
-let generateApiPath: string = useProd ? `${prodBase}/generate-test/new` : "http://localhost:8080/generate-test/new";
-let fixErrorApiPath: string = useProd ? `${prodBase}/generate-test/fix-error` : "http://localhost:8080/generate-test/fix-error";
-let testApiPath: string = useProd ? `${prodBase}/generate-test/test-code` : "http://localhost:8080/generate-test/test-code";
+let generateApiPath: string = `${prodBase}/generate-test/new`
+let fixErrorApiPath: string = `${prodBase}/generate-test/fix-error`
+let testApiPath: string = `${prodBase}/generate-test/test-code`;
+let password: string = "nonerequired"
 let version: string = "0.2.0";
 
-function detectWorkspaceDir() {
+
+let counter = 0
+export function detectWorkspaceDir() {
     process.chdir(rootDir);
     // Check if the configuration file exists
     let configWorkspaceDir = grabFromConfig('workspaceDir');
@@ -71,7 +78,7 @@ function detectWorkspaceDir() {
     debug("Detected repo located at workspaceDir: " + workspaceDir, verboseLogging);
 }
 
-function detectProjectType() {
+export function detectProjectType() {
     process.chdir(rootDir);
     const configValue = grabFromConfig('frontendFramework')
     if(configValue) {
@@ -109,7 +116,7 @@ function detectProjectType() {
     frontendFramework = 'unknown';
     debug('WARNING: Unable to detect frontend framework, typescript extension', true);
 }
-function detectTestFramework() {
+export function detectTestFramework() {
     let jestConfigPath = 'jest.config.js';
     let karmaConfigPath = 'karma.conf.js';
     let packageJsonPath = 'package.json';
@@ -140,7 +147,7 @@ function detectTestFramework() {
 
     debug("Detected testingFramework: " + testingFramework, true);
 }
-function detectTsconfigTarget() {
+export function detectTsconfigTarget() {
     let tsconfigPath: string | null = path.join(workspaceDir, 'tsconfig.json');
     let typescriptExtension = '.ts';
 
@@ -177,7 +184,7 @@ function detectTsconfigTarget() {
     return scriptTarget;
 }
 
-function detectTypescriptExtension() {
+export function detectTypescriptExtension() {
     const configTypescript = grabFromConfig('typescriptExtension')
     if(configTypescript) {
         typescriptExtension = configTypescript
@@ -192,7 +199,25 @@ function detectTypescriptExtension() {
     }
     console.log("Typescript extension is : " + typescriptExtension)
 }
-function grabFromConfig(configProperty: string): string | null {
+export function grabFromConfig(configProperty: string): string | null {
+    if (fs.existsSync(extraConfigFilePath)) {
+        let config = JSON.parse(fs.readFileSync(extraConfigFilePath, 'utf8'));
+
+        // Check if the 'repoPath' property exists in the configuration
+        if (configProperty in config) {
+            let shouldSkip: boolean = false;
+            if ('skipExtraConfig' in config) {
+                let skipExtraConfig: boolean = config['skipExtraConfig'];
+                if(skipExtraConfig) {
+                    shouldSkip = skipExtraConfig
+                }
+            }
+            if(!shouldSkip) {
+                let configValue = config[configProperty];
+                return configValue;
+            }
+        }
+    }
     if (fs.existsSync(configFilePath)) {
         let config = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
 
@@ -204,7 +229,7 @@ function grabFromConfig(configProperty: string): string | null {
     }
     return null;
 }
-function debug(inputString: string, doProd = false) {
+export function debug(inputString: string, doProd = false) {
     let doDebug = false;
     if (doDebug) {
         console.debug(inputString);
@@ -214,20 +239,20 @@ function debug(inputString: string, doProd = false) {
     }
 }
 
-function getChangedFiles(): string[] {
+export function getChangedFiles(): string[] {
     const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
     const output = execSync(changedFilesCmd).toString();
     return output.split('\n').filter(Boolean);
 }
 
-function getDiff(files: string[]): string {
+export function getDiff(files: string[]): string {
     const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
     return execSync(diffCmd).toString();
 }
 
-function getFileContent(file: string | null): string | null {
+export function getFileContent(file: string | null): string {
     if (file === null) {
-        return null;
+        return '';
     }
     try {
         const content = fs.readFileSync(file, 'utf-8');
@@ -242,10 +267,10 @@ function getFileContent(file: string | null): string | null {
                 console.error(`An error occurred while trying to read ${file}: ${error}`);
             }
         }
-        return null;
+        return '';
     }
 }
-function getTestVersion(file: string): string {
+export function getTestVersion(file: string): string {
     let testVersion: string = '';
     try {
         testVersion = fs.readFileSync(file, 'utf-8');
@@ -261,11 +286,11 @@ function getTestVersion(file: string): string {
     return testVersion;
 }
 
-function getDirectory(file: string): string {
+export function getDirectory(file: string): string {
     return path.dirname(file);
 }
 
-function getTestName(file: string): string {
+export function getTestName(file: string): string {
     console.log(testExtension)
     const testFileName = file.split('.').slice(0, -1).join('.') + testExtension;
     return testFileName;
@@ -279,15 +304,16 @@ type generateTestData = {
     tsFile?: {[key: string]: string};
     htmlFile?: {[key: string]: string};
     testFile?: {[key: string]: string};
+    password: string;
 };
-async function generateTest(
+export async function generateTest(
     diffs: string,
     tsFile: string | null,
     tsFileContent: string | null,
     htmlFile: string | null,
     htmlFileContent: string | null,
     testFile: string,
-    testVersion: string
+    testVersion: string,
 ): Promise<undefined | any> {
     console.log('started')
     console.log(testFile)
@@ -299,7 +325,8 @@ async function generateTest(
         frontendFramework: frontendFramework,
         testingFramework: testingFramework,
         scriptTarget: scriptTarget,
-        version
+        version,
+        password
     };
     if (tsFile && tsFileContent) {
         data.tsFile = {[tsFile]: tsFileContent};
@@ -310,77 +337,78 @@ async function generateTest(
     if (testFile || testVersion) {
         data.testFile = {[testFile]: testVersion};
     }
-console.log(data)
+    console.log(data)
     console.log(`Generating test for tsFile: ${tsFile}, htmlFile: ${htmlFile}`);
 
-    const maxRetries = 2;
-    const baseDelay = 0; // delay in ms
 
-    for (let i = 0; i <= maxRetries; i++) {
-        try {
-            const response = await axios.post(generateApiPath, data, {headers});
-            return response.data;
-        } catch (error) {
-            if (axios.isAxiosError(error) && error.response) {
-                const statusCode = error.response.status;
-                    const delay = baseDelay * Math.pow(2, i); // exponential backoff
-                    console.warn(`Received a ${statusCode} error, retrying in ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-                console.error(`Failed with error: ${error}`);
-                return undefined;
-            }
-        }
+    try {
+        const response = mockGenerationApiResponse ? mockedGeneration : await axios.post(generateApiPath, data, {headers});
+        console.log('response')
+        console.log(response)
+        return response.data;
+    } catch (error) {
+        console.error(`Failed with error: ${error}`);
+        return undefined;
     }
-
-    console.error("Failed after maximum retries");
-    return undefined;
 }
-function prettyPrintJson(jsonObj: Record<string, any>, doProd= true) {
+export function prettyPrintJson(jsonObj: Record<string, any>, doProd= true) {
     debug(JSON.stringify(jsonObj, null, 2), doProd);
 }
 const errorPattern = /Error: (.*?):(.*?)\n/;
 
-async function fixErrors(
+export async function fixErrors(
     file: string,
     testVersion: string,
     diff: string,
     tsFile: string | null,
     tsFileContent: string | null
-): Promise<[boolean, string, boolean, (string | null)]> {
+): Promise<{fixedAllErrors: boolean, runResults: string, apiError: boolean, fixedTest: string | null}> {
     let errors = '';
     let attempts = 0;
 
     if (!errorPattern) {
         throw new Error(`Unsupported testing framework: ${testingFramework}`);
     }
-    let matches = await runTestErrorOutput(file);
-    while (attempts < 1 && matches.length>0) {
+    let matches: string[] = await runTestErrorOutput(file);
+    const maxAttempts = 7;
+    let fixedTestCode: string = '';
+    let contiues = 0;
+    while (attempts < maxAttempts && matches.length>0) {
         console.log(' ', '##########################################################\n', '################### Begin fixing error ###################\n', '##########################################################');
-        if(attempts>0) {
-            matches = await runTestErrorOutput(file);
-        }
 
         if (!matches) {
             console.log(matches)
             console.log(`Fixed all errors for ${file}`);
-            return [true, errors, false, null];
+            return {fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: testVersion};
         }
 
         console.log(matches.length)
-        const match = matches.pop();
+        const match: string | undefined = matches.pop();
         console.log(matches.length)
         if(match === undefined) {
             console.log(match)
             console.log('that was the match')
             console.log(matches)
             console.log("match was undefined, I don't think this could ever happen, but if it did it could cause an infinite loop")
+            contiues++
             continue;
         } else if(match.includes('Your test suite must contain at least one test.')) {
             //never fix the empty test error
             if(matches.length<=1) {
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
                 break;
             }
+            contiues++
             continue;
         }
         const errorString = testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
@@ -396,34 +424,52 @@ async function fixErrors(
             script_target: scriptTarget,
             frontend_framework: frontendFramework,
             testingFramework: testingFramework,
-            version
+            version,
+            password
         };
 
-        let fixedTestCode: string;
+
 
         try {
-            const response = await axios.post(fixErrorApiPath, data, { headers });
+            counter++
+            const response = /*mockFixingApiResponse ? {data: {fixed_test: 'mocked fixed test code'}} :*/ await axios.post(fixErrorApiPath, data, { headers });
             console.log(response)
+            console.log(counter)
+            if(response.data.error) {
+                console.error(response.data.error)
+                continue
+            }
             fixedTestCode = response.data.fixed_test;
+            console.log(fixedTestCode)
+            if(fixedTestCode.trim() === '') {
+                console.log("The fixed test was empty, lets throw this away and start again!")
+                attempts++;
+                continue;
+            }
+            fs.writeFileSync(file, fixedTestCode);
         } catch (error) {
-            return [false, errors, true, null];
+            console.log('ran into error making api request in fix-error')
+            console.log(error)
+            return {fixedAllErrors: false, runResults: errors, apiError: true, fixedTest: null};
         }
-        console.log(fixedTestCode)
-        fs.writeFileSync(file, fixedTestCode);
-
         attempts++;
-
-        if (attempts === 7 && matches) {
-            console.log(`Unable to fix all errors, resetting any uncommitted changes in ${file}...`);
-            execSync(`git checkout -- ${file}`);
-            return [false, errors, false, fixedTestCode];
-        }
+        matches = runTestErrorOutput(file);
     }
-
-    return [true, errors, false, null];
+    console.log('Attempts: ' + attempts)
+    console.log('matches.length: ' + matches.length)
+    console.log(matches)
+    if (matches.length > 0) {
+        console.log('there are still matches, erorrs sadly')
+        console.log(`Unable to fix all errors, resetting any uncommitted changes in ${file}...`);
+        execSync(`git add ${file} && git checkout ${file}`);
+        return {fixedAllErrors: false, runResults: errors, apiError: false, fixedTest: fixedTestCode};
+    } else {
+        console.log('attempts: ' + attempts + ' not its not: ' + (maxAttempts-1))
+    }
+    return {fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: null};
 }
 
-function runJestTest(file: string) {
+export function runJestTest(file: string) {
     let relativeTestFilePath = file;
     process.chdir(rootDir);
 
@@ -446,9 +492,12 @@ function runJestTest(file: string) {
             throw error;
         }
     }
+    if(!result.numFailedTestSuites) {
+        return JSON.parse(result.toString());
+    }
     return result;
 }
-function runTestErrorOutput(file: string): string[] {
+export function runTestErrorOutput(file: string): string[] {
     let relativeTestFilePath = file;
     process.chdir(rootDir);
 
@@ -472,13 +521,17 @@ function runTestErrorOutput(file: string): string[] {
         if(result.numFailedTestSuites === 0) {
             console.log('is 0')
             return [];
-        } else {
+        } else if(result.testResults) {
             console.log('mapping didnt work')
+            console.log(result)
+            console.log(result.toString())
             return result.testResults.map((testResult: any) => testResult.message);
         }
-    } else {
-        throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
     }
+    throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
+
+    /*
+    This code seems useful, but seems unreachable.
 
     const errorMessages: string[] = [];
     if (stderr) {
@@ -498,10 +551,10 @@ function runTestErrorOutput(file: string): string[] {
         errorMessages.push(`Failed to parse test output: ${stdout}`);
     }
 
-    return errorMessages;
+    return errorMessages;*/
 }
 
-function runTest(file: string): string {
+export function runTest(file: string): string {
     let relativeTestFilePath = file;
     process.chdir(rootDir);
 
@@ -538,7 +591,7 @@ function runTest(file: string): string {
 
     return stdout;
 }
-function getInput(): Promise<boolean> {
+export function getInput(): Promise<boolean> {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -559,7 +612,7 @@ function getInput(): Promise<boolean> {
         });
     });
 }
-function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
+export function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
     const filesByDirectory: Record<string, string[]> = {};
 
     for (const file of changedFiles) {
@@ -574,7 +627,7 @@ function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]>
 
     return filesByDirectory;
 }
-function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
+export function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
     const baseFile = path.basename(file, path.extname(file));
     const extension = path.extname(file);
     let correspondingFile: string | null = null;
@@ -618,15 +671,16 @@ async function testCode(): Promise<void> {
     console.log("Need help? Email justin@deepunit.ai")
     process.exit();
 }
-function checkIfJestTestPasses(testFile: string): boolean {
+export function checkIfJestTestPasses(testFile: string): boolean {
     console.log(`Checking if ${testFile} passes before attempting to modify it`);
     const result = runJestTest(testFile)
+    debug(result, verboseLogging)
     if(result.numFailedTestSuites === 0 || result.numFailedTestSuites === 1 && result.testResults[0].message.includes("Your test suite must contain at least one test.")) {
         return true;
     }
     return 0  === result.numFailedTestSuites
 }
-function checkIfAngularTestsPass(testFile: string): boolean {
+export function checkIfAngularTestsPass(testFile: string): boolean {
     console.log(`Checking if all Angular tests pass`);
 
     let output;
@@ -650,7 +704,7 @@ function checkIfAngularTestsPass(testFile: string): boolean {
 
     return true;
 }
-function printSummary(
+export function printSummary(
     failingTests: string[],
     testsWithErrors: string[],
     passingTests: string[],
@@ -699,23 +753,26 @@ function printSummary(
 
     console.log('\n');
 }
-function doesFileExist(filename: string): boolean {
+export function doesFileExist(filename: string): boolean {
     return fs.existsSync(filename);
 }
-function createFile(filename: string): void {
+export function createFile(filename: string): void {
     // Create a new file
     fs.writeFileSync(filename, '');
+    console.log('created f')
+    console.log(filename)
 
     // Run git add on the file
     try {
         execSync(`git add ${filename}`);
+        console.log(execSync(`git status`).toString())
     } catch (error) {
         console.error(filename)
         console.error(error)
         console.error(`Error running git add: `);
     }
 }
-function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
+export function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
     /**
     Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
 
@@ -758,7 +815,7 @@ function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
  *   Returns:
  *   list: List of file paths that are not within the ignoreDirectories, defaultIgnore directories, and do not match filenames in ignoredFiles.
  */
-function filterFiles(files: string[]): string[] {
+export function filterFiles(files: string[]): string[] {
     const filteredFiles: string[] = [];
     const ignoreDirectories = ['dir1', 'dir2']; // replace with your ignore directories
     const defaultIgnore = ['defaultIgnore1', 'defaultIgnore2']; // replace with your default ignore directories
@@ -781,7 +838,7 @@ function filterFiles(files: string[]): string[] {
  * Save tests from testContentWithErrors to the filesystem.
  */
 type TestInfo = { [key: string]: string };
-function saveTestsWithErrors(testContentWithErrors: TestInfo[]): void {
+export function saveTestsWithErrors(testContentWithErrors: TestInfo[]): void {
     for (const testInfo of testContentWithErrors) {
         for (const [test, content] of Object.entries(testInfo)) {
             fs.writeFileSync(test, content);
@@ -795,7 +852,7 @@ function saveTestsWithErrors(testContentWithErrors: TestInfo[]): void {
  *   Parameters:
  *   output (str): The test output.
  */
-function parseFailedAngularTestOutput(output: string): boolean {
+export function parseFailedAngularTestOutput(output: string): boolean {
     const match = output.match(/TOTAL: (\d+) FAILED, (\d+) SUCCESS/);
 
     if (match) {
@@ -812,29 +869,43 @@ function parseFailedAngularTestOutput(output: string): boolean {
         }
     }
 }
-function writeTestsToFiles(tests: Record<string, string>, skip: boolean) {
+export function writeTestsToFiles(tests: Record<string, string>, skip: boolean) {
     if (skip) {
         return;
     }
     console.log(tests)
     console.log('its saving')
+    console.log(process.cwd())
     for (const [testFilePath, testCode] of Object.entries(tests)) {
+        console.log(testFilePath)
         save(testFilePath, testCode);
     }
 }
 
-function save(testFilePath: string, testCode: string) {
+export function save(testFilePath: string, testCode: string) {
     console.log(process.cwd());
     console.log(testFilePath);
     console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
-    execSync(`git stash push ${testFilePath}`);
+    execSync(`git add ${testFilePath} && git stash push ${testFilePath}`);
     fs.writeFileSync(testFilePath, testCode);
+    console.log(testFilePath)
+    console.log(testCode)
 }
-async function main() {
+
+export function getUrls() {
+    const doProd = grabFromConfig('doProd')
+    generateApiPath = doProd ? `${prodBase}/generate-test/new` : "http://localhost:8080/generate-test/new";
+    fixErrorApiPath = doProd ? `${prodBase}/generate-test/fix-error` : "http://localhost:8080/generate-test/fix-error";
+    testApiPath = doProd ? `${prodBase}/generate-test/test-code` : "http://localhost:8080/generate-test/test-code";
+    password = grabFromConfig("password") || 'nonerequired'
+}
+
+export async function main() {
     let skip = false;
     if (skip) {
         return;
     }
+    getUrls()
     await detectWorkspaceDir();
     await detectProjectType();
     await detectTestFramework();
@@ -879,15 +950,23 @@ async function main() {
                 firstRun = false;
             }
 
+            console.log('check the file exists')
             if (!fs.existsSync(testFile)) {
-                fs.writeFileSync(testFile, '');
+                console.log('the file not exist')
+                createFile(testFile);
             } else if (frontendFramework !== "angular") {
+                console.log('not exist is angular')
                 const doesTestPass = checkIfJestTestPasses(testFile);
+                console.log('doesTestPass')
+                console.log(doesTestPass)
                 if (!doesTestPass) {
                     failingTests.push(testFile);
                     continue;
                 }
+            } else {
+                console.log('not exist not angular')
             }
+            console.log("The test did not fail, continuing to generate")
 
             const testVersion = getTestVersion(testFile);
             const [tsFile, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
@@ -906,12 +985,15 @@ async function main() {
                 filesToPass.push(htmlFile)
             }
             const diff = getDiff(filesToPass);
-            let tsFileContent = getFileContent(tsFile);
+            let tsFileContent: string = getFileContent(tsFile);
             const htmlFileContent = getFileContent(htmlFile);
+            //todo: implement truncation which works, this should probably be in the backend
             // @ts-ignore
-            tsFileContent = tsFileContent?.split('fs.writeFileSync(testFilePath, testCode);\n' +
-                '}')[1]
-            console.log(tsFileContent)
+            //tsFileContent = tsFileContent?.split('function detectProjectType()')[0]
+            if(tsFileContent?.length>1500) {
+                tsFileContent = tsFileContent?.substring(0, 1500)
+            }
+            //console.log(tsFileContent)
             console.log('tsFile: '+ tsFile)
 
 
@@ -933,7 +1015,7 @@ async function main() {
                 apiErrors.push(testFile);
             }
 
-            const [fixedAllErrors, runResults, apiError, fixedTest] = await fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
+            const {fixedAllErrors, runResults, apiError, fixedTest} = await fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
             if (apiError) {
                 console.log("API error encountered");
                 apiErrors.push(testFile);
