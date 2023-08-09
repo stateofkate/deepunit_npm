@@ -500,72 +500,49 @@ export function runJestTest(file: string) {
     }
     return result;
 }
-export function runTestErrorOutput(file: string): string[] {
-    let relativeTestFilePath = file;
-    process.chdir(rootDir);
-
-    let result: Buffer;
-    let stdout;
-    let stderr;
-
-    if (frontendFramework === 'angular') {
-        const errorPattern = /Error: (.*?):(.*?)\n/;
-        if (workspaceDir) {
-            process.chdir(workspaceDir);
-            relativeTestFilePath = path.relative(workspaceDir, file);
-        }
-        result = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${relativeTestFilePath}`, { stdio: 'pipe' });
-        stdout = result.toString();
+    export function runTestErrorOutput(file: string): string[] {
+        let relativeTestFilePath = file;
         process.chdir(rootDir);
-        return stdout.match(errorPattern) || [];
-    } else if (testingFramework === 'jest') {
-        console.log("in the jest part")
-        const result = runJestTest(file)
-        console.log(result)
-        if(result.numFailedTestSuites === 0) {
-            console.log('is 0')
-            return [];
-        } else if(result.testResults) {
-            console.log('We have some failing test suites, count is: ' + result.numFailedTestSuites)
+
+        let result: Buffer;
+        let stdout;
+        let stderr;
+
+        if (frontendFramework === 'angular') {
+            const errorPattern = /Error: (.*?):(.*?)\n/;
+            if (workspaceDir) {
+                process.chdir(workspaceDir);
+                relativeTestFilePath = path.relative(workspaceDir, file);
+            }
+            result = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${relativeTestFilePath}`, { stdio: 'pipe' });
+            stdout = result.toString();
+            process.chdir(rootDir);
+            return stdout.match(errorPattern) || [];
+        } else if (testingFramework === 'jest') {
+            console.log("in the jest part")
+            const result = runJestTest(file)
             console.log(result)
-            console.log(result.testResults[0].message)
-            const splitted = result.testResults[0].message.split(file)
-            console.log(splitted.length)
-            let finalArray = []
-            for(const splitty of splitted) {
-                console.log('#### splitty')
-                const errorString = file + splitty
-                console.log(errorString)
-                finalArray.push(errorString)
-            }
-            return finalArray
-        }
-    }
-    throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
-
-    /*
-    This code seems useful, but seems unreachable.
-
-    const errorMessages: string[] = [];
-    if (stderr) {
-        errorMessages.push(stderr);
-    }
-
-    try {
-        const outputJson = JSON.parse(stdout);
-        for (const suite of outputJson.testResults) {
-            for (const assertion of suite.assertionResults) {
-                if (assertion.status === 'failed') {
-                    errorMessages.push(...assertion.failureMessages);
+            if(result.numFailedTestSuites === 0) {
+                console.log('is 0')
+                return [];
+            } else if(result.testResults) {
+                console.log('We have some failing test suites, count is: ' + result.numFailedTestSuites)
+                console.log(result)
+                console.log(result.testResults[0].message)
+                const splitted = result.testResults[0].message.split(file)
+                console.log(splitted.length)
+                let finalArray = []
+                for(const splitty of splitted) {
+                    console.log('#### splitty')
+                    const errorString = file + splitty
+                    console.log(errorString)
+                    finalArray.push(errorString)
                 }
+                return finalArray
             }
         }
-    } catch {
-        errorMessages.push(`Failed to parse test output: ${stdout}`);
+        throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
     }
-
-    return errorMessages;*/
-}
 
 export function runTest(file: string): string {
     let relativeTestFilePath = file;
