@@ -33,6 +33,7 @@ let defaultIgnore: string[] = ['node_modules', '.angular', '.idea', 'dist', 'git
 let ignoredFiles: string[] = ['index.html', 'index.tsx', 'polyfills.ts', 'test.ts', 'main.ts', 'environments/environment.ts', 'environments/environment.prod.ts'];  // ignore file paths ending in these names
 let configFilePath: string = "deepunit.config.json";
 let extraConfigFilePath: string = "deepunit.extra.config.json";
+let onlyTestFixErrors: boolean = true;
 let mockGenerationApiResponse: boolean = false;
 let mockFixingApiResponse: boolean = false;
 const mockedGeneration = mockedGenerationConst;
@@ -247,7 +248,9 @@ export function getChangedFiles(): string[] {
 
 export function getDiff(files: string[]): string {
     const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
-    return execSync(diffCmd).toString();
+    return execSync(diffCmd).toString().split('\n')
+        .filter(line => !line.trim().startsWith('-'))
+        .join('\n');
 }
 
 export function getFileContent(file: string | null): string {
@@ -516,16 +519,26 @@ export function runTestErrorOutput(file: string): string[] {
         process.chdir(rootDir);
         return stdout.match(errorPattern) || [];
     } else if (testingFramework === 'jest') {
+        console.log("in the jest part")
         const result = runJestTest(file)
         console.log(result)
         if(result.numFailedTestSuites === 0) {
             console.log('is 0')
             return [];
         } else if(result.testResults) {
-            console.log('mapping didnt work')
+            console.log('We have some failing test suites, count is: ' + result.numFailedTestSuites)
             console.log(result)
-            console.log(result.toString())
-            return result.testResults.map((testResult: any) => testResult.message);
+            console.log(result.testResults[0].message)
+            const splitted = result.testResults[0].message.split(file)
+            console.log(splitted.length)
+            let finalArray = []
+            for(const splitty of splitted) {
+                console.log('#### splitty')
+                const errorString = file + splitty
+                console.log(errorString)
+                finalArray.push(errorString)
+            }
+            return finalArray
         }
     }
     throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
@@ -954,7 +967,7 @@ export async function main() {
             if (!fs.existsSync(testFile)) {
                 console.log('the file not exist')
                 createFile(testFile);
-            } else if (frontendFramework !== "angular") {
+            } else if (frontendFramework !== "angular" && !onlyTestFixErrors) {
                 console.log('not exist is angular')
                 const doesTestPass = checkIfJestTestPasses(testFile);
                 console.log('doesTestPass')
@@ -997,22 +1010,24 @@ export async function main() {
             console.log('tsFile: '+ tsFile)
 
 
-            const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion);
-            console.log(response)
-            let tests;
-            if (!response) {
-                apiErrors.push(testFile);
-                continue;
-            }
-            try {
-                const tests = response.tests;
-                // todo: fix the issue with which files  so we can
-                writeTestsToFiles(tests, false);
-            } catch (error) {
-                console.error("Caught error trying to writeTestsToFiles")
-                console.error(error)
-                console.error(response)
-                apiErrors.push(testFile);
+            if(!onlyTestFixErrors) {
+                const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion);
+                console.log(response)
+                let tests;
+                if (!response) {
+                    apiErrors.push(testFile);
+                    continue;
+                }
+                try {
+                    const tests = response.tests;
+                    // todo: fix the issue with which files  so we can
+                    writeTestsToFiles(tests, false);
+                } catch (error) {
+                    console.error("Caught error trying to writeTestsToFiles")
+                    console.error(error)
+                    console.error(response)
+                    apiErrors.push(testFile);
+                }
             }
 
             const {fixedAllErrors, runResults, apiError, fixedTest} = await fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
