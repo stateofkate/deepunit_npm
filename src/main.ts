@@ -11,10 +11,10 @@ console.log("Arrr matey, the world I be plundering!");
 console.log("Arrr matey, the world I be plundering!");
 
 /** Automatically Detected Project configs
- * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() function to autodetect
+ * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
  */
 let configPath: string = '';
-let workspaceDir: string = ""; //If your package.json is not in the root directory set this to the directory it is located in. The autodetect function will reset it to the root directory if package.json is not found in the directory specified
+let workspaceDir: string = ""; //If your package.json is not in the root directory set this to the directory it is located in. The autodetect Function will reset it to the root directory if package.json is not found in the directory specified
 let frontendFramework: string = "";
 let testingFramework: string = "";
 let scriptTarget: string = "";
@@ -33,7 +33,7 @@ let defaultIgnore: string[] = ['node_modules', '.angular', '.idea', 'dist', 'git
 let ignoredFiles: string[] = ['index.html', 'index.tsx', 'polyfills.ts', 'test.ts', 'main.ts', 'environments/environment.ts', 'environments/environment.prod.ts'];  // ignore file paths ending in these names
 let configFilePath: string = "deepunit.config.json";
 let extraConfigFilePath: string = "deepunit.extra.config.json";
-let onlyTestFixErrors: boolean = true;
+let onlyTestFixErrors: boolean = false;
 let mockGenerationApiResponse: boolean = false;
 let mockFixingApiResponse: boolean = false;
 const mockedGeneration = mockedGenerationConst;
@@ -78,7 +78,6 @@ export function detectWorkspaceDir() {
     }
     debug("Detected repo located at workspaceDir: " + workspaceDir, verboseLogging);
 }
-
 export function detectProjectType() {
     process.chdir(rootDir);
     const configValue = grabFromConfig('frontendFramework')
@@ -358,7 +357,10 @@ export function prettyPrintJson(jsonObj: Record<string, any>, doProd= true) {
     debug(JSON.stringify(jsonObj, null, 2), doProd);
 }
 const errorPattern = /Error: (.*?):(.*?)\n/;
-
+export enum testingFrameworks {
+    jest = 'jest',
+    angular = 'angular'
+}
 export async function fixErrors(
     file: string,
     testVersion: string,
@@ -373,6 +375,9 @@ export async function fixErrors(
         throw new Error(`Unsupported testing framework: ${testingFramework}`);
     }
     let matches: string[] = await runTestErrorOutput(file);
+    if(matches) {
+        process.exit();
+    }
     const maxAttempts = 7;
     let fixedTestCode: string = '';
     let contiues = 0;
@@ -482,7 +487,8 @@ export function runJestTest(file: string) {
     }
     let result;
     try {
-        result = execSync(`npx jest --json ${file} --passWithNoTests`, { stdio: ['pipe', 'pipe', 'pipe'] });
+        console.log(file)
+        result = execSync(`npx jest --json ${file} secondTest.test.ts --passWithNoTests`, { stdio: ['pipe', 'pipe', 'pipe'] });
         process.chdir(rootDir);
     } catch (error: any) {
         process.chdir(rootDir);
@@ -665,7 +671,15 @@ export function checkIfJestTestPasses(testFile: string): boolean {
     console.log(`Checking if ${testFile} passes before attempting to modify it`);
     const result = runJestTest(testFile)
     debug(result, verboseLogging)
-    if(result.numFailedTestSuites === 0 || result.numFailedTestSuites === 1 && result.testResults[0].message.includes("Your test suite must contain at least one test.")) {
+    let mustContain = 0;
+    if(result.testResults) {
+        for(const testResult of result.testResults) {
+            if(testResult.message.includes('Your test suite must contain at least one test.')) {
+                mustContain++;
+            }
+        }
+    }
+    if(result.numFailedTestSuites === 0 || result.numFailedTestSuites-mustContain === 0) {
         return true;
     }
     return 0  === result.numFailedTestSuites
@@ -869,6 +883,7 @@ export function writeTestsToFiles(tests: Record<string, string>, skip: boolean) 
     for (const [testFilePath, testCode] of Object.entries(tests)) {
         console.log(testFilePath)
         save(testFilePath, testCode);
+        fs.writeFileSync('src/secondTest.test.ts', testCode);
     }
 }
 
@@ -889,7 +904,9 @@ export function getUrls() {
     testApiPath = doProd ? `${prodBase}/generate-test/test-code` : "http://localhost:8080/generate-test/test-code";
     password = grabFromConfig("password") || 'nonerequired'
 }
+export class newClass {
 
+}
 export async function main() {
     let skip = false;
     if (skip) {
@@ -978,11 +995,10 @@ export async function main() {
             let tsFileContent: string = getFileContent(tsFile);
             const htmlFileContent = getFileContent(htmlFile);
             //todo: implement truncation which works, this should probably be in the backend
-            // @ts-ignore
-            //tsFileContent = tsFileContent?.split('function detectProjectType()')[0]
+            /* hopefully we can not truncate now
             if(tsFileContent?.length>1500) {
                 tsFileContent = tsFileContent?.substring(0, 1500)
-            }
+            }*/
             //console.log(tsFileContent)
             console.log('tsFile: '+ tsFile)
 
@@ -1006,6 +1022,7 @@ export async function main() {
                     apiErrors.push(testFile);
                 }
             }
+
 
             const {fixedAllErrors, runResults, apiError, fixedTest} = await fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
             if (apiError) {
