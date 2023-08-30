@@ -44,11 +44,11 @@ let generateApiPath: string = `${prodBase}/generate-test/new`
 let fixErrorApiPath: string = `${prodBase}/generate-test/fix-error`
 let testApiPath: string = `${prodBase}/generate-test/test-code`;
 let password: string = "nonerequired"
-let version: string = "0.2.0";
+let version: string = "0.3.0";
 
 
 let counter = 0
-export function detectWorkspaceDir() {
+export function detectWorkspaceDir(): void {
     process.chdir(rootDir);
     // Check if the configuration file exists
     let configWorkspaceDir = grabFromConfig('workspaceDir');
@@ -78,7 +78,7 @@ export function detectWorkspaceDir() {
     }
     debug("Detected repo located at workspaceDir: " + workspaceDir, verboseLogging);
 }
-export function detectProjectType() {
+export function detectProjectType(): void {
     process.chdir(rootDir);
     const configValue = grabFromConfig('frontendFramework')
     if(configValue) {
@@ -116,7 +116,7 @@ export function detectProjectType() {
     frontendFramework = 'unknown';
     debug('WARNING: Unable to detect frontend framework, typescript extension', true);
 }
-export function detectTestFramework() {
+export function detectTestFramework(): void {
     let jestConfigPath = 'jest.config.js';
     let karmaConfigPath = 'karma.conf.js';
     let packageJsonPath = 'package.json';
@@ -184,7 +184,7 @@ export function detectTsconfigTarget() {
     return scriptTarget;
 }
 
-export function detectTypescriptExtension() {
+export function detectTypescriptExtension(): void {
     const configTypescript = grabFromConfig('typescriptExtension')
     if(configTypescript) {
         typescriptExtension = configTypescript
@@ -361,7 +361,131 @@ export enum testingFrameworks {
     jest = 'jest',
     angular = 'angular'
 }
-export async function fixErrors(
+
+/**
+ * We will take in the list of test which were generated and then fix the errors in each one. We will return a list of fixed tests and still failing tests at the end.
+ * @param tempTestPaths
+ * @param diff
+ * @param tsFile
+ * @param tsFileContent
+ */
+export async function fixManyErrors(
+    tempTestPaths: string[],
+    diff: string,
+    tsFile: string | null,
+    tsFileContent: string | null
+): Promise<{fixedAllErrors: boolean, runResults: string, apiError: boolean,
+failedTests: string[], passedTests: string[]}> {
+    let errors = ''; //todo: runResults which is used for the summary which is dependent on this variable, but its never assigned. We should remove it or update it
+    let attempts = 0;
+
+    if (!errorPattern) {
+        throw new Error(`Unsupported testing framework: ${testingFramework}`);
+    }
+    let result: { failedTests: string[]; passedTests: string[]; failedTestErrors: {[key: string]: string} } = runTestErrorOutput(tempTestPaths);
+    console.log(result)
+    console.log('matches')
+    console.log(result.failedTests)
+    const maxAttempts = 7;
+    let fixedTestCode: string = '';
+    while (attempts < maxAttempts && result.failedTests.length>0) {
+        //todo: refactor all this logic into an async helper function so that we can fix multiple tests at once
+        console.log(' ', '##########################################################\n', '################### Begin fixing error ###################\n', '##########################################################');
+
+        if (!result.failedTests) {
+            console.log(result)
+            console.log(`Fixed all errors for ${tempTestPaths}`);
+            //todo: recombine all tests into one file
+            return {fixedAllErrors: true, runResults: errors, apiError: false, passedTests: result.passedTests, failedTests: result.failedTests};
+        }
+        let popped = result.failedTests.pop();
+        let match: string = popped ? popped : ''
+
+
+        console.log(result.failedTests.length)
+        if(match === '') {
+            console.error(popped)
+            console.log('that was the popped')
+            console.error(result)
+            console.error("match was undefined, I don't think this could ever happen, if you're seeing this maybe debug?")
+            attempts++;
+        } else if(match.includes('Your test suite must contain at least one test.')) {
+            //never fix the empty test error
+            if(result.failedTests.length<=1) {
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                console.log("###### Big break!!!!")
+                break;
+            }
+            continue;
+        }
+        const errorString: string = result.failedTestErrors[match] // seems like some old angular logic which we should revisit when we fix angular/jasmine support testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
+        console.log(`Fixing error: ${errorString}`);
+        const testVersion = getTestVersion(match)
+        const headers = { 'Content-Type': 'application/json' };
+        const data = {
+            error_message: errorString,
+            test_code: testVersion,
+            diff,
+            ts_file_name: match,
+            ts_file_content: tsFileContent,
+            script_target: scriptTarget,
+            frontend_framework: frontendFramework,
+            testingFramework: testingFramework,
+            version,
+            password
+        };
+
+
+
+        try {
+            counter++
+            const response = await axios.post(fixErrorApiPath, data, { headers });
+            console.log(response)
+            console.log(counter)
+            if(response.data.error) {
+                console.error(response.data.error)
+                attempts++
+                continue
+            }
+            fixedTestCode = response.data.fixed_test;
+            if(fixedTestCode.trim() === '') {
+                console.log("The fixed test was empty, lets throw this away and start again!")
+                attempts++;
+                continue;
+            }
+            writeFileSync(match, fixedTestCode)
+            console.log(fixedTestCode)
+        } catch (error) {
+            console.log('ran into error making api request in fix-error')
+            console.log(error)
+            attempts++
+            continue;
+        }
+        attempts++;
+        result = runTestErrorOutput(tempTestPaths);
+    }
+    console.log('Attempts: ' + attempts)
+    console.log('result.failedTests.length: ' + result.failedTests.length)
+    console.log(result.failedTests)
+    if (result.failedTests.length > 0) {
+        console.log('there are still result.failedTests, erorrs sadly')
+        console.log(`Unable to fix all errors...`);
+        return {fixedAllErrors: false, runResults: errors, apiError: false, failedTests: result.failedTests, passedTests: result.passedTests};
+    } else {
+        console.log('attempts: ' + attempts + ' not its not: ' + (maxAttempts-1))
+    }
+    return {fixedAllErrors: true, runResults: errors, apiError: false, failedTests: result.failedTests, passedTests: result.passedTests};
+}
+/*export async function fixErrors(
     file: string,
     testVersion: string,
     diff: string,
@@ -375,9 +499,6 @@ export async function fixErrors(
         throw new Error(`Unsupported testing framework: ${testingFramework}`);
     }
     let matches: string[] = await runTestErrorOutput(file);
-    if(matches) {
-        process.exit();
-    }
     const maxAttempts = 7;
     let fixedTestCode: string = '';
     let contiues = 0;
@@ -440,7 +561,7 @@ export async function fixErrors(
 
         try {
             counter++
-            const response = /*mockFixingApiResponse ? {data: {fixed_test: 'mocked fixed test code'}} :*/ await axios.post(fixErrorApiPath, data, { headers });
+            const response = /!*mockFixingApiResponse ? {data: {fixed_test: 'mocked fixed test code'}} :*!/ await axios.post(fixErrorApiPath, data, { headers });
             console.log(response)
             console.log(counter)
             if(response.data.error) {
@@ -475,20 +596,29 @@ export async function fixErrors(
         console.log('attempts: ' + attempts + ' not its not: ' + (maxAttempts-1))
     }
     return {fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: null};
-}
+}*/
 
-export function runJestTest(file: string) {
-    let relativeTestFilePath = file;
+export function runJestTest(file: string[]) {
     process.chdir(rootDir);
 
+    let relativePathArray: string[] = [];
     if (workspaceDir) {
         process.chdir(workspaceDir);
-        relativeTestFilePath = path.relative(workspaceDir, file);
+        for(let i = 0; i<file.length; i++) {
+            let relativePath = path.relative(workspaceDir, file[i]);
+            relativePathArray.push(relativePath)
+        }
+    } else {
+        relativePathArray = file;
     }
+    const formattedPaths = relativePathArray.join(' ')
     let result;
     try {
         console.log(file)
-        result = execSync(`npx jest --json ${file} secondTest.test.ts --passWithNoTests`, { stdio: ['pipe', 'pipe', 'pipe'] });
+        const command = `npx jest --json ${formattedPaths} --passWithNoTests`
+        console.log("I command you")
+        console.log(command)
+        result = execSync(command, { stdio: ['pipe', 'pipe', 'pipe'] });
         process.chdir(rootDir);
     } catch (error: any) {
         process.chdir(rootDir);
@@ -506,8 +636,13 @@ export function runJestTest(file: string) {
     }
     return result;
 }
-    export function runTestErrorOutput(file: string): string[] {
-        let relativeTestFilePath = file;
+
+/**
+ * Currently the function returns an array of strings.
+ * We would like to modify the function so that it tells us which pass and which fail. For failing tests it should give us the error
+ * @param file
+ */
+    export function runTestErrorOutput(file: string[]): {failedTests: string[], passedTests: string[], failedTestErrors: {[key: string]: string}} {
         process.chdir(rootDir);
 
         let result: Buffer;
@@ -515,26 +650,63 @@ export function runJestTest(file: string) {
         let stderr;
 
         if (frontendFramework === 'angular') {
-            const errorPattern = /Error: (.*?):(.*?)\n/;
+            console.log("##### TODO: add support for jasmine back in")
+            console.log("##### TODO: add support for jasmine back in")
+            console.log("##### TODO: add support for jasmine back in")
+            console.log("##### TODO: add support for jasmine back in")
+            console.log("##### TODO: add support for jasmine back in")
+            process.exit()
+            /*const errorPattern = /Error: (.*?):(.*?)\n/;
+            let relativeFilePathArray: string[] = [];
             if (workspaceDir) {
                 process.chdir(workspaceDir);
-                relativeTestFilePath = path.relative(workspaceDir, file);
+                for(const filePath of file) {
+                    let relativeTestFilePath = path.relative(workspaceDir, filePath);
+                    relativeFilePathArray.push(relativeTestFilePath)
+                }
+
+            } else {
+                relativeFilePathArray = Array.isArray(file) ? relativeFilePathArray : [file];
             }
-            result = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${relativeTestFilePath}`, { stdio: 'pipe' });
+            result = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${relativeFilePathArray}`, { stdio: 'pipe' });
             stdout = result.toString();
             process.chdir(rootDir);
-            return stdout.match(errorPattern) || [];
+            return stdout.match(errorPattern) || [];*/
         } else if (testingFramework === 'jest') {
             console.log("in the jest part")
             const result = runJestTest(file)
             console.log(result)
             if(result.numFailedTestSuites === 0) {
                 console.log('is 0')
-                return [];
+                return {passedTests: file, failedTests: [], failedTestErrors: {}};
             } else if(result.testResults) {
                 console.log('We have some failing test suites, count is: ' + result.numFailedTestSuites)
                 console.log(result)
-                console.log(result.testResults[0].message)
+                let passedTests: string[] = [];
+                let failedTests: string[] = [];
+                let failedTestErrors: any = {};
+                for(const testResult of result.testResults) {
+                    const testPathFound: string | undefined = file.find(substring => testResult.name.endsWith(substring));
+                    const testPath = testPathFound ? testPathFound : testResult.name
+                    if(!testPath) {
+                        console.log('unable to find the testPAth for the return')
+                        console.log(testResult)
+                        console.log(file)
+                    }
+                    if(testResult.status == "failed") {
+                        if(testResult.message.includes("Your test suite must contain at least one test.")) {
+                            console.log("this test failed because it does not contain a test suite. Weird.")
+                            console.log(testResult)
+                            console.log(file)
+                        }
+                        failedTests.push(testPath)
+                        failedTestErrors[testPath] = testResult.message
+                    }else if(testResult.status == "passed") {
+                        passedTests.push(testPath)
+                    }
+                }
+                return {passedTests, failedTestErrors, failedTests}
+                /*console.log(result.testResults[0].message)
                 const splitted = result.testResults[0].message.split(file)
                 console.log(splitted.length)
                 let finalArray = []
@@ -543,8 +715,7 @@ export function runJestTest(file: string) {
                     const errorString = file + splitty
                     console.log(errorString)
                     finalArray.push(errorString)
-                }
-                return finalArray
+                }*/
             }
         }
         throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
@@ -669,7 +840,7 @@ async function testCode(): Promise<void> {
 }
 export function checkIfJestTestPasses(testFile: string): boolean {
     console.log(`Checking if ${testFile} passes before attempting to modify it`);
-    const result = runJestTest(testFile)
+    const result = runJestTest([testFile])
     debug(result, verboseLogging)
     let mustContain = 0;
     if(result.testResults) {
@@ -839,18 +1010,6 @@ export function filterFiles(files: string[]): string[] {
 }
 
 /**
- * Save tests from testContentWithErrors to the filesystem.
- */
-type TestInfo = { [key: string]: string };
-export function saveTestsWithErrors(testContentWithErrors: TestInfo[]): void {
-    for (const testInfo of testContentWithErrors) {
-        for (const [test, content] of Object.entries(testInfo)) {
-            fs.writeFileSync(test, content);
-        }
-    }
-}
-
-/**
  * Parse the test output to find if tests all pass.
  *
  *   Parameters:
@@ -873,28 +1032,46 @@ export function parseFailedAngularTestOutput(output: string): boolean {
         }
     }
 }
-export function writeTestsToFiles(tests: Record<string, string>, skip: boolean) {
+export function writeTestsToFiles(tests: Record<string, string>, skip: boolean): string[] {
     if (skip) {
-        return;
+        return [];
     }
     console.log(tests)
     console.log('its saving')
     console.log(process.cwd())
+    let testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
         console.log(testFilePath)
-        save(testFilePath, testCode);
-        fs.writeFileSync('src/secondTest.test.ts', testCode);
+        stashAndSave(testFilePath, testCode);
+        testPaths.push(testFilePath)
     }
+    return testPaths;
 }
 
-export function save(testFilePath: string, testCode: string) {
+export function stashAndSave(testFilePath: string, testCode: string) {
     console.log(process.cwd());
     console.log(testFilePath);
-    console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
-    execSync(`git add ${testFilePath} && git stash push ${testFilePath}`);
-    fs.writeFileSync(testFilePath, testCode);
+    //If the file does already exist we should add it to git and stash its contents. We should skip this if not since it will cause an errow ith git.
+    if(fs.existsSync(testFilePath)) {
+        console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
+        execSync(`git add ${testFilePath} && git stash push ${testFilePath}`);
+    } else {
+        fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+    }
+    writeFileSync(testFilePath, testCode);
     console.log(testFilePath)
     console.log(testCode)
+}
+
+export function writeFileSync(file: string, data: string, options?: any) {
+    try {
+        fs.writeFileSync(file, data, options)
+    } catch(e) {
+        console.error("ran into an issue writing this file")
+        console.log(file)
+        console.log(data)
+        console.log(options)
+    }
 }
 
 export function getUrls() {
@@ -907,6 +1084,27 @@ export function getUrls() {
 export class newClass {
 
 }
+
+export function recombineTests(needImplementing: boolean) {
+    if(needImplementing) {
+        console.log("Implement recombineTests()!!!!")
+        console.log("Implement recombineTests()!!!!")
+        console.log("Implement recombineTests()!!!!")
+        console.log("Implement recombineTests()!!!!")
+        process.exit()
+    }
+}
+
+function deleteTempFiles(tempTestPaths: string[],needImplementing: boolean) {
+    if (needImplementing) {
+        console.log("Implement deleteTempFiles()!!!!")
+        console.log("Implement deleteTempFiles()!!!!")
+        console.log("Implement deleteTempFiles()!!!!")
+        console.log("Implement deleteTempFiles()!!!!")
+        process.exit()
+    }
+}
+
 export async function main() {
     let skip = false;
     if (skip) {
@@ -937,7 +1135,7 @@ export async function main() {
     let testsWithErrors: string[] = [];
     let testContentWithErrors: any[] = [];
     let passingTests: string[] = [];
-    let testRunResults: string[] = [];
+    let testRunResults: string[] = []; //todo: this is never assigned, we need to fix that so the summary is correct
     let apiErrors: string[] = [];
     let firstRun = true;
 
@@ -961,7 +1159,7 @@ export async function main() {
             if (!fs.existsSync(testFile)) {
                 console.log('the file not exist')
                 createFile(testFile);
-            } else if (frontendFramework !== "angular" && !onlyTestFixErrors) {
+            } else if (frontendFramework !== "angular" && !onlyTestFixErrors && false) {
                 console.log('not exist is angular')
                 const doesTestPass = checkIfJestTestPasses(testFile);
                 console.log('doesTestPass')
@@ -1003,6 +1201,7 @@ export async function main() {
             console.log('tsFile: '+ tsFile)
 
 
+            let tempTestPaths: string[] = [];
             if(!onlyTestFixErrors) {
                 const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion);
                 console.log(response)
@@ -1014,7 +1213,7 @@ export async function main() {
                 try {
                     const tests = response.tests;
                     // todo: fix the issue with which files  so we can
-                    writeTestsToFiles(tests, false);
+                    tempTestPaths = writeTestsToFiles(tests, false);
                 } catch (error) {
                     console.error("Caught error trying to writeTestsToFiles")
                     console.error(error)
@@ -1024,7 +1223,12 @@ export async function main() {
             }
 
 
-            const {fixedAllErrors, runResults, apiError, fixedTest} = await fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
+            const {fixedAllErrors, runResults, apiError} = await fixManyErrors(tempTestPaths, diff, tsFile, tsFileContent);
+            //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
+            recombineTests(true)
+            //then we will need to delete all the temp test files.
+            deleteTempFiles(tempTestPaths, true)
+            //Todo: update the sumary accordingly
             if (apiError) {
                 console.log("API error encountered");
                 apiErrors.push(testFile);
@@ -1038,14 +1242,13 @@ export async function main() {
             } else {
                 testsWithErrors.push(testFile);
                 if (frontendFramework === "angular") {
-                    testContentWithErrors.push({ test: testFile, testContent: fixedTest });
+                    // This makes no sense, so I removed the saveFailingTests function, lets fiure it out when we restore angular support testContentWithErrors.push({ test: testFile, testContent: fixedTest });
                 }
             }
         }
     }
     console.log("Completed the first loop");
 
-    saveTestsWithErrors(testContentWithErrors);
     printSummary(failingTests, testsWithErrors, passingTests, apiErrors, testRunResults);
 
     console.log("Need help? Email justin@deepunit.ai")

@@ -36,11 +36,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getUrls = exports.save = exports.writeTestsToFiles = exports.parseFailedAngularTestOutput = exports.saveTestsWithErrors = exports.filterFiles = exports.findFiles = exports.createFile = exports.doesFileExist = exports.printSummary = exports.checkIfAngularTestsPass = exports.checkIfJestTestPasses = exports.tsAndHtmlFromFile = exports.groupFilesByDirectory = exports.getInput = exports.runTest = exports.runTestErrorOutput = exports.runJestTest = exports.fixErrors = exports.prettyPrintJson = exports.generateTest = exports.getTestName = exports.getDirectory = exports.getTestVersion = exports.getFileContent = exports.getDiff = exports.getChangedFiles = exports.debug = exports.grabFromConfig = exports.detectTypescriptExtension = exports.detectTsconfigTarget = exports.detectTestFramework = exports.detectProjectType = exports.detectWorkspaceDir = void 0;
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const child_process_1 = require("child_process");
 const axios_1 = __importDefault(require("axios"));
 const readline = __importStar(require("readline"));
+const typescript_1 = __importDefault(require("typescript"));
+const main_consts_1 = require("./main.consts");
 console.log("Arrr matey, the world I be plundering!");
 console.log("Arrr matey, the world I be plundering!");
 /** Automatically Detected Project configs
@@ -58,19 +61,24 @@ let rootDir = process.cwd();
  * Manually set configs
  */
 let verboseTestOutput = false;
-let verboseLogging = false;
-let allFiles = false; // grab list of files from last commit or recursively search all directories in the project for .ts or html files
+let verboseLogging = true;
+let allFiles = true; // grab list of files from last commit or recursively search all directories in the project for .ts or html files
 let ignoreDirectories = ['dumper']; // Add paths to directories to never write tests for
 let defaultIgnore = ['node_modules', '.angular', '.idea', 'dist', 'git_hooks']; // Paths that most projects will never want to unit test
 let ignoredFiles = ['index.html', 'index.tsx', 'polyfills.ts', 'test.ts', 'main.ts', 'environments/environment.ts', 'environments/environment.prod.ts']; // ignore file paths ending in these names
 let configFilePath = "deepunit.config.json";
+let extraConfigFilePath = "deepunit.extra.config.json";
+let mockGenerationApiResponse = false;
+let mockFixingApiResponse = false;
+const mockedGeneration = main_consts_1.mockedGenerationConst;
 // Api paths
-let useProd = true;
 let prodBase = "https://dumper.adaptable.app";
-let generateApiPath = useProd ? `${prodBase}/generate-test/new` : "http://localhost:8080/generate-test/new";
-let fixErrorApiPath = useProd ? `${prodBase}/generate-test/fix-error` : "http://localhost:8080/generate-test/fix-error";
-let testApiPath = useProd ? `${prodBase}/generate-test/test-code` : "http://localhost:8080/generate-test/test-code";
+let generateApiPath = `${prodBase}/generate-test/new`;
+let fixErrorApiPath = `${prodBase}/generate-test/fix-error`;
+let testApiPath = `${prodBase}/generate-test/test-code`;
+let password = "nonerequired";
 let version = "0.2.0";
+let counter = 0;
 function detectWorkspaceDir() {
     process.chdir(rootDir);
     // Check if the configuration file exists
@@ -80,6 +88,8 @@ function detectWorkspaceDir() {
     if (configWorkspaceDir) {
         packageJsonPath = path.join(configWorkspaceDir, 'package.json');
     }
+    console.log(packageJsonPath);
+    console.log(configWorkspaceDir);
     if (configWorkspaceDir && fs.existsSync(packageJsonPath)) {
         workspaceDir = configWorkspaceDir;
         debug("Detected workspaceDir: " + workspaceDir);
@@ -87,7 +97,7 @@ function detectWorkspaceDir() {
     }
     else if (fs.existsSync(packageJson)) {
         //Looks like it wasn't in the config path, but is in the current working directory
-        debug("Looks like it wasn't in the config path, but is in the current working directory", verboseLogging);
+        debug("Looks like it wasn't configured in deepunit.config.json, but is in the current working directory", verboseLogging);
         workspaceDir = "";
     }
     else {
@@ -100,9 +110,10 @@ function detectWorkspaceDir() {
     }
     debug("Detected repo located at workspaceDir: " + workspaceDir, verboseLogging);
 }
+exports.detectWorkspaceDir = detectWorkspaceDir;
 function detectProjectType() {
     process.chdir(rootDir);
-    const configValue = grabFromConfig(frontendFramework);
+    const configValue = grabFromConfig('frontendFramework');
     if (configValue) {
         frontendFramework = configValue;
         return;
@@ -137,6 +148,7 @@ function detectProjectType() {
     frontendFramework = 'unknown';
     debug('WARNING: Unable to detect frontend framework, typescript extension', true);
 }
+exports.detectProjectType = detectProjectType;
 function detectTestFramework() {
     let jestConfigPath = 'jest.config.js';
     let karmaConfigPath = 'karma.conf.js';
@@ -149,44 +161,46 @@ function detectTestFramework() {
     }
     if (fs.existsSync(jestConfigPath)) {
         testingFramework = 'jest';
-        return;
+        testExtension = '.test.ts';
     }
     else if (fs.existsSync(karmaConfigPath)) {
         testingFramework = 'jasmine';
-        return;
+        testExtension = '.spec.ts';
     }
     else if (fs.existsSync(packageJsonPath)) {
         let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
         if (fileContent.includes('jest')) {
             testingFramework = 'jest';
-            return;
+            testExtension = '.test.ts';
         }
         else if (fileContent.includes('jasmine-core')) {
             testingFramework = 'jasmine';
-            return;
+            testExtension = '.spec.ts';
         }
     }
-    testingFramework = 'unknown';
     debug("Detected testingFramework: " + testingFramework, true);
 }
+exports.detectTestFramework = detectTestFramework;
 function detectTsconfigTarget() {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     let tsconfigPath = path.join(workspaceDir, 'tsconfig.json');
-    let scriptTarget;
     let typescriptExtension = '.ts';
     while (tsconfigPath) {
         if (fs.existsSync(tsconfigPath)) {
             let contents = fs.readFileSync(tsconfigPath, 'utf8');
             try {
-                let tsconfigJson = JSON.parse(contents);
-                scriptTarget = scriptTarget || ((_a = tsconfigJson['compilerOptions']) === null || _a === void 0 ? void 0 : _a['target']);
-                const jsx = (_b = tsconfigJson['compilerOptions']) === null || _b === void 0 ? void 0 : _b['jsx'];
-                if (jsx) {
+                let tsconfigJson = typescript_1.default.parseConfigFileTextToJson('', contents);
+                scriptTarget = ((_b = (_a = tsconfigJson.config) === null || _a === void 0 ? void 0 : _a.compilerOptions) === null || _b === void 0 ? void 0 : _b.target) ? (_d = (_c = tsconfigJson.config) === null || _c === void 0 ? void 0 : _c.compilerOptions) === null || _d === void 0 ? void 0 : _d.target : undefined;
+                if ((_f = (_e = tsconfigJson.config) === null || _e === void 0 ? void 0 : _e.compilerOptions) === null || _f === void 0 ? void 0 : _f.jsx) {
                     typescriptExtension = '.tsx';
                 }
-                tsconfigPath = tsconfigJson['extends'] ? path.join(path.dirname(tsconfigPath), tsconfigJson['extends']) : null;
+                if (tsconfigPath != null) {
+                    // @ts-ignore
+                    tsconfigPath = ((_g = tsconfigJson.config) === null || _g === void 0 ? void 0 : _g.extends) ? path.join(path.dirname(tsconfigPath), (_h = tsconfigJson.config) === null || _h === void 0 ? void 0 : _h.extends) : null;
+                }
             }
             catch (error) {
+                console.log(error);
                 console.error("Error parsing tsconfig.json. JSON does not support comments. Please remove the comment at the top of " + tsconfigPath + " and try again.");
                 console.log("Need help? Email justin@deepunit.ai");
                 process.exit(1);
@@ -203,8 +217,9 @@ function detectTsconfigTarget() {
     console.log("Detected ES target: " + scriptTarget);
     return scriptTarget;
 }
+exports.detectTsconfigTarget = detectTsconfigTarget;
 function detectTypescriptExtension() {
-    const configTypescript = grabFromConfig(typescriptExtension);
+    const configTypescript = grabFromConfig('typescriptExtension');
     if (configTypescript) {
         typescriptExtension = configTypescript;
     }
@@ -222,7 +237,25 @@ function detectTypescriptExtension() {
     }
     console.log("Typescript extension is : " + typescriptExtension);
 }
+exports.detectTypescriptExtension = detectTypescriptExtension;
 function grabFromConfig(configProperty) {
+    if (fs.existsSync(extraConfigFilePath)) {
+        let config = JSON.parse(fs.readFileSync(extraConfigFilePath, 'utf8'));
+        // Check if the 'repoPath' property exists in the configuration
+        if (configProperty in config) {
+            let shouldSkip = false;
+            if ('skipExtraConfig' in config) {
+                let skipExtraConfig = config['skipExtraConfig'];
+                if (skipExtraConfig) {
+                    shouldSkip = skipExtraConfig;
+                }
+            }
+            if (!shouldSkip) {
+                let configValue = config[configProperty];
+                return configValue;
+            }
+        }
+    }
     if (fs.existsSync(configFilePath)) {
         let config = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
         // Check if the 'repoPath' property exists in the configuration
@@ -233,6 +266,7 @@ function grabFromConfig(configProperty) {
     }
     return null;
 }
+exports.grabFromConfig = grabFromConfig;
 function debug(inputString, doProd = false) {
     let doDebug = false;
     if (doDebug) {
@@ -242,15 +276,18 @@ function debug(inputString, doProd = false) {
         console.log(inputString);
     }
 }
+exports.debug = debug;
 function getChangedFiles() {
     const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
     const output = (0, child_process_1.execSync)(changedFilesCmd).toString();
     return output.split('\n').filter(Boolean);
 }
+exports.getChangedFiles = getChangedFiles;
 function getDiff(files) {
     const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
     return (0, child_process_1.execSync)(diffCmd).toString();
 }
+exports.getDiff = getDiff;
 function getFileContent(file) {
     if (file === null) {
         return null;
@@ -273,6 +310,7 @@ function getFileContent(file) {
         return null;
     }
 }
+exports.getFileContent = getFileContent;
 function getTestVersion(file) {
     let testVersion = '';
     try {
@@ -289,22 +327,31 @@ function getTestVersion(file) {
     }
     return testVersion;
 }
+exports.getTestVersion = getTestVersion;
 function getDirectory(file) {
     return path.dirname(file);
 }
+exports.getDirectory = getDirectory;
 function getTestName(file) {
+    console.log(testExtension);
     const testFileName = file.split('.').slice(0, -1).join('.') + testExtension;
     return testFileName;
 }
+exports.getTestName = getTestName;
 function generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('started');
+        console.log(testFile);
+        console.log(testVersion);
+        console.log('done');
         const headers = { 'Content-Type': 'application/json' };
         let data = {
             diffs,
-            frontend_framework: frontendFramework,
+            frontendFramework: frontendFramework,
             testingFramework: testingFramework,
-            script_target: scriptTarget,
-            version
+            scriptTarget: scriptTarget,
+            version,
+            password
         };
         if (tsFile && tsFileContent) {
             data.tsFile = { [tsFile]: tsFileContent };
@@ -312,41 +359,29 @@ function generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, t
         if (htmlFile && htmlFileContent) {
             data.htmlFile = { [htmlFile]: htmlFileContent };
         }
-        if (testFile && testVersion) {
+        if (testFile || testVersion) {
             data.testFile = { [testFile]: testVersion };
         }
+        console.log(data);
         console.log(`Generating test for tsFile: ${tsFile}, htmlFile: ${htmlFile}`);
-        const maxRetries = 2;
-        const baseDelay = 0; // delay in ms
-        for (let i = 0; i <= maxRetries; i++) {
-            try {
-                const response = yield axios_1.default.post(generateApiPath, data, { headers });
-                return response.data;
-            }
-            catch (error) {
-                if (axios_1.default.isAxiosError(error) && error.response) {
-                    const statusCode = error.response.status;
-                    const delay = baseDelay * Math.pow(2, i); // exponential backoff
-                    console.warn(`Received a ${statusCode} error, retrying in ${delay}ms...`);
-                    yield new Promise(resolve => setTimeout(resolve, delay));
-                }
-                else {
-                    console.error(`Failed with error: ${error}`);
-                    return undefined;
-                }
-            }
+        try {
+            const response = mockGenerationApiResponse ? mockedGeneration : yield axios_1.default.post(generateApiPath, data, { headers });
+            console.log('response');
+            console.log(response);
+            return response.data;
         }
-        console.error("Failed after maximum retries");
-        return undefined;
+        catch (error) {
+            console.error(`Failed with error: ${error}`);
+            return undefined;
+        }
     });
 }
+exports.generateTest = generateTest;
 function prettyPrintJson(jsonObj, doProd = true) {
     debug(JSON.stringify(jsonObj, null, 2), doProd);
 }
-const errorPattern = {
-    'jasmine': /Error: (.*?):(.*?)\n/,
-    'jest': /FAIL.*\n.*\n.*\n(.*)/
-}[testingFramework];
+exports.prettyPrintJson = prettyPrintJson;
+const errorPattern = /Error: (.*?):(.*?)\n/;
 function fixErrors(file, testVersion, diff, tsFile, tsFileContent) {
     return __awaiter(this, void 0, void 0, function* () {
         let errors = '';
@@ -354,16 +389,45 @@ function fixErrors(file, testVersion, diff, tsFile, tsFileContent) {
         if (!errorPattern) {
             throw new Error(`Unsupported testing framework: ${testingFramework}`);
         }
-        while (attempts < 7) {
-            console.log(' ', '##########################################################', '################### Begin fixing error ###################', '##########################################################');
-            const matches = yield runTestErrorOutput(file);
+        let matches = yield runTestErrorOutput(file);
+        const maxAttempts = 7;
+        let fixedTestCode = '';
+        let contiues = 0;
+        while (attempts < maxAttempts && matches.length > 0) {
+            console.log(' ', '##########################################################\n', '################### Begin fixing error ###################\n', '##########################################################');
             if (!matches) {
+                console.log(matches);
                 console.log(`Fixed all errors for ${file}`);
-                return [true, errors, false, null];
+                return { fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: testVersion };
             }
+            console.log(matches.length);
             const match = matches.pop();
+            console.log(matches.length);
             if (match === undefined) {
+                console.log(match);
+                console.log('that was the match');
+                console.log(matches);
                 console.log("match was undefined, I don't think this could ever happen, but if it did it could cause an infinite loop");
+                contiues++;
+                continue;
+            }
+            else if (match.includes('Your test suite must contain at least one test.')) {
+                //never fix the empty test error
+                if (matches.length <= 1) {
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    console.log("###### Big break!!!!");
+                    break;
+                }
+                contiues++;
                 continue;
             }
             const errorString = testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
@@ -378,27 +442,81 @@ function fixErrors(file, testVersion, diff, tsFile, tsFileContent) {
                 script_target: scriptTarget,
                 frontend_framework: frontendFramework,
                 testingFramework: testingFramework,
-                version
+                version,
+                password
             };
-            let fixedTestCode;
             try {
-                const response = yield axios_1.default.post(fixErrorApiPath, data, { headers });
+                counter++;
+                const response = /*mockFixingApiResponse ? {data: {fixed_test: 'mocked fixed test code'}} :*/ yield axios_1.default.post(fixErrorApiPath, data, { headers });
+                console.log(response);
+                console.log(counter);
+                if (response.data.error) {
+                    console.error(response.data.error);
+                    continue;
+                }
                 fixedTestCode = response.data.fixed_test;
+                console.log(fixedTestCode);
+                if (fixedTestCode.trim() === '') {
+                    console.log("The fixed test was empty, lets throw this away and start again!");
+                    attempts++;
+                    continue;
+                }
+                fs.writeFileSync(file, fixedTestCode);
             }
             catch (error) {
-                return [false, errors, true, null];
+                console.log('ran into error making api request in fix-error');
+                console.log(error);
+                return { fixedAllErrors: false, runResults: errors, apiError: true, fixedTest: null };
             }
-            fs.writeFileSync(file, fixedTestCode);
             attempts++;
-            if (attempts === 7 && matches) {
-                console.log(`Unable to fix all errors, resetting any uncommitted changes in ${file}...`);
-                (0, child_process_1.execSync)(`git checkout -- ${file}`);
-                return [false, errors, false, fixedTestCode];
-            }
+            matches = runTestErrorOutput(file);
         }
-        return [true, errors, false, null];
+        console.log('Attempts: ' + attempts);
+        console.log('matches.length: ' + matches.length);
+        console.log(matches);
+        if (matches.length > 0) {
+            console.log('there are still matches, erorrs sadly');
+            console.log(`Unable to fix all errors, resetting any uncommitted changes in ${file}...`);
+            (0, child_process_1.execSync)(`git add ${file} && git checkout ${file}`);
+            return { fixedAllErrors: false, runResults: errors, apiError: false, fixedTest: fixedTestCode };
+        }
+        else {
+            console.log('attempts: ' + attempts + ' not its not: ' + (maxAttempts - 1));
+        }
+        return { fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: null };
     });
 }
+exports.fixErrors = fixErrors;
+function runJestTest(file) {
+    let relativeTestFilePath = file;
+    process.chdir(rootDir);
+    if (workspaceDir) {
+        process.chdir(workspaceDir);
+        relativeTestFilePath = path.relative(workspaceDir, file);
+    }
+    let result;
+    try {
+        result = (0, child_process_1.execSync)(`npx jest --json ${file} --passWithNoTests`, { stdio: ['pipe', 'pipe', 'pipe'] });
+        process.chdir(rootDir);
+    }
+    catch (error) {
+        process.chdir(rootDir);
+        result = error;
+        if (error.stdout) {
+            result = JSON.parse(error.stdout.toString());
+            /*console.log(result)*/
+        }
+        else {
+            // If there's no stdout, rethrow the error
+            throw error;
+        }
+    }
+    if (!result.numFailedTestSuites) {
+        return JSON.parse(result.toString());
+    }
+    return result;
+}
+exports.runJestTest = runJestTest;
 function runTestErrorOutput(file) {
     let relativeTestFilePath = file;
     process.chdir(rootDir);
@@ -416,24 +534,29 @@ function runTestErrorOutput(file) {
         process.chdir(rootDir);
         return stdout.match(errorPattern) || [];
     }
-    else if (frontendFramework === 'react') {
-        if (workspaceDir) {
-            process.chdir(workspaceDir);
-            relativeTestFilePath = path.relative(workspaceDir, file);
+    else if (testingFramework === 'jest') {
+        const result = runJestTest(file);
+        console.log(result);
+        if (result.numFailedTestSuites === 0) {
+            console.log('is 0');
+            return [];
         }
-        //todo: fix this so we get stderr
-        result = (0, child_process_1.execSync)(`npx jest ${relativeTestFilePath} --json`, { stdio: ['pipe', 'pipe', 'pipe'] });
-        stdout = result.toString();
-        //stderr = result.stderr.toString();
-        process.chdir(rootDir);
+        else if (result.testResults) {
+            console.log('mapping didnt work');
+            console.log(result);
+            console.log(result.toString());
+            return result.testResults.map((testResult) => testResult.message);
+        }
     }
-    else {
-        throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
-    }
-    const errorMessages = [];
+    throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
+    /*
+    This code seems useful, but seems unreachable.
+
+    const errorMessages: string[] = [];
     if (stderr) {
         errorMessages.push(stderr);
     }
+
     try {
         const outputJson = JSON.parse(stdout);
         for (const suite of outputJson.testResults) {
@@ -443,12 +566,13 @@ function runTestErrorOutput(file) {
                 }
             }
         }
-    }
-    catch (_a) {
+    } catch {
         errorMessages.push(`Failed to parse test output: ${stdout}`);
     }
-    return errorMessages;
+
+    return errorMessages;*/
 }
+exports.runTestErrorOutput = runTestErrorOutput;
 function runTest(file) {
     let relativeTestFilePath = file;
     process.chdir(rootDir);
@@ -486,6 +610,7 @@ function runTest(file) {
     }
     return stdout;
 }
+exports.runTest = runTest;
 function getInput() {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -508,6 +633,7 @@ function getInput() {
         });
     });
 }
+exports.getInput = getInput;
 function groupFilesByDirectory(changedFiles) {
     const filesByDirectory = {};
     for (const file of changedFiles) {
@@ -519,6 +645,7 @@ function groupFilesByDirectory(changedFiles) {
     }
     return filesByDirectory;
 }
+exports.groupFilesByDirectory = groupFilesByDirectory;
 function tsAndHtmlFromFile(file, filesInDirectory) {
     const baseFile = path.basename(file, path.extname(file));
     const extension = path.extname(file);
@@ -551,6 +678,7 @@ function tsAndHtmlFromFile(file, filesInDirectory) {
     }
     return [tsFile, htmlFile, correspondingFile];
 }
+exports.tsAndHtmlFromFile = tsAndHtmlFromFile;
 function testCode() {
     return __awaiter(this, void 0, void 0, function* () {
         const headers = { 'Content-Type': 'application/json' };
@@ -565,27 +693,16 @@ function testCode() {
         process.exit();
     });
 }
-function checkIfTestPasses(testFile) {
+function checkIfJestTestPasses(testFile) {
     console.log(`Checking if ${testFile} passes before attempting to modify it`);
-    let output;
-    try {
-        output = (0, child_process_1.execSync)(`jest ${testFile}`).toString(); // replace with your test runner command
+    const result = runJestTest(testFile);
+    debug(result, verboseLogging);
+    if (result.numFailedTestSuites === 0 || result.numFailedTestSuites === 1 && result.testResults[0].message.includes("Your test suite must contain at least one test.")) {
+        return true;
     }
-    catch (error) {
-        console.error(error);
-        console.log(`Error running tests: ${error}`);
-        return false;
-    }
-    console.log(`Output for: ${testFile}`);
-    console.log(output);
-    if (output.includes('Your test suite must contain at least one test.')) {
-        return true; // React will fail on an empty file, but we still want to write a test in this case
-    }
-    if (output.includes('FAIL') || output.includes('ERROR')) {
-        return false;
-    }
-    return true;
+    return 0 === result.numFailedTestSuites;
 }
+exports.checkIfJestTestPasses = checkIfJestTestPasses;
 function checkIfAngularTestsPass(testFile) {
     console.log(`Checking if all Angular tests pass`);
     let output;
@@ -607,6 +724,7 @@ function checkIfAngularTestsPass(testFile) {
     }
     return true;
 }
+exports.checkIfAngularTestsPass = checkIfAngularTestsPass;
 function printSummary(failingTests, testsWithErrors, passingTests, apiErrors, testRunResults) {
     if (testRunResults) {
         console.log("Here are the final results from running the tests:");
@@ -643,15 +761,20 @@ function printSummary(failingTests, testsWithErrors, passingTests, apiErrors, te
     }
     console.log('\n');
 }
+exports.printSummary = printSummary;
 function doesFileExist(filename) {
     return fs.existsSync(filename);
 }
+exports.doesFileExist = doesFileExist;
 function createFile(filename) {
     // Create a new file
     fs.writeFileSync(filename, '');
+    console.log('created f');
+    console.log(filename);
     // Run git add on the file
     try {
         (0, child_process_1.execSync)(`git add ${filename}`);
+        console.log((0, child_process_1.execSync)(`git status`).toString());
     }
     catch (error) {
         console.error(filename);
@@ -659,6 +782,7 @@ function createFile(filename) {
         console.error(`Error running git add: `);
     }
 }
+exports.createFile = createFile;
 function findFiles(extensions, ignoreExtensions) {
     /**
     Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
@@ -689,6 +813,7 @@ function findFiles(extensions, ignoreExtensions) {
     walk(walkDir);
     return matches;
 }
+exports.findFiles = findFiles;
 /**
  * Filter out files that are within certain directories or match certain filenames.
  *
@@ -713,6 +838,7 @@ function filterFiles(files) {
     }
     return filteredFiles;
 }
+exports.filterFiles = filterFiles;
 function saveTestsWithErrors(testContentWithErrors) {
     for (const testInfo of testContentWithErrors) {
         for (const [test, content] of Object.entries(testInfo)) {
@@ -720,6 +846,7 @@ function saveTestsWithErrors(testContentWithErrors) {
         }
     }
 }
+exports.saveTestsWithErrors = saveTestsWithErrors;
 /**
  * Parse the test output to find if tests all pass.
  *
@@ -744,27 +871,45 @@ function parseFailedAngularTestOutput(output) {
         }
     }
 }
+exports.parseFailedAngularTestOutput = parseFailedAngularTestOutput;
 function writeTestsToFiles(tests, skip) {
     if (skip) {
         return;
     }
+    console.log(tests);
+    console.log('its saving');
+    console.log(process.cwd());
     for (const [testFilePath, testCode] of Object.entries(tests)) {
+        console.log(testFilePath);
         save(testFilePath, testCode);
     }
 }
+exports.writeTestsToFiles = writeTestsToFiles;
 function save(testFilePath, testCode) {
     console.log(process.cwd());
     console.log(testFilePath);
     console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
-    (0, child_process_1.execSync)(`git stash push -- ${testFilePath}`);
+    (0, child_process_1.execSync)(`git add ${testFilePath} && git stash push ${testFilePath}`);
     fs.writeFileSync(testFilePath, testCode);
+    console.log(testFilePath);
+    console.log(testCode);
 }
+exports.save = save;
+function getUrls() {
+    const doProd = grabFromConfig('doProd');
+    generateApiPath = doProd ? `${prodBase}/generate-test/new` : "http://localhost:8080/generate-test/new";
+    fixErrorApiPath = doProd ? `${prodBase}/generate-test/fix-error` : "http://localhost:8080/generate-test/fix-error";
+    testApiPath = doProd ? `${prodBase}/generate-test/test-code` : "http://localhost:8080/generate-test/test-code";
+    password = grabFromConfig("password") || 'nonerequired';
+}
+exports.getUrls = getUrls;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         let skip = false;
         if (skip) {
             return;
         }
+        getUrls();
         yield detectWorkspaceDir();
         yield detectProjectType();
         yield detectTestFramework();
@@ -780,7 +925,9 @@ function main() {
         else {
             changedFiles = getChangedFiles();
         }
+        console.log(changedFiles);
         const filteredChangedFiles = filterFiles(changedFiles);
+        console.log(filteredChangedFiles);
         const filesByDirectory = groupFilesByDirectory(filteredChangedFiles);
         let failingTests = [];
         let testsWithErrors = [];
@@ -796,20 +943,30 @@ function main() {
                 if (file === undefined) {
                     continue;
                 }
+                console.log("##### file: " + file);
                 const testFile = getTestName(file);
+                console.log("##### testname: " + testFile);
                 if (firstRun && frontendFramework === "angular") {
                     checkIfAngularTestsPass(testFile);
                     firstRun = false;
                 }
+                console.log('check the file exists');
                 if (!fs.existsSync(testFile)) {
-                    fs.writeFileSync(testFile, '');
+                    console.log('the file not exist');
+                    createFile(testFile);
                 }
                 else if (frontendFramework !== "angular") {
-                    const doesTestPass = checkIfTestPasses(testFile);
+                    console.log('not exist is angular');
+                    const doesTestPass = checkIfJestTestPasses(testFile);
+                    console.log('doesTestPass');
+                    console.log(doesTestPass);
                     if (!doesTestPass) {
                         failingTests.push(testFile);
                         continue;
                     }
+                }
+                else {
+                    console.log('not exist not angular');
                 }
                 const testVersion = getTestVersion(testFile);
                 const [tsFile, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
@@ -827,16 +984,23 @@ function main() {
                     filesToPass.push(htmlFile);
                 }
                 const diff = getDiff(filesToPass);
-                const tsFileContent = getFileContent(tsFile);
+                let tsFileContent = getFileContent(tsFile);
                 const htmlFileContent = getFileContent(htmlFile);
+                //todo: implement truncation which works, this should probably be in the backend
+                // @ts-ignore
+                tsFileContent = tsFileContent === null || tsFileContent === void 0 ? void 0 : tsFileContent.split('function detectProjectType()')[0];
+                //console.log(tsFileContent)
+                console.log('tsFile: ' + tsFile);
                 const response = yield generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion);
+                console.log(response);
                 let tests;
                 if (!response) {
                     apiErrors.push(testFile);
                     continue;
                 }
                 try {
-                    const tests = response['tests'];
+                    const tests = response.tests;
+                    // todo: fix the issue with which files  so we can
                     writeTestsToFiles(tests, false);
                 }
                 catch (error) {
@@ -845,7 +1009,7 @@ function main() {
                     console.error(response);
                     apiErrors.push(testFile);
                 }
-                const [fixedAllErrors, runResults, apiError, fixedTest] = yield fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
+                const { fixedAllErrors, runResults, apiError, fixedTest } = yield fixErrors(testFile, testVersion, diff, tsFile, tsFileContent);
                 if (apiError) {
                     console.log("API error encountered");
                     apiErrors.push(testFile);
