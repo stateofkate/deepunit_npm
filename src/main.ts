@@ -7,20 +7,30 @@ import * as readline from 'readline';
 import ts from 'typescript';
 import { mockedGenerationConst } from './main.consts';
 import { grabFromConfig } from './utils';
-import { detectWorkspaceDir } from './configDetector';
+import {
+  detectProjectType,
+  detectTestFramework,
+  detectWorkspaceDir,
+} from './configDetector';
 
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
  */
-let environment = {
+export type Config = {
+  workspaceDir: string;
+  frontendFramework: string;
+  testExtension: string;
+  testingFramework: string;
+};
+let config: Config = {
   workspaceDir: '',
+  frontendFramework: '',
+  testExtension: '',
+  testingFramework: '',
 };
 
-let frontendFramework: string = '';
-let testingFramework: string = '';
 let scriptTarget: string = '';
 let typescriptExtension: string = '';
-let testExtension: string = '';
 
 export const rootDir: string = process.cwd();
 
@@ -60,85 +70,9 @@ let version: string = '0.3.0';
 
 let fixAttempts = 0;
 
-export function detectProjectType(): void {
-  process.chdir(rootDir);
-  const configValue = grabFromConfig('frontendFramework');
-  if (configValue) {
-    frontendFramework = configValue;
-    return;
-  }
-  let angularJsonPath = 'angular.json';
-  let packageJsonPath = 'package.json';
-
-  // If workspaceDir is not empty, join the path
-  if (environment.workspaceDir) {
-    angularJsonPath = path.join(environment.workspaceDir, 'angular.json');
-    packageJsonPath = path.join(environment.workspaceDir, 'package.json');
-  }
-
-  if (fs.existsSync(angularJsonPath)) {
-    frontendFramework = 'angular';
-    debug('Detected frontendFramework: ' + frontendFramework, true);
-    return;
-  } else if (fs.existsSync(packageJsonPath)) {
-    let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    let dependencies = packageJson['dependencies'] || {};
-    let devDependencies = packageJson['devDependencies'] || {};
-    if ('react' in dependencies || 'react' in devDependencies) {
-      frontendFramework = 'react';
-      debug('Detected frontendFramework: ' + frontendFramework, true);
-      return;
-    }
-    if (
-      'angular/common' in dependencies ||
-      'angular/common' in devDependencies
-    ) {
-      frontendFramework = 'angular';
-      debug('Detected frontendFramework: ' + frontendFramework, true);
-      return;
-    }
-  }
-  frontendFramework = 'unknown';
-  debug(
-    'WARNING: Unable to detect frontend framework, typescript extension',
-    true,
-  );
-}
-
-export function detectTestFramework(): void {
-  let jestConfigPath = 'jest.config.js';
-  let karmaConfigPath = 'karma.conf.js';
-  let packageJsonPath = 'package.json';
-
-  // If workspaceDir is not empty, join the path
-  if (environment.workspaceDir) {
-    jestConfigPath = path.join(environment.workspaceDir, 'jest.config.js');
-    karmaConfigPath = path.join(environment.workspaceDir, 'karma.conf.js');
-    packageJsonPath = path.join(environment.workspaceDir, 'package.json');
-  }
-
-  if (fs.existsSync(jestConfigPath)) {
-    testingFramework = 'jest';
-    testExtension = '.test.ts';
-  } else if (fs.existsSync(karmaConfigPath)) {
-    testingFramework = 'jasmine';
-    testExtension = '.spec.ts';
-  } else if (fs.existsSync(packageJsonPath)) {
-    let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
-    if (fileContent.includes('jest')) {
-      testingFramework = 'jest';
-      testExtension = '.test.ts';
-    } else if (fileContent.includes('jasmine-core')) {
-      testingFramework = 'jasmine';
-      testExtension = '.spec.ts';
-    }
-  }
-
-  debug('Detected testingFramework: ' + testingFramework, true);
-}
 export function detectTsconfigTarget() {
   let tsconfigPath: string | null = path.join(
-    environment.workspaceDir,
+    config.workspaceDir,
     'tsconfig.json',
   );
   let typescriptExtension = '.ts';
@@ -194,9 +128,9 @@ export function detectTypescriptExtension(): void {
     typescriptExtension = configTypescript;
   } else if (typescriptExtension) {
     console.log('found it in the tsconfig');
-  } else if (frontendFramework === 'react') {
+  } else if (config.frontendFramework === 'react') {
     typescriptExtension = '.tsx';
-  } else if (frontendFramework === 'angular') {
+  } else if (config.frontendFramework === 'angular') {
     typescriptExtension = '.ts';
   } else {
     typescriptExtension = '.ts';
@@ -303,8 +237,8 @@ export async function generateTest(
   const headers = { 'Content-Type': 'application/json' };
   let data: generateTestData = {
     diffs,
-    frontendFramework: frontendFramework,
-    testingFramework: testingFramework,
+    frontendFramework: config.frontendFramework,
+    testingFramework: config.testingFramework,
     scriptTarget: scriptTarget,
     version,
     password,
@@ -365,7 +299,9 @@ export async function fixManyErrors(
   let attempts = 0;
 
   if (!errorPattern) {
-    throw new Error(`Unsupported testing framework: ${testingFramework}`);
+    throw new Error(
+      `Unsupported testing framework: ${config.testingFramework}`,
+    );
   }
   let result: {
     failedTests: string[];
@@ -441,8 +377,8 @@ export async function fixManyErrors(
       ts_file_name: match,
       ts_file_content: tsFileContent,
       script_target: scriptTarget,
-      frontend_framework: frontendFramework,
-      testingFramework: testingFramework,
+      frontend_framework: config.frontendFramework,
+      testingFramework: config.testingFramework,
       version,
       password,
     };
@@ -568,7 +504,7 @@ export async function fixManyErrors(
             ts_file_name: tsFile,
             ts_file_content: tsFileContent,
             script_target: scriptTarget,
-            frontend_framework: frontendFramework,
+            frontend_framework: config.frontendFramework,
             testingFramework: testingFramework,
             version,
             password
@@ -619,10 +555,10 @@ export function runJestTest(file: string[]) {
   process.chdir(rootDir);
 
   let relativePathArray: string[] = [];
-  if (environment.workspaceDir) {
-    process.chdir(environment.workspaceDir);
+  if (config.workspaceDir) {
+    process.chdir(config.workspaceDir);
     for (let i = 0; i < file.length; i++) {
-      let relativePath = path.relative(environment.workspaceDir, file[i]);
+      let relativePath = path.relative(config.workspaceDir, file[i]);
       relativePathArray.push(relativePath);
     }
   } else {
@@ -670,7 +606,7 @@ export function runTestErrorOutput(file: string[]): {
   let stdout;
   let stderr;
 
-  if (frontendFramework === 'angular') {
+  if (config.frontendFramework === 'angular') {
     console.log('##### TODO: add support for jasmine back in');
     console.log('##### TODO: add support for jasmine back in');
     console.log('##### TODO: add support for jasmine back in');
@@ -693,7 +629,7 @@ export function runTestErrorOutput(file: string[]): {
             stdout = result.toString();
             process.chdir(rootDir);
             return stdout.match(errorPattern) || [];*/
-  } else if (testingFramework === 'jest') {
+  } else if (config.testingFramework === 'jest') {
     console.log('in the jest part');
     const result = runJestTest(file);
     console.log(result);
@@ -750,7 +686,9 @@ export function runTestErrorOutput(file: string[]): {
                 }*/
     }
   }
-  throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
+  throw new Error(
+    `Unsupported frontend framework: ${config.frontendFramework}`,
+  );
 }
 
 export function runTest(file: string): string {
@@ -760,20 +698,20 @@ export function runTest(file: string): string {
   let result;
   let stdout;
 
-  if (frontendFramework === 'angular') {
+  if (config.frontendFramework === 'angular') {
     const command = [];
     if (fs.existsSync(file)) {
-      if (environment.workspaceDir) {
-        process.chdir(environment.workspaceDir);
-        relativeTestFilePath = path.relative(environment.workspaceDir, file);
+      if (config.workspaceDir) {
+        process.chdir(config.workspaceDir);
+        relativeTestFilePath = path.relative(config.workspaceDir, file);
       }
       result = execSync(
         `ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${relativeTestFilePath}`,
         { stdio: 'pipe' },
       );
     } else {
-      if (environment.workspaceDir) {
-        process.chdir(environment.workspaceDir);
+      if (config.workspaceDir) {
+        process.chdir(config.workspaceDir);
       }
       result = execSync(
         'ng test --browsers=ChromeHeadless --no-watch --no-progress',
@@ -782,10 +720,10 @@ export function runTest(file: string): string {
     }
     stdout = result.toString();
     process.chdir(rootDir);
-  } else if (frontendFramework === 'react') {
-    if (environment.workspaceDir) {
-      process.chdir(environment.workspaceDir);
-      relativeTestFilePath = path.relative(environment.workspaceDir, file);
+  } else if (config.frontendFramework === 'react') {
+    if (config.workspaceDir) {
+      process.chdir(config.workspaceDir);
+      relativeTestFilePath = path.relative(config.workspaceDir, file);
     }
     result = execSync(`npx jest ${relativeTestFilePath}`, {
       stdio: 'pipe',
@@ -793,7 +731,9 @@ export function runTest(file: string): string {
     stdout = result.toString();
     process.chdir(rootDir);
   } else {
-    throw new Error(`Unsupported frontend framework: ${frontendFramework}`);
+    throw new Error(
+      `Unsupported frontend framework: ${config.frontendFramework}`,
+    );
   }
 
   return stdout;
@@ -1025,7 +965,7 @@ export function findFiles(
     list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
     */
   const matches: string[] = [];
-  const walkDir = environment.workspaceDir || 'src'; // replace with actual workspaceDir if needed
+  const walkDir = config.workspaceDir || 'src'; // replace with actual workspaceDir if needed
 
   function walk(directory: string) {
     const files = fs.readdirSync(directory);
@@ -1192,9 +1132,13 @@ export async function main() {
     return;
   }
   getUrls();
-  environment.workspaceDir = await detectWorkspaceDir();
-  await detectProjectType();
-  await detectTestFramework();
+  config.workspaceDir = await detectWorkspaceDir();
+  config.frontendFramework = await detectProjectType(config);
+
+  const { testingFramework, testExtension } = await detectTestFramework(config);
+  config.testExtension = testExtension;
+  config.testingFramework = testingFramework;
+
   await detectTsconfigTarget();
   await detectTypescriptExtension();
   debug('#################################################', true);
@@ -1234,7 +1178,7 @@ export async function main() {
       const testFile = getTestName(file);
       console.log('##### testname: ' + testFile);
 
-      if (firstRun && frontendFramework === 'angular') {
+      if (firstRun && config.frontendFramework === 'angular') {
         checkIfAngularTestsPass(testFile);
         firstRun = false;
       }
@@ -1244,7 +1188,7 @@ export async function main() {
         console.log('the file not exist');
         createFile(testFile);
       } else if (
-        frontendFramework !== 'angular' &&
+        config.frontendFramework !== 'angular' &&
         !onlyTestFixErrors &&
         false
       ) {
@@ -1343,7 +1287,7 @@ export async function main() {
         passingTests.push(testFile);
       } else {
         testsWithErrors.push(testFile);
-        if (frontendFramework === 'angular') {
+        if (config.frontendFramework === 'angular') {
           // This makes no sense, so I removed the saveFailingTests function, lets fiure it out when we restore angular support testContentWithErrors.push({ test: testFile, testContent: fixedTest });
         }
       }
