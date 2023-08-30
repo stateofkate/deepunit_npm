@@ -4,140 +4,27 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import axios from 'axios';
 import * as readline from 'readline';
-import ts from 'typescript';
 import { mockedGenerationConst } from './main.consts';
-import { grabFromConfig } from './utils';
-import {
-  detectProjectType,
-  detectTestFramework,
-  detectWorkspaceDir,
-} from './configDetector';
-
-/** Automatically Detected Project configs
- * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
- */
-export type Config = {
-  workspaceDir: string;
-  frontendFramework: string;
-  testExtension: string;
-  testingFramework: string;
-};
-let config: Config = {
-  workspaceDir: '',
-  frontendFramework: '',
-  testExtension: '',
-  testingFramework: '',
-};
-
-let scriptTarget: string = '';
-let typescriptExtension: string = '';
+import { Config } from './Config';
 
 export const rootDir: string = process.cwd();
+
+let config: Config;
 
 /**
  * Manually set configs
  */
 let verboseLogging: boolean = true;
 let allFiles: boolean = true; // grab list of files from last commit or recursively search all directories in the project for .ts or html files
-let defaultIgnore: string[] = [
-  'node_modules',
-  '.angular',
-  '.idea',
-  'dist',
-  'git_hooks',
-  'src',
-]; // Paths that most projects will never want to unit test
-let ignoredFiles: string[] = [
-  'index.html',
-  'index.tsx',
-  'polyfills.ts',
-  'test.ts',
-  'main.ts',
-  'environments/environment.ts',
-  'environments/environment.prod.ts',
-]; // ignore file paths ending in these names
 let onlyTestFixErrors: boolean = false;
 let mockGenerationApiResponse: boolean = false;
 const mockedGeneration = mockedGenerationConst;
 
-// Api paths
-let prodBase: string = 'https://dumper.adaptable.app';
-let generateApiPath: string = `${prodBase}/generate-test/new`;
-let fixErrorApiPath: string = `${prodBase}/generate-test/fix-error`;
-let testApiPath: string = `${prodBase}/generate-test/test-code`;
-let password: string = 'nonerequired';
 let version: string = '0.3.0';
 
 let fixAttempts = 0;
 
-export function detectTsconfigTarget() {
-  let tsconfigPath: string | null = path.join(
-    config.workspaceDir,
-    'tsconfig.json',
-  );
-  let typescriptExtension = '.ts';
-
-  while (tsconfigPath) {
-    if (fs.existsSync(tsconfigPath)) {
-      let contents = fs.readFileSync(tsconfigPath, 'utf8');
-      try {
-        let tsconfigJson = ts.parseConfigFileTextToJson('', contents);
-        scriptTarget = tsconfigJson.config?.compilerOptions?.target
-          ? tsconfigJson.config?.compilerOptions?.target
-          : undefined;
-        if (tsconfigJson.config?.compilerOptions?.jsx) {
-          typescriptExtension = '.tsx';
-        }
-        if (tsconfigPath != null) {
-          // @ts-ignore
-          tsconfigPath = tsconfigJson.config?.extends
-            ? path.join(
-                path.dirname(tsconfigPath),
-                tsconfigJson.config?.extends,
-              )
-            : null;
-        }
-      } catch (error) {
-        console.log(error);
-        console.error(
-          'Error parsing tsconfig.json. JSON does not support comments. Please remove the comment at the top of ' +
-            tsconfigPath +
-            ' and try again.',
-        );
-        console.log('Need help? Email justin@deepunit.ai');
-        process.exit(1);
-      }
-    } else {
-      console.error('Error: unable to find tsconfig at ' + tsconfigPath);
-      console.error('The current working director is ' + process.cwd());
-      console.error(
-        'Please notify the appropriate team to add a tsconfig path config',
-      );
-      console.log('Need help? Email justin@deepunit.ai');
-      process.exit(1);
-    }
-  }
-
-  console.log('Detected ES target: ' + scriptTarget);
-  return scriptTarget;
-}
-
-export function detectTypescriptExtension(): void {
-  const configTypescript = grabFromConfig('typescriptExtension');
-  if (configTypescript) {
-    typescriptExtension = configTypescript;
-  } else if (typescriptExtension) {
-    console.log('found it in the tsconfig');
-  } else if (config.frontendFramework === 'react') {
-    typescriptExtension = '.tsx';
-  } else if (config.frontendFramework === 'angular') {
-    typescriptExtension = '.ts';
-  } else {
-    typescriptExtension = '.ts';
-  }
-  console.log('Typescript extension is : ' + typescriptExtension);
-}
-
+// TODO: setup logger
 export function debug(inputString: string, doProd = false) {
   let doDebug = false;
   if (doDebug) {
@@ -206,8 +93,9 @@ export function getDirectory(file: string): string {
 }
 
 export function getTestName(file: string): string {
-  console.log(testExtension);
-  const testFileName = file.split('.').slice(0, -1).join('.') + testExtension;
+  console.log(config.testExtension);
+  const testFileName =
+    file.split('.').slice(0, -1).join('.') + config.testExtension;
   return testFileName;
 }
 type generateTestData = {
@@ -239,9 +127,9 @@ export async function generateTest(
     diffs,
     frontendFramework: config.frontendFramework,
     testingFramework: config.testingFramework,
-    scriptTarget: scriptTarget,
+    scriptTarget: config.scriptTarget,
     version,
-    password,
+    password: config.password,
   };
   if (tsFile && tsFileContent) {
     data.tsFile = { [tsFile]: tsFileContent };
@@ -258,7 +146,7 @@ export async function generateTest(
   try {
     const response = mockGenerationApiResponse
       ? mockedGeneration
-      : await axios.post(generateApiPath, data, { headers });
+      : await axios.post(config.generateApiPath, data, { headers });
     console.log('response');
     console.log(response);
     return response.data;
@@ -376,16 +264,16 @@ export async function fixManyErrors(
       diff,
       ts_file_name: match,
       ts_file_content: tsFileContent,
-      script_target: scriptTarget,
+      script_target: config.scriptTarget,
       frontend_framework: config.frontendFramework,
       testingFramework: config.testingFramework,
       version,
-      password,
+      password: config.password,
     };
 
     try {
       fixAttempts++;
-      const response = await axios.post(fixErrorApiPath, data, {
+      const response = await axios.post(config.fixErrorApiPath, data, {
         headers,
       });
       console.log(response);
@@ -438,118 +326,6 @@ export async function fixManyErrors(
     passedTests: result.passedTests,
   };
 }
-/*export async function fixErrors(
-    file: string,
-    testVersion: string,
-    diff: string,
-    tsFile: string | null,
-    tsFileContent: string | null
-): Promise<{fixedAllErrors: boolean, runResults: string, apiError: boolean, fixedTest: string | null}> {
-    let errors = '';
-    let attempts = 0;
-
-    if (!errorPattern) {
-        throw new Error(`Unsupported testing framework: ${testingFramework}`);
-    }
-    let matches: string[] = await runTestErrorOutput(file);
-    const maxAttempts = 7;
-    let fixedTestCode: string = '';
-    let contiues = 0;
-    while (attempts < maxAttempts && matches.length>0) {
-        console.log(' ', '##########################################################\n', '################### Begin fixing error ###################\n', '##########################################################');
-
-        if (!matches) {
-            console.log(matches)
-            console.log(`Fixed all errors for ${file}`);
-            return {fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: testVersion};
-        }
-
-        console.log(matches.length)
-        const match: string | undefined = matches.pop();
-        console.log(matches.length)
-        if(match === undefined) {
-            console.log(match)
-            console.log('that was the match')
-            console.log(matches)
-            console.log("match was undefined, I don't think this could ever happen, but if it did it could cause an infinite loop")
-            contiues++
-            continue;
-        } else if(match.includes('Your test suite must contain at least one test.')) {
-            //never fix the empty test error
-            if(matches.length<=1) {
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                console.log("###### Big break!!!!")
-                break;
-            }
-            contiues++
-            continue;
-        }
-        const errorString = testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
-        console.log(`Fixing error: ${errorString}`);
-
-        const headers = { 'Content-Type': 'application/json' };
-        const data = {
-            error_message: errorString,
-            test_code: testVersion,
-            diff,
-            ts_file_name: tsFile,
-            ts_file_content: tsFileContent,
-            script_target: scriptTarget,
-            frontend_framework: config.frontendFramework,
-            testingFramework: testingFramework,
-            version,
-            password
-        };
-
-
-
-        try {
-            counter++
-            const response = /!*mockFixingApiResponse ? {data: {fixed_test: 'mocked fixed test code'}} :*!/ await axios.post(fixErrorApiPath, data, { headers });
-            console.log(response)
-            console.log(counter)
-            if(response.data.error) {
-                console.error(response.data.error)
-                continue
-            }
-            fixedTestCode = response.data.fixed_test;
-            console.log(fixedTestCode)
-            if(fixedTestCode.trim() === '') {
-                console.log("The fixed test was empty, lets throw this away and start again!")
-                attempts++;
-                continue;
-            }
-            fs.writeFileSync(file, fixedTestCode);
-        } catch (error) {
-            console.log('ran into error making api request in fix-error')
-            console.log(error)
-            return {fixedAllErrors: false, runResults: errors, apiError: true, fixedTest: null};
-        }
-        attempts++;
-        matches = runTestErrorOutput(file);
-    }
-    console.log('Attempts: ' + attempts)
-    console.log('matches.length: ' + matches.length)
-    console.log(matches)
-    if (matches.length > 0) {
-        console.log('there are still matches, erorrs sadly')
-        console.log(`Unable to fix all errors, resetting any uncommitted changes in ${file}...`);
-        execSync(`git add ${file} && git checkout ${file}`);
-        return {fixedAllErrors: false, runResults: errors, apiError: false, fixedTest: fixedTestCode};
-    } else {
-        console.log('attempts: ' + attempts + ' not its not: ' + (maxAttempts-1))
-    }
-    return {fixedAllErrors: true, runResults: errors, apiError: false, fixedTest: null};
-}*/
 
 export function runJestTest(file: string[]) {
   process.chdir(rootDir);
@@ -602,35 +378,11 @@ export function runTestErrorOutput(file: string[]): {
 } {
   process.chdir(rootDir);
 
-  let result: Buffer;
-  let stdout;
-  let stderr;
-
   if (config.frontendFramework === 'angular') {
-    console.log('##### TODO: add support for jasmine back in');
-    console.log('##### TODO: add support for jasmine back in');
-    console.log('##### TODO: add support for jasmine back in');
-    console.log('##### TODO: add support for jasmine back in');
-    console.log('##### TODO: add support for jasmine back in');
+    // TODO: add support for jasmine back in
+    console.error('##### TODO: add support for jasmine back in');
     process.exit();
-    /*const errorPattern = /Error: (.*?):(.*?)\n/;
-            let relativeFilePathArray: string[] = [];
-            if (environment.workspaceDir) {
-                process.chdir(environment.workspaceDir);
-                for(const filePath of file) {
-                    let relativeTestFilePath = path.relative(environment.workspaceDir, filePath);
-                    relativeFilePathArray.push(relativeTestFilePath)
-                }
-
-            } else {
-                relativeFilePathArray = Array.isArray(file) ? relativeFilePathArray : [file];
-            }
-            result = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${relativeFilePathArray}`, { stdio: 'pipe' });
-            stdout = result.toString();
-            process.chdir(rootDir);
-            return stdout.match(errorPattern) || [];*/
   } else if (config.testingFramework === 'jest') {
-    console.log('in the jest part');
     const result = runJestTest(file);
     console.log(result);
     if (result.numFailedTestSuites === 0) {
@@ -674,16 +426,6 @@ export function runTestErrorOutput(file: string[]): {
         }
       }
       return { passedTests, failedTestErrors, failedTests };
-      /*console.log(result.testResults[0].message)
-                const splitted = result.testResults[0].message.split(file)
-                console.log(splitted.length)
-                let finalArray = []
-                for(const splitty of splitted) {
-                    console.log('#### splitty')
-                    const errorString = file + splitty
-                    console.log(errorString)
-                    finalArray.push(errorString)
-                }*/
     }
   }
   throw new Error(
@@ -738,27 +480,7 @@ export function runTest(file: string): string {
 
   return stdout;
 }
-export function getInput(): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
 
-  return new Promise((resolve, reject) => {
-    rl.question('Do you want to continue fixing errors? (y/n): ', (answer) => {
-      rl.close();
-      if (answer.toLowerCase() === 'n') {
-        resolve(false);
-      } else if (answer.toLowerCase() === 'y') {
-        console.log('Y received, continuing execution');
-        resolve(true);
-      } else {
-        console.log('Invalid input. Please enter y or n.');
-        resolve(getInput());
-      }
-    });
-  });
-}
 export function groupFilesByDirectory(
   changedFiles: string[],
 ): Record<string, string[]> {
@@ -784,17 +506,17 @@ export function tsAndHtmlFromFile(
   const extension = path.extname(file);
   let correspondingFile: string | null = null;
 
-  if (extension === typescriptExtension) {
+  if (extension === config.typescriptExtension) {
     correspondingFile = `${baseFile}.html`;
   } else if (extension === '.html') {
-    correspondingFile = `${baseFile}${typescriptExtension}`;
+    correspondingFile = `${baseFile}${config.typescriptExtension}`;
   }
 
   let htmlFile: string | null = null;
   let tsFile: string | null = null;
 
   if (correspondingFile && filesInDirectory.includes(correspondingFile)) {
-    if (extension === typescriptExtension) {
+    if (extension === config.typescriptExtension) {
       tsFile = file;
       htmlFile = correspondingFile;
     } else {
@@ -802,7 +524,7 @@ export function tsAndHtmlFromFile(
       htmlFile = file;
     }
   } else {
-    if (extension === typescriptExtension) {
+    if (extension === config.typescriptExtension) {
       tsFile = file;
     } else {
       htmlFile = file;
@@ -811,18 +533,7 @@ export function tsAndHtmlFromFile(
 
   return [tsFile, htmlFile, correspondingFile];
 }
-async function testCode(): Promise<void> {
-  const headers = { 'Content-Type': 'application/json' };
 
-  try {
-    const response = await axios.post(testApiPath, {}, { headers });
-    console.log(response);
-  } catch (error) {
-    console.log(error);
-  }
-  console.log('Need help? Email justin@deepunit.ai');
-  process.exit();
-}
 export function checkIfJestTestPasses(testFile: string): boolean {
   console.log(`Checking if ${testFile} passes before attempting to modify it`);
   const result = runJestTest([testFile]);
@@ -847,6 +558,7 @@ export function checkIfJestTestPasses(testFile: string): boolean {
   }
   return 0 === result.numFailedTestSuites;
 }
+
 export function checkIfAngularTestsPass(testFile: string): boolean {
   console.log(`Checking if all Angular tests pass`);
 
@@ -875,6 +587,7 @@ export function checkIfAngularTestsPass(testFile: string): boolean {
 
   return true;
 }
+
 export function printSummary(
   failingTests: string[],
   testsWithErrors: string[],
@@ -1055,7 +768,6 @@ export function writeTestsToFiles(
   }
   console.log(tests);
   console.log('its saving');
-  console.log(process.cwd());
   let testPaths: string[] = [];
   for (const [testFilePath, testCode] of Object.entries(tests)) {
     console.log(testFilePath);
@@ -1091,56 +803,26 @@ export function writeFileSync(file: string, data: string, options?: any) {
   }
 }
 
-export function getUrls() {
-  const doProd = grabFromConfig('doProd');
-  generateApiPath = doProd
-    ? `${prodBase}/generate-test/new`
-    : 'http://localhost:8080/generate-test/new';
-  fixErrorApiPath = doProd
-    ? `${prodBase}/generate-test/fix-error`
-    : 'http://localhost:8080/generate-test/fix-error';
-  testApiPath = doProd
-    ? `${prodBase}/generate-test/test-code`
-    : 'http://localhost:8080/generate-test/test-code';
-  password = grabFromConfig('password') || 'nonerequired';
-}
-export class newClass {}
-
 export function recombineTests(needImplementing: boolean) {
   if (needImplementing) {
-    console.log('Implement recombineTests()!!!!');
-    console.log('Implement recombineTests()!!!!');
-    console.log('Implement recombineTests()!!!!');
-    console.log('Implement recombineTests()!!!!');
+    // TODO: Implement recombineTests()
+    console.log('Implement recombineTests()!');
     process.exit();
   }
 }
 
 function deleteTempFiles(tempTestPaths: string[], needImplementing: boolean) {
   if (needImplementing) {
-    console.log('Implement deleteTempFiles()!!!!');
-    console.log('Implement deleteTempFiles()!!!!');
-    console.log('Implement deleteTempFiles()!!!!');
-    console.log('Implement deleteTempFiles()!!!!');
+    // TODO: Implement deleteTempFiles()!
+    console.log('Implement deleteTempFiles()!');
     process.exit();
   }
 }
 
 export async function main() {
-  let skip = false;
-  if (skip) {
-    return;
-  }
-  getUrls();
-  config.workspaceDir = await detectWorkspaceDir();
-  config.frontendFramework = await detectProjectType(config);
+  // assign the config
+  config = await Config.init();
 
-  const { testingFramework, testExtension } = await detectTestFramework(config);
-  config.testExtension = testExtension;
-  config.testingFramework = testingFramework;
-
-  await detectTsconfigTarget();
-  await detectTypescriptExtension();
   debug('#################################################', true);
   debug('##### Generating unit tests with DeepUnitAI #####', true);
   debug('#################################################', true);
@@ -1148,15 +830,13 @@ export async function main() {
   let changedFiles: string[];
   if (allFiles) {
     changedFiles = findFiles(
-      [typescriptExtension, '.html'],
+      [config.typescriptExtension, '.html'],
       ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts'],
     );
   } else {
     changedFiles = getChangedFiles();
   }
-  console.log(changedFiles);
   const filteredChangedFiles = filterFiles(changedFiles);
-  console.log(filteredChangedFiles);
   const filesByDirectory = groupFilesByDirectory(filteredChangedFiles);
 
   let failingTests: string[] = [];
@@ -1187,19 +867,6 @@ export async function main() {
       if (!fs.existsSync(testFile)) {
         console.log('the file not exist');
         createFile(testFile);
-      } else if (
-        config.frontendFramework !== 'angular' &&
-        !onlyTestFixErrors &&
-        false
-      ) {
-        console.log('not exist is angular');
-        const doesTestPass = checkIfJestTestPasses(testFile);
-        console.log('doesTestPass');
-        console.log(doesTestPass);
-        if (!doesTestPass) {
-          failingTests.push(testFile);
-          continue;
-        }
       } else {
         console.log('not exist not angular');
       }
@@ -1227,12 +894,6 @@ export async function main() {
       const diff = getDiff(filesToPass);
       let tsFileContent: string = getFileContent(tsFile);
       const htmlFileContent = getFileContent(htmlFile);
-      //todo: implement truncation which works, this should probably be in the backend
-      /* hopefully we can not truncate now
-            if(tsFileContent?.length>1500) {
-                tsFileContent = tsFileContent?.substring(0, 1500)
-            }*/
-      //console.log(tsFileContent)
       console.log('tsFile: ' + tsFile);
 
       let tempTestPaths: string[] = [];
@@ -1247,7 +908,6 @@ export async function main() {
           testVersion,
         );
         console.log(response);
-        let tests;
         if (!response) {
           apiErrors.push(testFile);
           continue;
@@ -1305,8 +965,6 @@ export async function main() {
 
   console.log('Need help? Email justin@deepunit.ai');
   process.exit(100);
-
-  console.log('Remove the exit');
 }
 
 if (require.main === module) {
