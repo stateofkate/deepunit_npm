@@ -580,7 +580,8 @@ function writeFileSync(file: string, data: string, options?: any) {
   try {
     fs.writeFileSync(file, data, options);
   } catch (e) {
-    console.error('Unable to write file ' + file);
+    console.error({data, options});
+    console.error(`Unable to write file: ${file}`);
   }
 }
 
