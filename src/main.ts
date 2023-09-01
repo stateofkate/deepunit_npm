@@ -53,7 +53,7 @@ function getFileContent(file: string | null): string {
   }
 }
 
-function getExistingTestVersion(file: string): string {
+function getExistingTestContent(file: string): string {
   let testVersion: string = '';
   try {
     testVersion = fs.readFileSync(file, 'utf-8');
@@ -92,7 +92,7 @@ async function generateTest(
   htmlFile: string | null,
   htmlFileContent: string | null,
   testFile: string,
-  existingTestVersion: string,
+  testContent: string,
 ): Promise<undefined | any> {
   const headers = { 'Content-Type': 'application/json' };
 
@@ -110,8 +110,8 @@ async function generateTest(
   if (htmlFile && htmlFileContent) {
     data.htmlFile = { [htmlFile]: htmlFileContent };
   }
-  if (testFile || existingTestVersion) {
-    data.testFile = { [testFile]: existingTestVersion };
+  if (testFile || testContent) {
+    data.testFile = { [testFile]: testContent };
   }
 
   try {
@@ -186,7 +186,7 @@ async function fixManyErrors(
       continue;
     }
     const errorString: string = result.failedTestErrors[match]; // seems like some old angular logic which we should revisit when we fix angular/jasmine support testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
-    const testVersion = getExistingTestVersion(match);
+    const testVersion = getExistingTestContent(match);
     const headers = { 'Content-Type': 'application/json' };
     const data = {
       error_message: errorString,
@@ -478,7 +478,7 @@ function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
     list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
     */
   const matches: string[] = [];
-  const walkDir = CONFIG.workspaceDir || ''; // replace with actual workspaceDir if needed
+  const walkDir = CONFIG.workspaceDir || 'src'; // replace with actual workspaceDir if needed
 
   function walk(directory: string) {
     const files = fs.readdirSync(directory);
@@ -637,10 +637,10 @@ export async function main() {
       }
       const testFile = getTestName(file);
 
-      if (firstRun && CONFIG.frontendFramework === 'angular') {
+      if (firstRun && CONFIG.testingFramework === TestingFrameworks.jasmine) {
         checkIfAngularTestsPass(testFile);
         firstRun = false;
-      } else if (firstRun && CONFIG.frontendFramework === 'react') {
+      } else if (firstRun && CONFIG.testingFramework === TestingFrameworks.jest) {
         checkIfJestTestPasses(testFile);
       }
 
@@ -649,23 +649,14 @@ export async function main() {
         createFile(testFile);
       }
 
-      const testVersion = getExistingTestVersion(testFile);
-      // TODO: if angular, get corresponding html files ?????
+      const testContent = getExistingTestContent(testFile);
       const [tsFile, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
 
-      // ?????
-      if (correspondingFile && filesInDirectory.includes(correspondingFile)) {
-        const index = filesInDirectory.indexOf(correspondingFile);
-        if (index > -1) {
-          filesInDirectory.splice(index, 1);
-        }
-      }
-
       let filesToPass = [];
-      if (tsFile) {
+      if (tsFile && tsFile != correspondingFile) {
         filesToPass.push(tsFile);
       }
-      if (htmlFile) {
+      if (htmlFile && htmlFile != correspondingFile) {
         filesToPass.push(htmlFile);
       }
 
@@ -674,7 +665,7 @@ export async function main() {
       const htmlFileContent = getFileContent(htmlFile);
 
       let tempTestPaths: string[] = [];
-      const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testVersion);
+      const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
 
       // error with API response, unable generate test
       if (!response) {
