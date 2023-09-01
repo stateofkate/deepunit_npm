@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { multiply } from './utils';
+import { multiply } from './testUtils';
 
 // base logic
 export function testFunction(arg: number): number {
