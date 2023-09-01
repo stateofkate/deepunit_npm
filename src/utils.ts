@@ -6,7 +6,17 @@ import { CONFIG } from './Config';
  */
 export function expect(truthyVal: any): any {
   if (CONFIG.doProd && !truthyVal) {
-    const error = new Error('DEBUG: Value was expected to exist but did not');
+    type FalsyTypeKeys = 'boolean' | 'number' | 'string' | 'object' | 'undefined' | 'NaN';
+    const falsyTypes: Record<FalsyTypeKeys, string> = {
+      'boolean': "boolean 'false'",
+      'number': "number '0'",
+      'string': "empty string",
+      'object': "'null'",
+      'undefined': "'undefined'",
+      'NaN': "'NaN'"
+    };
+    const typeKey = (Number.isNaN(truthyVal) ? 'NaN' : typeof truthyVal) as FalsyTypeKeys; //typeof NaN is number, so we must handle NaN
+    const error = new Error(`DEBUG: Value was expected to be truthy but was falsy, falsy type is ${falsyTypes[typeKey]}`);
     console.error(error.message);
     console.error(error.stack);
   }
