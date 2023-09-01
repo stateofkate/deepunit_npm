@@ -1,54 +1,59 @@
 import path from 'path';
-import { debug, rootDir } from './main';
 import * as fs from 'fs';
 import ts from 'typescript';
+import { TestingFrameworks } from './main.consts';
 
 // HARDCODED CONFIG VALUES
-const configFilePath = 'deepunit.config.json';
-const extraConfigFilePath = 'deepunit.extra.config.json';
+const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
+
+export const maxFixFailingTestAttempts = 7;
+export const rootDir = process.cwd();
 
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
  */
-export class Config {
+class Config {
   workspaceDir: string = '';
   frontendFramework: string = '';
   testExtension: string = '';
-  testingFramework: string = '';
+  testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
   typescriptExtension: string = '';
-  prodBase: string = prodBase;
   generateApiPath: string = '';
   fixErrorApiPath: string = '';
   testApiPath: string = '';
   password: string = 'nonerequired';
+  doProd: boolean = true;
+  ignoredDirectories: string[] = [];
+  ignoredFiles: string[] = [];
 
-  static async init(): Promise<Config> {
-    const config = new Config();
+  constructor() {
+    this.detectWorkspaceDir();
+    this.detectProjectType();
+    this.detectTsconfigTarget();
+    this.detectTestFramework();
+    this.detectTypescriptExtension();
 
-    await config.detectWorkspaceDir();
-    await config.detectProjectType();
-    await config.detectTestFramework();
-    await config.detectTsconfigTarget();
-    await config.detectTypescriptExtension();
+    this.getUrls();
 
-    config.getUrls();
-
-    config.password = Config.grabFromConfig('password') || 'nonerequired';
-
-    return config;
+    this.password = Config.getStringFromConfig('password') || 'nonerequired';
+    this.doProd = Config.getStringFromConfig('doProd') === 'true' || true;
+    this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
+    this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
   }
 
   // Find the where the package.json file is located
-  ///If your package.json is not in the root directory set this to the directory it is located in.
+  /// If your package.json is not in the root directory set this to the directory it is located in.
   // The autodetect Function will reset it to the root directory if package.json is not found in the directory specified
+
+  // TODO: this isn't right, we need the ability for the user to either select which folder they want to run ?????
   detectWorkspaceDir(): void {
     // go to the current working directory
     process.chdir(rootDir);
     // Check if the configuration file exists
-    let configWorkspaceDir = Config.grabFromConfig('workspaceDir');
+    let configWorkspaceDir = Config.getStringFromConfig('workspaceDir');
     const packageJson = 'package.json';
     let packageJsonPath = packageJson;
     if (configWorkspaceDir) {
@@ -65,16 +70,14 @@ export class Config {
     } else {
       console.error('Unable to find package.json at ' + packageJsonPath);
       console.error('Current working directory is ' + process.cwd());
-      console.error(
-        'Please resolve the path and update the workspaceDir in deepunit.config.json',
-      );
+      console.error('Please resolve the path and update the workspaceDir in deepunit.config.json');
       process.exit(1);
     }
   }
 
   private detectProjectType(): void {
     process.chdir(rootDir);
-    const configValue = Config.grabFromConfig('frontendFramework');
+    const configValue = Config.getStringFromConfig('frontendFramework');
     if (configValue) {
       this.frontendFramework = configValue;
       return;
@@ -99,19 +102,13 @@ export class Config {
         this.frontendFramework = 'react';
         return;
       }
-      if (
-        'angular/common' in dependencies ||
-        'angular/common' in devDependencies
-      ) {
+      if ('angular/common' in dependencies || 'angular/common' in devDependencies) {
         this.frontendFramework = 'angular';
         return;
       }
     }
     // Unable to find the framework
-    debug(
-      'WARNING: Unable to detect frontend framework, typescript extension',
-      true,
-    );
+    console.log('WARNING: Unable to detect frontend framework, typescript extension');
     this.frontendFramework = 'unknown';
   }
 
@@ -128,44 +125,34 @@ export class Config {
     }
 
     if (fs.existsSync(jestConfigPath)) {
-      this.testingFramework = 'jest';
+      this.testingFramework = TestingFrameworks.jest;
       this.testExtension = '.test.ts';
     } else if (fs.existsSync(karmaConfigPath)) {
-      this.testingFramework = 'jasmine';
+      this.testingFramework = TestingFrameworks.jasmine;
       this.testExtension = '.spec.ts';
     } else if (fs.existsSync(packageJsonPath)) {
       let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
       if (fileContent.includes('jest')) {
-        this.testingFramework = 'jest';
+        this.testingFramework = TestingFrameworks.jest;
         this.testExtension = '.test.ts';
       } else if (fileContent.includes('jasmine-core')) {
-        this.testingFramework = 'jasmine';
+        this.testingFramework = TestingFrameworks.jasmine;
         this.testExtension = '.spec.ts';
       }
     }
   }
   private detectTsconfigTarget(): void {
-    let tsconfigPath: string | null = path.join(
-      this.workspaceDir,
-      'ts.config.json',
-    );
+    let tsconfigPath: string | null = path.join(this.workspaceDir, 'tsconfig.json');
 
     while (tsconfigPath) {
       if (fs.existsSync(tsconfigPath)) {
         let contents: string = fs.readFileSync(tsconfigPath, 'utf8');
         try {
           let tsconfigJson = ts.parseConfigFileTextToJson('', contents);
-          this.scriptTarget = tsconfigJson.config?.compilerOptions?.target
-            ? tsconfigJson.config?.compilerOptions?.target
-            : undefined;
+          this.scriptTarget = tsconfigJson.config?.compilerOptions?.target ? tsconfigJson.config?.compilerOptions?.target : undefined;
           if (tsconfigPath != null) {
             // @ts-ignore
-            tsconfigPath = tsconfigJson.config?.extends
-              ? path.join(
-                  path.dirname(tsconfigPath),
-                  tsconfigJson.config?.extends,
-                )
-              : null;
+            tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;
           }
         } catch (error) {
           console.log(error);
@@ -181,7 +168,7 @@ export class Config {
 
   // TODO: Should we support both tsx and ts?
   private detectTypescriptExtension(): void {
-    const configTypescript = Config.grabFromConfig('typescriptExtension');
+    const configTypescript = Config.getStringFromConfig('typescriptExtension');
     if (configTypescript) {
       this.typescriptExtension = configTypescript;
     } else if (this.frontendFramework === 'react') {
@@ -194,41 +181,52 @@ export class Config {
   }
 
   private getUrls(): void {
-    const doProd = Config.grabFromConfig('doProd');
+    const doProd = Config.getStringFromConfig('doProd');
     const host = doProd ? prodBase : localHostBase;
     this.generateApiPath = `${host}/generate-test/new`;
     this.fixErrorApiPath = `${host}/generate-test/fix-error`;
     this.testApiPath = `${host}/generate-test/test-code`;
   }
 
-  public static grabFromConfig(configProperty: string): string | null {
-    if (fs.existsSync(extraConfigFilePath)) {
-      let config = JSON.parse(fs.readFileSync(extraConfigFilePath, 'utf8'));
+  /**
+   * Get an array value from config (supports all sub-types of array)
+   */
+  public static getArrayFromConfig(configProperty: string): string[] {
+    const configVal = Config.getValueFromConfigFile(configProperty);
+    if (configVal && Array.isArray(configVal)) {
+      return configVal;
+    }
 
-      // Check if the 'repoPath' property exists in the configuration
-      if (configProperty in config) {
-        let shouldSkip: boolean = false;
-        if ('skipExtraConfig' in config) {
-          let skipExtraConfig: boolean = config['skipExtraConfig'];
-          if (skipExtraConfig) {
-            shouldSkip = skipExtraConfig;
-          }
-        }
-        if (!shouldSkip) {
+    return [];
+  }
+
+  /**
+   * Get an string value from config (even if the value is something else, we convert to string)
+   */
+  public static getStringFromConfig(configProperty: string): string {
+    const configVal = Config.getValueFromConfigFile(configProperty);
+    if (configVal) {
+      return configVal.toString();
+    }
+
+    return '';
+  }
+
+  /**
+   * HELPER FUNCTION: Get the json value from config
+   */
+  private static getValueFromConfigFile(configProperty: string): unknown {
+    for (let configPath of configFilePaths) {
+      if (fs.existsSync(configPath)) {
+        let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+        if (configProperty in config) {
           let configValue = config[configProperty];
           return configValue;
         }
       }
     }
-    if (fs.existsSync(configFilePath)) {
-      let config = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
-
-      // Check if the 'repoPath' property exists in the configuration
-      if (configProperty in config) {
-        let configValue = config[configProperty];
-        return configValue;
-      }
-    }
-    return null;
   }
 }
+
+export const CONFIG = new Config();
