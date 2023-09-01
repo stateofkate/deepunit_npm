@@ -14,3 +14,9 @@ export const mockedGenerationConst = {
     },
   },
 };
+
+export enum TestingFrameworks {
+  unknown = 'unknown',
+  jest = 'jest',
+  jasmine = 'jasmine',
+}

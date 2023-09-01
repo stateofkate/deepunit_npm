@@ -1,7 +1,0 @@
-{
-  "frontendFramework": "typescript",
-  "typescriptExtension": ".ts",
-  "workspaceDir": "examples",
-  "doProd": false,
-  "password": "iwouldbesurprisedifanyoneguessed"
-}
