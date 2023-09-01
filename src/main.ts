@@ -5,7 +5,8 @@ import { execSync } from 'child_process';
 import axios from 'axios';
 import { TestingFrameworks, mockedGenerationConst } from './main.consts';
 import { CONFIG, maxFixFailingTestAttempts, rootDir } from './Config';
-import { expectNot } from './utils';
+import { debugMsg, expectNot } from './utils';
+import { debug } from 'console';
 
 /**
  * Manually set configs
@@ -113,6 +114,8 @@ async function generateTest(
   if (testFile || testContent) {
     data.testFile = { [testFile]: testContent };
   }
+
+  debugMsg(data);
 
   try {
     const response = mockGenerationApiResponse ? mockedGeneration : await axios.post(CONFIG.generateApiPath, data, { headers });
@@ -689,7 +692,7 @@ export async function main() {
       recombineTests(tempTestPaths, testFile);
 
       //then we will need to delete all the temp test files.
-      deleteTempFiles(tempTestPaths);
+      // deleteTempFiles(tempTestPaths);
 
       if (apiError) {
         console.log('API error encountered');

@@ -36,10 +36,10 @@ export function expectNot(falsyVal: any): any {
 
 /**
  * Console.log only when we are not in production
- * @param inputString
+ * @param input
  */
-export function debug(inputString: string) {
+export function debugMsg(input: any) {
   if (!CONFIG.doProd) {
-    console.log(inputString);
+    console.log(input);
   }
 }

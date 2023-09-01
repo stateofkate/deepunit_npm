@@ -39,7 +39,7 @@ class Config {
     this.getUrls();
 
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
-    this.doProd = Config.getStringFromConfig('doProd') === 'true' || true;
+    this.doProd = Config.getStringFromConfig('doProd') === 'true';
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
   }
