@@ -23,6 +23,7 @@ class Config {
   typescriptExtension: string = '';
   generateApiPath: string = '';
   fixErrorApiPath: string = '';
+  recombineApiPath: string = '';
   testApiPath: string = '';
   password: string = 'nonerequired';
   doProd: boolean = true;
@@ -186,6 +187,7 @@ class Config {
     this.generateApiPath = `${host}/generate-test/new`;
     this.fixErrorApiPath = `${host}/generate-test/fix-error`;
     this.testApiPath = `${host}/generate-test/test-code`;
+    this.recombineApiPath = `${host}/generate-test/recombine-tests`;
   }
 
   /**
