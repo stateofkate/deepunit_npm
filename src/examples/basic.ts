@@ -1,9 +1,11 @@
-import * as fs from 'fs';
+import fs from 'fs';
 import { multiply } from './testUtils';
+import { checkIfFileExists } from './subfolder/file';
+import { SMALL_NUMBER } from './subfolder/consts/myConsts';
 
 // base logic
 export function testFunction(arg: number): number {
-  let test1 = 6;
+  let test1 = SMALL_NUMBER;
   if (arg > 5) {
     return test1 - arg;
   } else {
@@ -18,6 +20,10 @@ export function checkFileIsNotEmpty(filePath: string): boolean {
   } catch (error) {
     return false; // Return false if there's an error reading the file
   }
+}
+
+export function confirmFiles(filePath: string): boolean {
+  return checkIfFileExists(filePath);
 }
 
 export function squareNumber(num: number): number {

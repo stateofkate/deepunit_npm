@@ -5,7 +5,8 @@ import { execSync } from 'child_process';
 import axios from 'axios';
 import { TestingFrameworks, mockedGenerationConst } from './main.consts';
 import { CONFIG, maxFixFailingTestAttempts, rootDir } from './Config';
-import { expectNot } from './utils';
+import { debugMsg, expectNot } from './utils';
+import { debug } from 'console';
 
 /**
  * Manually set configs
@@ -73,15 +74,18 @@ function getTestName(file: string): string {
   const testFileName = file.split('.').slice(0, -1).join('.') + CONFIG.testExtension;
   return testFileName;
 }
-type generateTestData = {
+type GenerateTestData = {
   diffs: string;
+  tsFile?: { [key: string]: string };
+  htmlFile?: { [key: string]: string };
+  testFile?: { [key: string]: string };
+};
+
+type ApiBaseData = {
   frontendFramework: string;
   testingFramework: TestingFrameworks;
   scriptTarget: string;
   version: string;
-  tsFile?: { [key: string]: string };
-  htmlFile?: { [key: string]: string };
-  testFile?: { [key: string]: string };
   password: string;
 };
 
@@ -96,7 +100,7 @@ async function generateTest(
 ): Promise<undefined | any> {
   const headers = { 'Content-Type': 'application/json' };
 
-  let data: generateTestData = {
+  let data: GenerateTestData & ApiBaseData = {
     diffs,
     frontendFramework: CONFIG.frontendFramework,
     testingFramework: CONFIG.testingFramework,
@@ -113,6 +117,8 @@ async function generateTest(
   if (testFile || testContent) {
     data.testFile = { [testFile]: testContent };
   }
+
+  debugMsg(data);
 
   try {
     const response = mockGenerationApiResponse ? mockedGeneration : await axios.post(CONFIG.generateApiPath, data, { headers });
@@ -580,19 +586,43 @@ function writeFileSync(file: string, data: string, options?: any) {
   try {
     fs.writeFileSync(file, data, options);
   } catch (e) {
-    console.error({data, options});
+    console.error({ data, options });
     console.error(`Unable to write file: ${file}`);
   }
 }
 
-function recombineTests(tempTestPaths: string[], endResult: string) {
-  // get test functions
-  // get all imports
-  // merge imports, removing duplicates
-  // add to file
-  // concat test functions
-  // add to file
-  // save file?
+type RecombineTestData = {
+  testFiles: string[];
+};
+
+async function recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
+  // TODO: max size of one request?
+  const headers = { 'Content-Type': 'application/json' };
+
+  let data: ApiBaseData & RecombineTestData = {
+    frontendFramework: CONFIG.frontendFramework,
+    testingFramework: CONFIG.testingFramework,
+    scriptTarget: CONFIG.scriptTarget,
+    version,
+    password: CONFIG.password,
+    testFiles: [],
+  };
+
+  for (let filePath of tempTestPaths) {
+    const content = fs.readFileSync(filePath).toString();
+    data.testFiles.push(content);
+  }
+
+  debugMsg(data);
+
+  try {
+    const response = mockGenerationApiResponse ? mockedGeneration : await axios.post(CONFIG.recombineApiPath, data, { headers });
+    if (response.data && response.data.testContent) {
+      writeFileSync(finalizedTestPath, response.data.testContent);
+    }
+  } catch (error) {
+    console.error(`Failed with error: ${error}`);
+  }
 }
 
 function deleteTempFiles(tempTestPaths: string[]) {
@@ -686,7 +716,7 @@ export async function main() {
       const { fixedAllErrors, runResults, apiError } = await fixManyErrors(tempTestPaths, diff, tsFile, tsFileContent);
 
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-      recombineTests(tempTestPaths, testFile);
+      await recombineTests(tempTestPaths, testFile);
 
       //then we will need to delete all the temp test files.
       deleteTempFiles(tempTestPaths);

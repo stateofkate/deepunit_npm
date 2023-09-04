@@ -4,11 +4,6 @@
   "workspaceDir": "",
   "doProd": false,
   "password": "iwouldbesurprisedifanyoneguessed",
-  "ignoredDirectories": [],
-  "ignoredFiles": [
-    "src/main.ts",
-    "src/main.consts.ts",
-    "src/utils.ts",
-    "src/Config.ts"
-  ]
+  "ignoredDirectories": ["src/examples/subfolder"],
+  "ignoredFiles": ["src/main.ts", "src/main.consts.ts", "src/utils.ts", "src/Config.ts"]
 }
