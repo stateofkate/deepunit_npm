@@ -1,0 +1,95 @@
+import axios from 'axios';
+import { CONFIG } from './Config';
+import { TestingFrameworks, mockedGenerationConst } from '../main.consts';
+import { debugMsg } from './utils';
+import { FixErrorsData, GenerateTestData, RecombineTestData } from './ApiTypes';
+
+type ApiBaseData = {
+  frontendFramework: string;
+  testingFramework: TestingFrameworks;
+  scriptTarget: string;
+  version: string;
+  password: string;
+};
+
+enum ApiPaths {
+  generate = '/generate-test/new',
+  fixErrors = '/generate-test/fix-error',
+  recombineTests = '/generate-test/recombine-tests',
+}
+
+const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
+
+let mockGenerationApiResponse: boolean = false;
+
+export class Api {
+  public static async post<T>(path: ApiPaths, customData: T) {
+    const headers = { 'Content-Type': 'application/json' };
+
+    let data: ApiBaseData = {
+      frontendFramework: CONFIG.frontendFramework,
+      testingFramework: CONFIG.testingFramework,
+      scriptTarget: CONFIG.scriptTarget,
+      version: CONFIG.version,
+      password: CONFIG.password,
+      ...customData,
+    };
+
+    try {
+      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPath(path), data, { headers });
+      debugMsg(`POST REQUEST ${path}`, data, response.data);
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Failed with error: ${error}`);
+      return undefined;
+    }
+  }
+
+  public static async generateTest(
+    diffs: string,
+    tsFile: string | null,
+    tsFileContent: string | null,
+    htmlFile: string | null,
+    htmlFileContent: string | null,
+    testFile: string,
+    testContent: string,
+  ): Promise<undefined | any> {
+    let data: GenerateTestData = {
+      diffs,
+    };
+    if (tsFile && tsFileContent) {
+      data.tsFile = { [tsFile]: tsFileContent };
+    }
+    if (htmlFile && htmlFileContent) {
+      data.htmlFile = { [htmlFile]: htmlFileContent };
+    }
+    if (testFile || testContent) {
+      data.testFile = { [testFile]: testContent };
+    }
+
+    return await this.post(ApiPaths.generate, data);
+  }
+
+  public static async fixErrors(errorMessage: string, testFileName: string, testContent: string, diff: string, tsFileContent: string): Promise<undefined | any> {
+    const data: FixErrorsData = {
+      errorMessage,
+      testFileName,
+      testContent,
+      diff,
+      tsFileContent,
+    };
+
+    return await this.post(ApiPaths.fixErrors, data);
+  }
+
+  public static async recombineTests(testContents: string[]) {
+    let data: RecombineTestData = {
+      testFiles: testContents,
+    };
+
+    return await this.post(ApiPaths.recombineTests, data);
+  }
+}

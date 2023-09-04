@@ -2,20 +2,15 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-import axios from 'axios';
-import { TestingFrameworks, mockedGenerationConst } from './main.consts';
-import { CONFIG, maxFixFailingTestAttempts, rootDir } from './Config';
-import { debugMsg, expectNot } from './utils';
-import { debug } from 'console';
+import { TestingFrameworks } from './main.consts';
+import { CONFIG, maxFixFailingTestAttempts, rootDir } from './lib/Config';
+import { debugMsg, expectNot, isEmpty } from './lib/utils';
+import { Api } from './lib/Api';
 
 /**
  * Manually set configs
  */
 let allFiles: boolean = true; // instead of grabbing list of files from last commit, recursively search all directories in the project for .ts or html files
-let mockGenerationApiResponse: boolean = false;
-const mockedGeneration = mockedGenerationConst;
-
-let version: string = process.env.npm_package_version ?? '0.0.0';
 let fixAttempts = 0;
 
 function getChangedFiles(): string[] {
@@ -74,193 +69,106 @@ function getTestName(file: string): string {
   const testFileName = file.split('.').slice(0, -1).join('.') + CONFIG.testExtension;
   return testFileName;
 }
-type GenerateTestData = {
-  diffs: string;
-  tsFile?: { [key: string]: string };
-  htmlFile?: { [key: string]: string };
-  testFile?: { [key: string]: string };
+
+type FixManyErrorsResult = {
+  fixedAllErrors: boolean;
+  apiError: boolean;
+  failedTests: string[];
+  passedTests: string[];
 };
-
-type ApiBaseData = {
-  frontendFramework: string;
-  testingFramework: TestingFrameworks;
-  scriptTarget: string;
-  version: string;
-  password: string;
-};
-
-async function generateTest(
-  diffs: string,
-  tsFile: string | null,
-  tsFileContent: string | null,
-  htmlFile: string | null,
-  htmlFileContent: string | null,
-  testFile: string,
-  testContent: string,
-): Promise<undefined | any> {
-  const headers = { 'Content-Type': 'application/json' };
-
-  let data: GenerateTestData & ApiBaseData = {
-    diffs,
-    frontendFramework: CONFIG.frontendFramework,
-    testingFramework: CONFIG.testingFramework,
-    scriptTarget: CONFIG.scriptTarget,
-    version,
-    password: CONFIG.password,
-  };
-  if (tsFile && tsFileContent) {
-    data.tsFile = { [tsFile]: tsFileContent };
-  }
-  if (htmlFile && htmlFileContent) {
-    data.htmlFile = { [htmlFile]: htmlFileContent };
-  }
-  if (testFile || testContent) {
-    data.testFile = { [testFile]: testContent };
-  }
-
-  debugMsg(data);
-
-  try {
-    const response = mockGenerationApiResponse ? mockedGeneration : await axios.post(CONFIG.generateApiPath, data, { headers });
-    return response.data;
-  } catch (error) {
-    console.error(`Failed with error: ${error}`);
-    return undefined;
-  }
-}
 
 /**
  * We will take in the list of test which were generated and then fix the errors in each one. We will return a list of fixed tests and still failing tests at the end.
  * @param tempTestPaths
  * @param diff
- * @param tsFile
  * @param tsFileContent
  */
-async function fixManyErrors(
-  tempTestPaths: string[],
-  diff: string,
-  tsFile: string | null,
-  tsFileContent: string | null,
-): Promise<{
-  fixedAllErrors: boolean;
-  runResults: string;
-  apiError: boolean;
-  failedTests: string[];
-  passedTests: string[];
-}> {
-  let errors = ''; //TODO: runResults which is used for the summary which is dependent on this variable, but its never assigned. We should remove it or update it
+async function fixManyErrors(tempTestPaths: string[], diff: string, tsFileContent: string): Promise<FixManyErrorsResult> {
   let attempts = 0;
 
-  const errorPattern = /Error: (.*?):(.*?)\n/;
-  if (!errorPattern) {
-    throw new Error(`Unsupported testing framework: ${CONFIG.testingFramework}`);
-  }
-  let result: {
-    failedTests: string[];
-    passedTests: string[];
-    failedTestErrors: { [key: string]: string };
-  } = runTestErrorOutput(tempTestPaths);
-  let fixedTestCode: string = '';
-  while (attempts < maxFixFailingTestAttempts && result.failedTests.length > 0) {
-    //TODO: refactor all this logic into an async helper function so that we can fix multiple tests at once
-    console.log(
-      ' ',
-      '##########################################################\n',
-      '################### Begin fixing error ###################\n',
-      '##########################################################',
-    );
+  console.log(
+    ' ',
+    '##########################################################\n',
+    '################### Begin fixing error ###################\n',
+    '##########################################################',
+  );
 
-    if (!result.failedTests) {
+  // store the result globally so we can return the failed results at the end
+  let result: FixManyErrorsResult = {
+    fixedAllErrors: true,
+    apiError: false,
+    passedTests: [],
+    failedTests: [],
+  };
+
+  while (attempts < maxFixFailingTestAttempts) {
+    attempts++;
+
+    // check the tests, see if it worked
+    let result: {
+      failedTests: string[];
+      passedTests: string[];
+      failedTestErrors: { [key: string]: string };
+    } = runTestErrorOutput(tempTestPaths);
+
+    // success case, no errors to fix
+    if (!result.failedTests || result.failedTests.length <= 0) {
       return {
         fixedAllErrors: true,
-        runResults: errors,
         apiError: false,
         passedTests: result.passedTests,
         failedTests: result.failedTests,
       };
     }
-    let popped = result.failedTests.pop();
-    let match: string = popped ? popped : '';
 
-    if (expectNot(match === '')) {
-      attempts++;
-    } else if (match.includes('Your test suite must contain at least one test.')) {
-      //never fix the empty test error
-      if (result.failedTests.length <= 1) {
-        break;
-      }
-      continue;
-    }
-    const errorString: string = result.failedTestErrors[match]; // seems like some old angular logic which we should revisit when we fix angular/jasmine support testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
-    const testVersion = getExistingTestContent(match);
-    const headers = { 'Content-Type': 'application/json' };
-    const data = {
-      error_message: errorString,
-      test_code: testVersion,
-      diff,
-      ts_file_name: match,
-      ts_file_content: tsFileContent,
-      script_target: CONFIG.scriptTarget,
-      frontend_framework: CONFIG.frontendFramework,
-      testingFramework: CONFIG.testingFramework,
-      version,
-      password: CONFIG.password,
-    };
+    let testFileName = result.failedTests.pop() || ''; // pop is optionally even though we check to confirm the array has a length above
+
+    // TODO: don't fix the empty test error ".includes('Your test suite must contain at least one test.')"
+    const errorMessage: string = result.failedTestErrors[testFileName];
+    const testContent = getExistingTestContent(testFileName);
 
     try {
-      fixAttempts++;
-      const response = await axios.post(CONFIG.fixErrorApiPath, data, {
-        headers,
-      });
-      if (response.data.error) {
-        attempts++;
-        continue;
+      const response = await Api.fixErrors(errorMessage, testFileName, testContent, diff, tsFileContent);
+
+      if (response.fixedTest.trim() === '') {
+        throw new Error('Fixed test returned empty');
       }
-      fixedTestCode = response.data.fixed_test;
-      if (fixedTestCode.trim() === '') {
-        attempts++;
-        continue;
-      }
-      writeFileSync(match, fixedTestCode);
+
+      // if no error and file exists, write file so we can test again
+      writeFileSync(testFileName, response.fixedTest);
     } catch (error) {
-      attempts++;
-      continue;
+      // if we get an API error or critical error, then we should NOT run through all the maxAttempts as it will just loop through again most likely throwing same error
+      debugMsg(`Unable to fix test file: ${testFileName}, Error: ${error}`);
+      return {
+        fixedAllErrors: false,
+        apiError: true,
+        passedTests: result.passedTests,
+        failedTests: result.failedTests,
+      };
     }
-    attempts++;
-    result = runTestErrorOutput(tempTestPaths);
   }
-  if (result.failedTests.length > 0) {
-    return {
-      fixedAllErrors: false,
-      runResults: errors,
-      apiError: false,
-      failedTests: result.failedTests,
-      passedTests: result.passedTests,
-    };
-  } else {
-    console.log('attempts: ' + attempts + ' not its not: ' + (maxFixFailingTestAttempts - 1));
-  }
+
+  // if we have ran through all attempts and still fail, let the user know
   return {
-    fixedAllErrors: true,
-    runResults: errors,
+    fixedAllErrors: false,
     apiError: false,
-    failedTests: result.failedTests,
-    passedTests: result.passedTests,
+    failedTests: result?.failedTests,
+    passedTests: result?.passedTests,
   };
 }
 
-function runJestTest(file: string[]) {
+function runJestTest(files: string[]) {
   process.chdir(rootDir);
 
   let relativePathArray: string[] = [];
   if (CONFIG.workspaceDir) {
     process.chdir(CONFIG.workspaceDir);
-    for (let i = 0; i < file.length; i++) {
-      let relativePath = path.relative(CONFIG.workspaceDir, file[i]);
+    for (let i = 0; i < files.length; i++) {
+      let relativePath = path.relative(CONFIG.workspaceDir, files[i]);
       relativePathArray.push(relativePath);
     }
   } else {
-    relativePathArray = file;
+    relativePathArray = files;
   }
   const formattedPaths = relativePathArray.join(' ');
   let result;
@@ -591,37 +499,20 @@ function writeFileSync(file: string, data: string, options?: any) {
   }
 }
 
-type RecombineTestData = {
-  testFiles: string[];
-};
-
 async function recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
-  // TODO: max size of one request?
-  const headers = { 'Content-Type': 'application/json' };
-
-  let data: ApiBaseData & RecombineTestData = {
-    frontendFramework: CONFIG.frontendFramework,
-    testingFramework: CONFIG.testingFramework,
-    scriptTarget: CONFIG.scriptTarget,
-    version,
-    password: CONFIG.password,
-    testFiles: [],
-  };
-
-  for (let filePath of tempTestPaths) {
-    const content = fs.readFileSync(filePath).toString();
-    data.testFiles.push(content);
+  if (tempTestPaths.length < 0) {
+    return '';
   }
 
-  debugMsg(data);
+  const testFiles = [];
+  for (let filePath of tempTestPaths) {
+    const content = fs.readFileSync(filePath).toString();
+    testFiles.push(content);
+  }
 
-  try {
-    const response = mockGenerationApiResponse ? mockedGeneration : await axios.post(CONFIG.recombineApiPath, data, { headers });
-    if (response.data && response.data.testContent) {
-      writeFileSync(finalizedTestPath, response.data.testContent);
-    }
-  } catch (error) {
-    console.error(`Failed with error: ${error}`);
+  const responseData = await Api.recombineTests(testFiles);
+  if (responseData && responseData.testContent) {
+    writeFileSync(finalizedTestPath, responseData.testContent);
   }
 }
 
@@ -677,6 +568,7 @@ export async function main() {
 
       if (!fs.existsSync(testFile)) {
         // check if the file exists, if it does then we should create a file
+        // TODO: we should do this afterward, so we don't create empty files
         createFile(testFile);
       }
 
@@ -696,10 +588,10 @@ export async function main() {
       const htmlFileContent = getFileContent(htmlFile);
 
       let tempTestPaths: string[] = [];
-      const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
+      const response = await Api.generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
 
       // error with API response, unable generate test
-      if (!response) {
+      if (!response || isEmpty(response.tests)) {
         apiErrors.push(testFile);
         continue;
       }
@@ -713,7 +605,7 @@ export async function main() {
         apiErrors.push(testFile);
       }
 
-      const { fixedAllErrors, runResults, apiError } = await fixManyErrors(tempTestPaths, diff, tsFile, tsFileContent);
+      const { fixedAllErrors, apiError } = await fixManyErrors(tempTestPaths, diff, tsFileContent);
 
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
       await recombineTests(tempTestPaths, testFile);
@@ -728,7 +620,7 @@ export async function main() {
       }
 
       testRunResults.push(`\n     Result for: ${testFile}`);
-      testRunResults.push(runResults);
+      // testRunResults.push(runResults); TODO: add back testResults
       if (fixedAllErrors) {
         passingTests.push(testFile);
       } else {
