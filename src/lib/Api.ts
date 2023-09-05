@@ -14,7 +14,7 @@ type ApiBaseData = {
 
 enum ApiPaths {
   generate = '/generate-test/new',
-  fixErrors = '/generate-test/fix-error',
+  fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
 }
 
@@ -56,7 +56,7 @@ export class Api {
     htmlFileContent: string | null,
     testFile: string,
     testContent: string,
-  ): Promise<undefined | any> {
+  ): Promise<any> {
     let data: GenerateTestData = {
       diffs,
     };
