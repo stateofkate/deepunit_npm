@@ -8,12 +8,12 @@ export function expect(truthyVal: any): any {
   if (CONFIG.doProd && !truthyVal) {
     type FalsyTypeKeys = 'boolean' | 'number' | 'string' | 'object' | 'undefined' | 'NaN';
     const falsyTypes: Record<FalsyTypeKeys, string> = {
-      'boolean': "boolean 'false'",
-      'number': "number '0'",
-      'string': "empty string",
-      'object': "'null'",
-      'undefined': "'undefined'",
-      'NaN': "'NaN'"
+      boolean: "boolean 'false'",
+      number: "number '0'",
+      string: 'empty string',
+      object: "'null'",
+      undefined: "'undefined'",
+      NaN: "'NaN'",
     };
     const typeKey = (Number.isNaN(truthyVal) ? 'NaN' : typeof truthyVal) as FalsyTypeKeys; //typeof NaN is number, so we must handle NaN
     const error = new Error(`DEBUG: Value was expected to be truthy but was falsy, falsy type is ${falsyTypes[typeKey]}`);
@@ -38,8 +38,23 @@ export function expectNot(falsyVal: any): any {
  * Console.log only when we are not in production
  * @param input
  */
-export function debugMsg(input: any) {
+export function debugMsg(...input: any) {
   if (!CONFIG.doProd) {
     console.log(input);
   }
+}
+
+/**
+ * Check if object is empty
+ * @param obj
+ * @returns
+ */
+export function isEmpty(obj: Object) {
+  for (const prop in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+      return false;
+    }
+  }
+
+  return true;
 }
