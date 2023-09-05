@@ -1,7 +1,7 @@
 import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
-import { TestingFrameworks } from './main.consts';
+import { TestingFrameworks } from '../main.consts';
 
 // HARDCODED CONFIG VALUES
 const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; // in order of importance
@@ -21,12 +21,10 @@ class Config {
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
   typescriptExtension: string = '';
-  generateApiPath: string = '';
-  fixErrorApiPath: string = '';
-  recombineApiPath: string = '';
-  testApiPath: string = '';
   password: string = 'nonerequired';
   doProd: boolean = true;
+  apiHost: string = '';
+  version: string = '';
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
 
@@ -37,12 +35,12 @@ class Config {
     this.detectTestFramework();
     this.detectTypescriptExtension();
 
-    this.getUrls();
-
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getStringFromConfig('doProd') === 'true';
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
+    this.apiHost = this.doProd ? prodBase : localHostBase;
+    this.version = process.env.npm_package_version ?? '0.0.0';
   }
 
   // Find the where the package.json file is located
@@ -179,15 +177,6 @@ class Config {
     } else {
       this.typescriptExtension = '.ts';
     }
-  }
-
-  private getUrls(): void {
-    const doProd = Config.getStringFromConfig('doProd');
-    const host = doProd ? prodBase : localHostBase;
-    this.generateApiPath = `${host}/generate-test/new`;
-    this.fixErrorApiPath = `${host}/generate-test/fix-error`;
-    this.testApiPath = `${host}/generate-test/test-code`;
-    this.recombineApiPath = `${host}/generate-test/recombine-tests`;
   }
 
   /**
