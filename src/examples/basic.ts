@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { multiply } from './testUtils';
 import { checkIfFileExists } from './subfolder/file';
-import { SMALL_NUMBER } from './subfolder/consts/myConsts';
+import { SMALL_NUMBER } from './subfolder/consts/tests.consts';
 
 // base logic
 export function testFunction(arg: number): number {
