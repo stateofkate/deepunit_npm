@@ -50,9 +50,9 @@ function getFileContent(file: string | null): string {
 }
 
 export function getExistingTestContent(file: string): string {
-  let testVersion: string = '';
+  let testContent: string = '';
   try {
-    testVersion = fs.readFileSync(file, 'utf-8');
+    testContent = fs.readFileSync(file, 'utf-8');
   } catch (error) {
     if (error instanceof Error) {
       console.error('Had an error in reading the file, woopsies');
@@ -62,7 +62,7 @@ export function getExistingTestContent(file: string): string {
       process.exit(1);
     }
   }
-  return testVersion;
+  return testContent;
 }
 
 function getTestName(file: string): string {
@@ -76,14 +76,6 @@ type FixManyErrorsResult = {
   passedTests: string[];
 };
 
-type ApiBaseData = {
-  frontendFramework: string;
-  testingFramework: TestingFrameworks;
-  scriptTarget: string;
-  version: string;
-  password: string;
-};
-
 export async function generateTest(
   diffs: string,
   tsFile: string | null,
@@ -95,7 +87,7 @@ export async function generateTest(
 ): Promise<any> {
   try {
     const response = await Api.generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
-    return response.data;
+    return response;
   } catch (error) {
     console.error(`Failed with error: ${error}`);
     return undefined;
@@ -129,26 +121,10 @@ export async function fixManyErrors(tempTestPaths: string[], diff: string, tsFil
     const fixPromises = result.failedTests.map(async (failedtestName) => {
       const errorMessage: string = result.failedTestErrors[failedtestName];
       const testContent: string = getExistingTestContent(failedtestName);
-      const headers = { 'Content-Type': 'application/json' };
-      const data = {
-        error_message: errorMessage,
-        test_code: testContent,
-        diff,
-        ts_file_name: failedtestName,
-        ts_file_content: sourceFileContent,
-        script_target: CONFIG.scriptTarget,
-        frontend_framework: CONFIG.frontendFramework,
-        testingFramework: CONFIG.testingFramework,
-        password: CONFIG.password,
-      };
 
       try {
-        //fixErrors(errorMessage: string, testFileName: string, testContent: string, diff: string, tsFileContent: string)
         const response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
-        if (response.data.error) {
-          return null;
-        }
-        const fixedTestCode = response.data.fixed_test;
+        const fixedTestCode = response.fixedTest;
         if (fixedTestCode.trim() === '') {
           console.error('Got back an empty test, this should never happen.');
           return null;
@@ -156,7 +132,7 @@ export async function fixManyErrors(tempTestPaths: string[], diff: string, tsFil
         writeFileSync(failedtestName, fixedTestCode);
         return failedtestName;
       } catch (error) {
-        return null;
+        console.error(error);
       }
     });
 
@@ -501,10 +477,6 @@ function writeFileSync(file: string, data: string, options?: any) {
   }
 }
 
-type RecombineTestData = {
-  testFiles: string[];
-};
-
 export async function recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
   const testFiles = [];
   for (let filePath of tempTestPaths) {
@@ -591,34 +563,33 @@ export async function main() {
         createFile(testFile);
       }
 
-      const testContent = getExistingTestContent(testFile);
-      const [tsFile, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
+      const testFileContent = getExistingTestContent(testFile);
+      const [sourceFileName, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
 
       let filesToPass = [];
-      if (tsFile && tsFile != correspondingFile) {
-        filesToPass.push(tsFile);
+      if (sourceFileName && sourceFileName != correspondingFile) {
+        filesToPass.push(sourceFileName);
       }
       if (htmlFile && htmlFile != correspondingFile) {
         filesToPass.push(htmlFile);
       }
 
       const diff = getDiff(filesToPass);
-      const sourceFileContent: string = getFileContent(tsFile);
+      const sourceFileContent: string = getFileContent(sourceFileName);
       const htmlFileContent = getFileContent(htmlFile);
 
       let tempTestPaths: string[] = [];
-      console.log(`Generating test for ${sourceFileContent}`);
-      const response = await generateTest(diff, tsFile, sourceFileContent, htmlFile, htmlFileContent, testFile, testContent);
-
+      console.log(`Generating test for ${sourceFileName}`);
+      const response = await generateTest(diff, sourceFileName, sourceFileContent, htmlFile, htmlFileContent, testFile, testFileContent);
       try {
         const tests = response.tests;
         // TODO: fix the issue with which files  so we can
         tempTestPaths = writeTestsToFiles(tests);
       } catch (error) {
-        console.error({ message: 'Caught error trying to writeTestsToFiles', response });
+        console.error({ message: 'Caught error trying to writeTestsToFiles', response, error });
       }
 
-      const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await fixManyErrors(tempTestPaths, diff, tsFile, sourceFileContent);
+      const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await fixManyErrors(tempTestPaths, diff, sourceFileName, sourceFileContent);
 
       console.log({ hasPassingTests, passedTests, tempTestPaths });
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
