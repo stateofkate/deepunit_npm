@@ -232,7 +232,7 @@ export function runTestErrorOutput(file: string[]): {
   throw new Error(`Unsupported frontend framework: ${CONFIG.frontendFramework}`);
 }
 
-function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
+export function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
   const filesByDirectory: Record<string, string[]> = {};
 
   for (const file of changedFiles) {
@@ -248,7 +248,7 @@ function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]>
   return filesByDirectory;
 }
 
-function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
+export function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
   const baseFile = path.basename(file, path.extname(file));
   const extension = path.extname(file);
   let correspondingFile: string | null = null;
@@ -297,7 +297,7 @@ export function checkIfJestTestPasses(testFile: string): boolean {
   return 0 === result.numFailedTestSuites;
 }
 
-function checkIfAngularTestsPass(testFile: string): boolean {
+export function checkIfAngularTestsPass(testFile: string): boolean {
   let output;
   try {
     output = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${testFile}`).toString();
@@ -315,7 +315,7 @@ function checkIfAngularTestsPass(testFile: string): boolean {
   return true;
 }
 
-function printSummary(failingTests: string[], testsWithErrors: string[], passingTests: string[]): void {
+export function printSummary(failingTests: string[], testsWithErrors: string[], passingTests: string[]): void {
   console.log('#####################################');
   console.log('##### Summary of DeepUnitAI Run #####');
   console.log('#####################################');
@@ -358,7 +358,7 @@ export function createFile(filename: string): void {
   }
 }
 
-function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
+export function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
   /**
     Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
 
@@ -415,7 +415,7 @@ export function filterFiles(files: string[]): string[] {
   return filteredFiles;
 }
 
-function isParentAncestorOfChild(parent: string, child: string) {
+export function isParentAncestorOfChild(parent: string, child: string) {
   const rel = path.relative(parent, child);
   return !rel.startsWith('../') && rel !== '..';
 }
@@ -443,7 +443,7 @@ export function parseFailedAngularTestOutput(output: string): boolean {
   }
 }
 
-function writeTestsToFiles(tests: Record<string, string>): string[] {
+export function writeTestsToFiles(tests: Record<string, string>): string[] {
   let testPaths: string[] = [];
   for (const [testFilePath, testCode] of Object.entries(tests)) {
     try {
@@ -468,7 +468,7 @@ export function stashAndSave(testFilePath: string, testCode: string) {
   writeFileSync(testFilePath, testCode);
 }
 
-function writeFileSync(file: string, data: string, options?: any) {
+export function writeFileSync(file: string, data: string, options?: any) {
   try {
     fs.writeFileSync(file, data, options);
   } catch (e) {
@@ -506,7 +506,7 @@ export function deleteTempFiles(tempTestPaths: string[]) {
  * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
  * Example npm run deepunit -- --f main.ts subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
  */
-function getFilesFlag(): string[] {
+export function getFilesFlag(): string[] {
   const args = process.argv.slice(2);
   let files: string[] = [];
 
