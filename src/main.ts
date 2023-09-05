@@ -164,7 +164,6 @@ async function fixManyErrors(
   while (attempts < maxFixFailingTestAttempts && result.failedTests.length > 0) {
     //TODO: refactor all this logic into an async helper function so that we can fix multiple tests at once
     console.log(
-      ' ',
       '##########################################################\n',
       '################### Begin fixing error ###################\n',
       '##########################################################',
@@ -192,7 +191,7 @@ async function fixManyErrors(
       continue;
     }
     const errorString: string = result.failedTestErrors[match]; // seems like some old angular logic which we should revisit when we fix angular/jasmine support testingFramework === 'jasmine' ? `${match[0]}${match[1]}` : match;
-    const testVersion = getExistingTestContent(match);
+    const testVersion: string = getExistingTestContent(match);
     const headers = { 'Content-Type': 'application/json' };
     const data = {
       error_message: errorString,
@@ -526,7 +525,6 @@ function filterFiles(files: string[]): string[] {
       filteredFiles.push(file);
     }
   }
-
   return filteredFiles;
 }
 
@@ -637,19 +635,39 @@ function deleteTempFiles(tempTestPaths: string[]) {
   });
 }
 
+/**
+ * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
+ * Example npm run deepunit -- --f main.ts subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
+ */
+function getFilesFlag(): string[] {
+  const args = process.argv.slice(2);
+  let files: string[] = [];
+
+  args.forEach((arg, index) => {
+    if (arg === '--f' || arg === '--file' || arg === '--files') {
+      files = files.concat(args[index + 1].split(','));
+    }
+  });
+
+  return files;
+}
+
 export async function main() {
   console.log('#################################################');
   console.log('##### Generating unit tests with DeepUnitAI #####');
   console.log('#################################################');
 
   // Get files that need to be tested
-  let changedFiles: string[];
-  if (allFiles) {
-    changedFiles = findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
+  let filesToWriteTestsFor: string[];
+  const filesFlagArray: string[] = getFilesFlag();
+  if (filesFlagArray) {
+    filesToWriteTestsFor = filesFlagArray;
+  } else if (allFiles) {
+    filesToWriteTestsFor = findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
   } else {
-    changedFiles = getChangedFiles();
+    filesToWriteTestsFor = getChangedFiles();
   }
-  const filteredChangedFiles = filterFiles(changedFiles);
+  const filteredChangedFiles = filterFiles(filesToWriteTestsFor);
   const filesByDirectory = groupFilesByDirectory(filteredChangedFiles);
 
   let failingTests: string[] = [];
@@ -657,8 +675,7 @@ export async function main() {
   let passingTests: string[] = [];
   let testRunResults: string[] = []; //TODO: this is never assigned, we need to fix that so the summary is correct
   let apiErrors: string[] = [];
-  let firstRun = true;
-
+  let firstRun: boolean = true;
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
@@ -697,7 +714,6 @@ export async function main() {
 
       let tempTestPaths: string[] = [];
       const response = await generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
-
       // error with API response, unable generate test
       if (!response) {
         apiErrors.push(testFile);
