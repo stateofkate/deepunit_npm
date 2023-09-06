@@ -13,13 +13,13 @@ import { Api } from './lib/Api';
 let allFiles: boolean = true; // instead of grabbing list of files from last commit, recursively search all directories in the project for .ts or html files
 let fixAttempts = 0;
 
-function getChangedFiles(): string[] {
+export function getChangedFiles(): string[] {
   const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
   const output = execSync(changedFilesCmd).toString();
   return output.split('\n').filter(Boolean);
 }
 
-function getDiff(files: string[]): string {
+export function getDiff(files: string[]): string {
   const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
   return execSync(diffCmd)
     .toString()
@@ -49,10 +49,10 @@ function getFileContent(file: string | null): string {
   }
 }
 
-function getExistingTestContent(file: string): string {
-  let testVersion: string = '';
+export function getExistingTestContent(file: string): string {
+  let testContent: string = '';
   try {
-    testVersion = fs.readFileSync(file, 'utf-8');
+    testContent = fs.readFileSync(file, 'utf-8');
   } catch (error) {
     if (error instanceof Error) {
       console.error('Had an error in reading the file, woopsies');
@@ -62,7 +62,7 @@ function getExistingTestContent(file: string): string {
       process.exit(1);
     }
   }
-  return testVersion;
+  return testContent;
 }
 
 function getTestName(file: string): string {
@@ -71,93 +71,87 @@ function getTestName(file: string): string {
 }
 
 type FixManyErrorsResult = {
-  fixedAllErrors: boolean;
-  apiError: boolean;
+  hasPassingTests: boolean;
   failedTests: string[];
   passedTests: string[];
 };
+
+export async function generateTest(
+  diffs: string,
+  tsFile: string | null,
+  tsFileContent: string | null,
+  htmlFile: string | null,
+  htmlFileContent: string | null,
+  testFile: string,
+  testContent: string,
+): Promise<any> {
+  try {
+    const response = await Api.generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
+    return response;
+  } catch (error) {
+    console.error(`Failed with error: ${error}`);
+    return undefined;
+  }
+}
 
 /**
  * We will take in the list of test which were generated and then fix the errors in each one. We will return a list of fixed tests and still failing tests at the end.
  * @param tempTestPaths
  * @param diff
- * @param tsFileContent
+ * @param sourceFileContent
  */
-async function fixManyErrors(tempTestPaths: string[], diff: string, tsFileContent: string): Promise<FixManyErrorsResult> {
+export async function fixManyErrors(tempTestPaths: string[], diff: string, tsFile: string | null, sourceFileContent: string): Promise<FixManyErrorsResult> {
   let attempts = 0;
-
-  console.log(
-    ' ',
-    '##########################################################\n',
-    '################### Begin fixing error ###################\n',
-    '##########################################################',
-  );
-
   // store the result globally so we can return the failed results at the end
-  let result: FixManyErrorsResult = {
-    fixedAllErrors: true,
-    apiError: false,
-    passedTests: [],
-    failedTests: [],
-  };
 
-  while (attempts < maxFixFailingTestAttempts) {
-    attempts++;
-
-    // check the tests, see if it worked
-    let result: {
-      failedTests: string[];
-      passedTests: string[];
-      failedTestErrors: { [key: string]: string };
-    } = runTestErrorOutput(tempTestPaths);
-
-    // success case, no errors to fix
-    if (!result.failedTests || result.failedTests.length <= 0) {
+  let result: {
+    failedTests: string[];
+    passedTests: string[];
+    failedTestErrors: { [key: string]: string };
+  } = runTestErrorOutput(tempTestPaths);
+  while (attempts < maxFixFailingTestAttempts && result.failedTests.length > 0) {
+    if (!result.failedTests) {
       return {
-        fixedAllErrors: true,
-        apiError: false,
         passedTests: result.passedTests,
+        hasPassingTests: result.passedTests.length > 0,
         failedTests: result.failedTests,
       };
     }
 
-    let testFileName = result.failedTests.pop() || ''; // pop is optionally even though we check to confirm the array has a length above
+    const fixPromises = result.failedTests.map(async (failedtestName) => {
+      const errorMessage: string = result.failedTestErrors[failedtestName];
+      const testContent: string = getExistingTestContent(failedtestName);
 
-    // TODO: don't fix the empty test error ".includes('Your test suite must contain at least one test.')"
-    const errorMessage: string = result.failedTestErrors[testFileName];
-    const testContent = getExistingTestContent(testFileName);
-
-    try {
-      const response = await Api.fixErrors(errorMessage, testFileName, testContent, diff, tsFileContent);
-
-      if (response.fixedTest.trim() === '') {
-        throw new Error('Fixed test returned empty');
+      try {
+        const response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
+        const fixedTestCode = response.fixedTest;
+        if (fixedTestCode.trim() === '') {
+          console.error('Got back an empty test, this should never happen.');
+          return null;
+        }
+        writeFileSync(failedtestName, fixedTestCode);
+        return failedtestName;
+      } catch (error) {
+        console.error(error);
       }
+    });
 
-      // if no error and file exists, write file so we can test again
-      writeFileSync(testFileName, response.fixedTest);
-    } catch (error) {
-      // if we get an API error or critical error, then we should NOT run through all the maxAttempts as it will just loop through again most likely throwing same error
-      debugMsg(`Unable to fix test file: ${testFileName}, Error: ${error}`);
-      return {
-        fixedAllErrors: false,
-        apiError: true,
-        passedTests: result.passedTests,
-        failedTests: result.failedTests,
-      };
-    }
+    console.log(`Attempt ${attempts} of ${maxFixFailingTestAttempts} to fix errors for ${result.failedTests.join(', ')}`);
+    const fixedTests = await Promise.all(fixPromises);
+    // Filter out null values and update failedTests
+    result.failedTests = result.failedTests.filter((test) => !fixedTests.includes(test));
+
+    attempts++;
+    result = runTestErrorOutput(tempTestPaths);
   }
-
-  // if we have ran through all attempts and still fail, let the user know
   return {
-    fixedAllErrors: false,
-    apiError: false,
-    failedTests: result?.failedTests,
-    passedTests: result?.passedTests,
+    hasPassingTests: result.passedTests.length > 0,
+    passedTests: result.passedTests,
+    failedTests: result.failedTests,
   };
 }
 
-function runJestTest(files: string[]) {
+export function runJestTest(files: string[]) {
   process.chdir(rootDir);
 
   let relativePathArray: string[] = [];
@@ -197,7 +191,7 @@ function runJestTest(files: string[]) {
  * We would like to modify the function so that it tells us which pass and which fail. For failing tests it should give us the error
  * @param file
  */
-function runTestErrorOutput(file: string[]): {
+export function runTestErrorOutput(file: string[]): {
   failedTests: string[];
   passedTests: string[];
   failedTestErrors: { [key: string]: string };
@@ -238,7 +232,7 @@ function runTestErrorOutput(file: string[]): {
   throw new Error(`Unsupported frontend framework: ${CONFIG.frontendFramework}`);
 }
 
-function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
+export function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
   const filesByDirectory: Record<string, string[]> = {};
 
   for (const file of changedFiles) {
@@ -254,7 +248,7 @@ function groupFilesByDirectory(changedFiles: string[]): Record<string, string[]>
   return filesByDirectory;
 }
 
-function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
+export function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
   const baseFile = path.basename(file, path.extname(file));
   const extension = path.extname(file);
   let correspondingFile: string | null = null;
@@ -287,7 +281,7 @@ function tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | 
   return [tsFile, htmlFile, correspondingFile];
 }
 
-function checkIfJestTestPasses(testFile: string): boolean {
+export function checkIfJestTestPasses(testFile: string): boolean {
   const result = runJestTest([testFile]);
   let mustContain = 0;
   if (result.testResults) {
@@ -303,7 +297,7 @@ function checkIfJestTestPasses(testFile: string): boolean {
   return 0 === result.numFailedTestSuites;
 }
 
-function checkIfAngularTestsPass(testFile: string): boolean {
+export function checkIfAngularTestsPass(testFile: string): boolean {
   let output;
   try {
     output = execSync(`ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${testFile}`).toString();
@@ -321,14 +315,7 @@ function checkIfAngularTestsPass(testFile: string): boolean {
   return true;
 }
 
-function printSummary(failingTests: string[], testsWithErrors: string[], passingTests: string[], apiErrors: string[], testRunResults: string[]): void {
-  if (testRunResults) {
-    console.log('Here are the final results from running the tests:');
-    for (const result of testRunResults) {
-      console.log(result);
-    }
-  }
-
+export function printSummary(failingTests: string[], testsWithErrors: string[], passingTests: string[]): void {
   console.log('#####################################');
   console.log('##### Summary of DeepUnitAI Run #####');
   console.log('#####################################');
@@ -354,21 +341,12 @@ function printSummary(failingTests: string[], testsWithErrors: string[], passing
     }
   }
 
-  if (apiErrors.length > 0) {
-    console.log(
-      "\nWe had API errors while generating the following tests, see the logs above.\nTry again and if you're seeing this frequently bother Justin@deepunit.ai to find a fix this:",
-    );
-    for (const test of apiErrors) {
-      console.log(`     ${test}`);
-    }
-  }
-
   console.log('\n');
 }
 
-function createFile(filename: string): void {
+export function createFile(filename: string): void {
   // Create a new file
-  fs.writeFileSync(filename, '');
+  writeFileSync(filename, '');
 
   // Run git add on the file
   try {
@@ -380,7 +358,7 @@ function createFile(filename: string): void {
   }
 }
 
-function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
+export function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
   /**
     Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
 
@@ -422,7 +400,7 @@ function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
  *   Returns:
  *   list: List of file paths that are not within the ignoreDirectories and do not match filenames in ignoredFiles.
  */
-function filterFiles(files: string[]): string[] {
+export function filterFiles(files: string[]): string[] {
   const filteredFiles: string[] = [];
 
   const combinedIgnoredDirs = CONFIG.ignoredDirectories.map((dir) => path.join(CONFIG.workspaceDir, dir));
@@ -434,11 +412,10 @@ function filterFiles(files: string[]): string[] {
       filteredFiles.push(file);
     }
   }
-
   return filteredFiles;
 }
 
-function isParentAncestorOfChild(parent: string, child: string) {
+export function isParentAncestorOfChild(parent: string, child: string) {
   const rel = path.relative(parent, child);
   return !rel.startsWith('../') && rel !== '..';
 }
@@ -449,7 +426,7 @@ function isParentAncestorOfChild(parent: string, child: string) {
  *   Parameters:
  *   output (str): The test output.
  */
-function parseFailedAngularTestOutput(output: string): boolean {
+export function parseFailedAngularTestOutput(output: string): boolean {
   const match = output.match(/TOTAL: (\d+) FAILED, (\d+) SUCCESS/);
 
   if (match) {
@@ -466,19 +443,20 @@ function parseFailedAngularTestOutput(output: string): boolean {
   }
 }
 
-function writeTestsToFiles(tests: Record<string, string>, skip: boolean): string[] {
-  if (skip) {
-    return [];
-  }
+export function writeTestsToFiles(tests: Record<string, string>): string[] {
   let testPaths: string[] = [];
   for (const [testFilePath, testCode] of Object.entries(tests)) {
-    stashAndSave(testFilePath, testCode);
-    testPaths.push(testFilePath);
+    try {
+      stashAndSave(testFilePath, testCode);
+      testPaths.push(testFilePath);
+    } catch (e) {
+      console.error({ testCode, message: 'Error while saving', e, testFilePath });
+    }
   }
   return testPaths;
 }
 
-function stashAndSave(testFilePath: string, testCode: string) {
+export function stashAndSave(testFilePath: string, testCode: string) {
   //If the file does already exist we should add it to git and stash its contents. We should skip this if not since it will cause an error with git.
   if (fs.existsSync(testFilePath)) {
     // TODO: inform the user we stashed the changes or find a better way to tell them it is gone
@@ -490,7 +468,7 @@ function stashAndSave(testFilePath: string, testCode: string) {
   writeFileSync(testFilePath, testCode);
 }
 
-function writeFileSync(file: string, data: string, options?: any) {
+export function writeFileSync(file: string, data: string, options?: any) {
   try {
     fs.writeFileSync(file, data, options);
   } catch (e) {
@@ -499,14 +477,10 @@ function writeFileSync(file: string, data: string, options?: any) {
   }
 }
 
-async function recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
-  if (tempTestPaths.length < 0) {
-    return '';
-  }
-
+export async function recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
   const testFiles = [];
   for (let filePath of tempTestPaths) {
-    const content = fs.readFileSync(filePath).toString();
+    const content = fs.readFileSync(filePath).toString(); //todo: we should refactor this to just hold the fixed tests in memory instead of reading/writing from the file system
     testFiles.push(content);
   }
 
@@ -516,7 +490,7 @@ async function recombineTests(tempTestPaths: string[], finalizedTestPath: string
   }
 }
 
-function deleteTempFiles(tempTestPaths: string[]) {
+export function deleteTempFiles(tempTestPaths: string[]) {
   tempTestPaths.forEach((filePath) => {
     try {
       // delete the file
@@ -528,28 +502,45 @@ function deleteTempFiles(tempTestPaths: string[]) {
   });
 }
 
+/**
+ * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
+ * Example npm run deepunit -- --f main.ts subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
+ */
+export function getFilesFlag(): string[] {
+  const args = process.argv.slice(2);
+  let files: string[] = [];
+
+  args.forEach((arg, index) => {
+    if (arg === '--f' || arg === '--file' || arg === '--files') {
+      files = files.concat(args[index + 1].split(','));
+    }
+  });
+
+  return files;
+}
+
 export async function main() {
   console.log('#################################################');
   console.log('##### Generating unit tests with DeepUnitAI #####');
   console.log('#################################################');
 
   // Get files that need to be tested
-  let changedFiles: string[];
-  if (allFiles) {
-    changedFiles = findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
+  let filesToWriteTestsFor: string[];
+  const filesFlagArray: string[] = getFilesFlag();
+  if (filesFlagArray) {
+    filesToWriteTestsFor = filesFlagArray;
+  } else if (allFiles) {
+    filesToWriteTestsFor = findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
   } else {
-    changedFiles = getChangedFiles();
+    filesToWriteTestsFor = getChangedFiles();
   }
-  const filteredChangedFiles = filterFiles(changedFiles);
+  const filteredChangedFiles = filterFiles(filesToWriteTestsFor);
   const filesByDirectory = groupFilesByDirectory(filteredChangedFiles);
 
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
-  let testRunResults: string[] = []; //TODO: this is never assigned, we need to fix that so the summary is correct
-  let apiErrors: string[] = [];
-  let firstRun = true;
-
+  let firstRun: boolean = true;
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
@@ -572,56 +563,42 @@ export async function main() {
         createFile(testFile);
       }
 
-      const testContent = getExistingTestContent(testFile);
-      const [tsFile, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
+      const testFileContent = getExistingTestContent(testFile);
+      const [sourceFileName, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
 
       let filesToPass = [];
-      if (tsFile && tsFile != correspondingFile) {
-        filesToPass.push(tsFile);
+      if (sourceFileName && sourceFileName != correspondingFile) {
+        filesToPass.push(sourceFileName);
       }
       if (htmlFile && htmlFile != correspondingFile) {
         filesToPass.push(htmlFile);
       }
 
       const diff = getDiff(filesToPass);
-      const tsFileContent: string = getFileContent(tsFile);
+      const sourceFileContent: string = getFileContent(sourceFileName);
       const htmlFileContent = getFileContent(htmlFile);
 
       let tempTestPaths: string[] = [];
-      const response = await Api.generateTest(diff, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
-
-      // error with API response, unable generate test
-      if (!response || isEmpty(response.tests)) {
-        apiErrors.push(testFile);
-        continue;
-      }
-
+      console.log(`Generating test for ${sourceFileName}`);
+      const response = await generateTest(diff, sourceFileName, sourceFileContent, htmlFile, htmlFileContent, testFile, testFileContent);
       try {
         const tests = response.tests;
         // TODO: fix the issue with which files  so we can
-        tempTestPaths = writeTestsToFiles(tests, false);
+        tempTestPaths = writeTestsToFiles(tests);
       } catch (error) {
-        console.error('Caught error trying to writeTestsToFiles');
-        apiErrors.push(testFile);
+        console.error({ message: 'Caught error trying to writeTestsToFiles', response, error });
       }
 
-      const { fixedAllErrors, apiError } = await fixManyErrors(tempTestPaths, diff, tsFileContent);
+      const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await fixManyErrors(tempTestPaths, diff, sourceFileName, sourceFileContent);
 
+      console.log({ hasPassingTests, passedTests, tempTestPaths });
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-      await recombineTests(tempTestPaths, testFile);
+      await recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFile);
 
       //then we will need to delete all the temp test files.
-      deleteTempFiles(tempTestPaths);
+      //deleteTempFiles(tempTestPaths);
 
-      if (apiError) {
-        console.log('API error encountered');
-        apiErrors.push(testFile);
-        continue;
-      }
-
-      testRunResults.push(`\n     Result for: ${testFile}`);
-      // testRunResults.push(runResults); TODO: add back testResults
-      if (fixedAllErrors) {
+      if (hasPassingTests) {
         passingTests.push(testFile);
       } else {
         testsWithErrors.push(testFile);
@@ -629,7 +606,7 @@ export async function main() {
     }
   }
 
-  printSummary(failingTests, testsWithErrors, passingTests, apiErrors, testRunResults);
+  printSummary(failingTests, testsWithErrors, passingTests);
 
   process.exit(100);
 }
