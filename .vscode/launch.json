@@ -10,7 +10,8 @@
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
-            "runtimeArgs": ["run-script", "start"]
+            "runtimeArgs": ["run", "start"],
+            "args": ["--", "--file", "src/examples/testUtils.ts"]
           }
     ]
 }
