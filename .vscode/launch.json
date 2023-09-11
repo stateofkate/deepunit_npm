@@ -11,7 +11,7 @@
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["run", "start"],
-            "args": ["--", "--file", "src/examples/testUtils.ts"]
+            "args": ["--", "--file", "src/examples/basic.ts"]
           }
     ]
 }

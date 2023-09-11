@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
+import { exitWithError } from './utils';
 
 export class Files {
   public static getChangedFiles(): string[] {
@@ -46,11 +47,7 @@ export class Files {
       testContent = fs.readFileSync(file, 'utf-8');
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Had an error in reading the file, woopsies');
-        console.error(file);
-        console.error(error);
-        console.log('Need help? Email justin@deepunit.ai');
-        process.exit(1);
+        exitWithError('unable to read file ' + file);
       }
     }
     return testContent;
@@ -176,5 +173,62 @@ export class Files {
         console.error(err);
       }
     });
+  }
+
+  public static groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
+    const filesByDirectory: Record<string, string[]> = {};
+
+    for (const file of changedFiles) {
+      const directory = path.dirname(file);
+
+      if (!filesByDirectory[directory]) {
+        filesByDirectory[directory] = [];
+      }
+
+      filesByDirectory[directory].push(file);
+    }
+
+    return filesByDirectory;
+  }
+
+  public static existsSync(path: fs.PathLike) {
+    return fs.existsSync(path);
+  }
+
+  public static readFileSync(path: fs.PathLike) {
+    return fs.readFileSync(path);
+  }
+
+  public static tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
+    const baseFile = path.basename(file, path.extname(file));
+    const extension = path.extname(file);
+    let correspondingFile: string | null = null;
+
+    if (extension === CONFIG.typescriptExtension) {
+      correspondingFile = `${baseFile}.html`;
+    } else if (extension === '.html') {
+      correspondingFile = `${baseFile}${CONFIG.typescriptExtension}`;
+    }
+
+    let htmlFile: string | null = null;
+    let tsFile: string | null = null;
+
+    if (correspondingFile && filesInDirectory.includes(correspondingFile)) {
+      if (extension === CONFIG.typescriptExtension) {
+        tsFile = file;
+        htmlFile = correspondingFile;
+      } else {
+        tsFile = correspondingFile;
+        htmlFile = file;
+      }
+    } else {
+      if (extension === CONFIG.typescriptExtension) {
+        tsFile = file;
+      } else {
+        htmlFile = file;
+      }
+    }
+
+    return [tsFile, htmlFile, correspondingFile];
   }
 }
