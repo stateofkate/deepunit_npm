@@ -4,66 +4,14 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { TestingFrameworks } from './main.consts';
 import { CONFIG, maxFixFailingTestAttempts, rootDir } from './lib/Config';
-import { debugMsg, expectNot, isEmpty } from './lib/utils';
 import { Api } from './lib/Api';
+import { Files } from './lib/Files';
 
 /**
  * Manually set configs
  */
 let allFiles: boolean = true; // instead of grabbing list of files from last commit, recursively search all directories in the project for .ts or html files
 let fixAttempts = 0;
-
-export function getChangedFiles(): string[] {
-  const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
-  const output = execSync(changedFilesCmd).toString();
-  return output.split('\n').filter(Boolean);
-}
-
-export function getDiff(files: string[]): string {
-  const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
-  return execSync(diffCmd)
-    .toString()
-    .split('\n')
-    .filter((line) => !line.trim().startsWith('-'))
-    .join('\n');
-}
-
-function getFileContent(file: string | null): string {
-  if (file === null) {
-    return '';
-  }
-  try {
-    const content = fs.readFileSync(file, 'utf-8');
-    return content;
-  } catch (error) {
-    if (error instanceof Error) {
-      // @ts-ignore
-      if (error.code === 'ENOENT') {
-        console.warn(`Warning: File ${file} not found`);
-      } else {
-        console.error(error);
-        console.error(`An error occurred while trying to read ${file}: ${error}`);
-      }
-    }
-    return '';
-  }
-}
-
-export function getExistingTestContent(file: string): string {
-  let testContent: string = '';
-  try {
-    testContent = fs.readFileSync(file, 'utf-8');
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Had an error in reading the file, woopsies');
-      console.error(file);
-      console.error(error);
-      console.log('Need help? Email justin@deepunit.ai');
-      process.exit(1);
-    }
-  }
-  return testContent;
-}
 
 function getTestName(file: string): string {
   const testFileName = file.split('.').slice(0, -1).join('.') + CONFIG.testExtension;
@@ -120,7 +68,7 @@ export async function fixManyErrors(tempTestPaths: string[], diff: string, tsFil
 
     const fixPromises = result.failedTests.map(async (failedtestName) => {
       const errorMessage: string = result.failedTestErrors[failedtestName];
-      const testContent: string = getExistingTestContent(failedtestName);
+      const testContent: string = Files.getExistingTestContent(failedtestName);
 
       try {
         const response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
@@ -129,7 +77,7 @@ export async function fixManyErrors(tempTestPaths: string[], diff: string, tsFil
           console.error('Got back an empty test, this should never happen.');
           return null;
         }
-        writeFileSync(failedtestName, fixedTestCode);
+        Files.writeFileSync(failedtestName, fixedTestCode);
         return failedtestName;
       } catch (error) {
         console.error(error);
@@ -344,82 +292,6 @@ export function printSummary(failingTests: string[], testsWithErrors: string[], 
   console.log('\n');
 }
 
-export function createFile(filename: string): void {
-  // Create a new file
-  writeFileSync(filename, '');
-
-  // Run git add on the file
-  try {
-    execSync(`git add ${filename}`);
-  } catch (error) {
-    console.error(filename);
-    console.error(error);
-    console.error(`Error running git add: `);
-  }
-}
-
-export function findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
-  /**
-    Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
-
-        Parameters:
-    extensions (list): List of extensions to match.
-    ignoreExtensions (list): List of extensions to ignore.
-
-        Returns:
-    list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
-    */
-  const matches: string[] = [];
-  const walkDir = CONFIG.workspaceDir || 'src'; // replace with actual workspaceDir if needed
-
-  function walk(directory: string) {
-    const files = fs.readdirSync(directory);
-
-    for (const file of files) {
-      const fullPath = path.join(directory, file);
-      const stat = fs.statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        walk(fullPath);
-      } else if (extensions.some((ext) => file.endsWith(ext)) && !ignoreExtensions.some((ext) => file.endsWith(ext))) {
-        matches.push(fullPath);
-      }
-    }
-  }
-
-  walk(walkDir);
-  return matches;
-}
-
-/**
- * Filter out files that are within certain directories or match certain filenames.
- *
- *   Parameters:
- *   files (list): List of file paths.
- *
- *   Returns:
- *   list: List of file paths that are not within the ignoreDirectories and do not match filenames in ignoredFiles.
- */
-export function filterFiles(files: string[]): string[] {
-  const filteredFiles: string[] = [];
-
-  const combinedIgnoredDirs = CONFIG.ignoredDirectories.map((dir) => path.join(CONFIG.workspaceDir, dir));
-
-  const combinedIgnoredFiles = CONFIG.ignoredFiles.map((file) => path.join(CONFIG.workspaceDir, file));
-
-  for (const file of files) {
-    if (!combinedIgnoredDirs.some((ignoreDir) => isParentAncestorOfChild(ignoreDir, file)) && !combinedIgnoredFiles.some((ignoreFile) => file == ignoreFile)) {
-      filteredFiles.push(file);
-    }
-  }
-  return filteredFiles;
-}
-
-export function isParentAncestorOfChild(parent: string, child: string) {
-  const rel = path.relative(parent, child);
-  return !rel.startsWith('../') && rel !== '..';
-}
-
 /**
  * Parse the test output to find if tests all pass.
  *
@@ -443,40 +315,6 @@ export function parseFailedAngularTestOutput(output: string): boolean {
   }
 }
 
-export function writeTestsToFiles(tests: Record<string, string>): string[] {
-  let testPaths: string[] = [];
-  for (const [testFilePath, testCode] of Object.entries(tests)) {
-    try {
-      stashAndSave(testFilePath, testCode);
-      testPaths.push(testFilePath);
-    } catch (e) {
-      console.error({ testCode, message: 'Error while saving', e, testFilePath });
-    }
-  }
-  return testPaths;
-}
-
-export function stashAndSave(testFilePath: string, testCode: string) {
-  //If the file does already exist we should add it to git and stash its contents. We should skip this if not since it will cause an error with git.
-  if (fs.existsSync(testFilePath)) {
-    // TODO: inform the user we stashed the changes or find a better way to tell them it is gone
-    console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
-    execSync(`git add ${testFilePath} && git stash push ${testFilePath}`);
-  } else {
-    fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
-  }
-  writeFileSync(testFilePath, testCode);
-}
-
-export function writeFileSync(file: string, data: string, options?: any) {
-  try {
-    fs.writeFileSync(file, data, options);
-  } catch (e) {
-    console.error({ data, options });
-    console.error(`Unable to write file: ${file}`);
-  }
-}
-
 export async function recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
   const testFiles = [];
   for (let filePath of tempTestPaths) {
@@ -486,20 +324,8 @@ export async function recombineTests(tempTestPaths: string[], finalizedTestPath:
 
   const responseData = await Api.recombineTests(testFiles);
   if (responseData && responseData.testContent) {
-    writeFileSync(finalizedTestPath, responseData.testContent);
+    Files.writeFileSync(finalizedTestPath, responseData.testContent);
   }
-}
-
-export function deleteTempFiles(tempTestPaths: string[]) {
-  tempTestPaths.forEach((filePath) => {
-    try {
-      // delete the file
-      fs.unlinkSync(filePath);
-    } catch (err) {
-      console.error(`Error deleting file: ${filePath}`);
-      console.error(err);
-    }
-  });
 }
 
 /**
@@ -530,11 +356,11 @@ export async function main() {
   if (filesFlagArray.length > 0) {
     filesToWriteTestsFor = filesFlagArray;
   } else if (allFiles) {
-    filesToWriteTestsFor = findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
+    filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
   } else {
-    filesToWriteTestsFor = getChangedFiles();
+    filesToWriteTestsFor = Files.getChangedFiles();
   }
-  const filteredChangedFiles = filterFiles(filesToWriteTestsFor);
+  const filteredChangedFiles = Files.filterFiles(filesToWriteTestsFor);
   const filesByDirectory = groupFilesByDirectory(filteredChangedFiles);
 
   let failingTests: string[] = [];
@@ -560,10 +386,10 @@ export async function main() {
       if (!fs.existsSync(testFile)) {
         // check if the file exists, if it does then we should create a file
         // TODO: we should do this afterward, so we don't create empty files
-        createFile(testFile);
+        Files.createFile(testFile);
       }
 
-      const testFileContent = getExistingTestContent(testFile);
+      const testFileContent = Files.getExistingTestContent(testFile);
       const [sourceFileName, htmlFile, correspondingFile] = tsAndHtmlFromFile(file, filesInDirectory);
 
       let filesToPass = [];
@@ -574,9 +400,9 @@ export async function main() {
         filesToPass.push(htmlFile);
       }
 
-      const diff = getDiff(filesToPass);
-      const sourceFileContent: string = getFileContent(sourceFileName);
-      const htmlFileContent = getFileContent(htmlFile);
+      const diff = Files.getDiff(filesToPass);
+      const sourceFileContent: string = Files.getFileContent(sourceFileName);
+      const htmlFileContent = Files.getFileContent(htmlFile);
 
       let tempTestPaths: string[] = [];
       console.log(`Generating test for ${sourceFileName}`);
@@ -584,7 +410,7 @@ export async function main() {
       try {
         const tests = response.tests;
         // TODO: fix the issue with which files  so we can
-        tempTestPaths = writeTestsToFiles(tests);
+        tempTestPaths = Files.writeTestsToFiles(tests);
       } catch (error) {
         console.error({ message: 'Caught error trying to writeTestsToFiles', response, error });
       }
@@ -596,7 +422,7 @@ export async function main() {
       await recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFile);
 
       //then we will need to delete all the temp test files.
-      deleteTempFiles(tempTestPaths);
+      Files.deleteTempFiles(tempTestPaths);
 
       if (hasPassingTests) {
         passingTests.push(testFile);
