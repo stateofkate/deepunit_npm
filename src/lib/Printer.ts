@@ -1,5 +1,5 @@
 export class Printer {
-  static LINE_DIVIDER = '#####################################';
+  static LINE_DIVIDER = '#############################################';
 
   public static printIntro() {
     console.log(Printer.LINE_DIVIDER);

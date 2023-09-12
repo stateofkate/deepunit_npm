@@ -83,7 +83,7 @@ export async function main() {
       const response = await tester.generateTest(diff, sourceFileName, sourceFileContent, htmlFile, htmlFileContent, testFile, testFileContent);
       try {
         const tests = response.tests;
-        // TODO: fix the issue with which files  so we can
+        // TODO: fix the issue with which files so we can
         tempTestPaths = Files.writeTestsToFiles(tests);
       } catch (error) {
         console.error({ message: 'Caught error trying to writeTestsToFiles', response, error });
@@ -98,7 +98,8 @@ export async function main() {
 
       console.log({ hasPassingTests, passedTests, tempTestPaths });
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-      await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFile, hasPassingTests);
+      const prettierConfig = Files.getPrettierConfig();
+      await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFile, hasPassingTests, prettierConfig);
 
       //then we will need to delete all the temp test files.
       Files.deleteTempFiles(tempTestPaths);

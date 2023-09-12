@@ -14,7 +14,7 @@ export abstract class Tester {
     return testFileName;
   }
 
-  public async recombineTests(tempTestPaths: string[], finalizedTestPath: string, hasPassingTests: boolean) {
+  public async recombineTests(tempTestPaths: string[], finalizedTestPath: string, hasPassingTests: boolean, prettierConfig: Object | undefined) {
     if (!hasPassingTests && !CONFIG.includeFailingTests) {
       return;
     }
@@ -25,7 +25,7 @@ export abstract class Tester {
       testFiles.push(content);
     }
 
-    const responseData = await Api.recombineTests(testFiles);
+    const responseData = await Api.recombineTests(testFiles, prettierConfig);
     if (responseData && responseData.testContent) {
       let fileContent = responseData.testContent;
       if (!hasPassingTests) {
