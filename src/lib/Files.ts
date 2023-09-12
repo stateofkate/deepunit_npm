@@ -238,8 +238,6 @@ export class Files {
       const fileContent = Files.readFileSync(prettierDefaultFilePath).toString();
       if (fileContent) {
         return JSON.parse(fileContent);
-      } else {
-        return undefined;
       }
     }
   }

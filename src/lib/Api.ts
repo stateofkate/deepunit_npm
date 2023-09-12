@@ -38,7 +38,6 @@ export class Api {
     try {
       debugMsg(`POST REQUEST ${path}`, data);
       const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPath(path), data, { headers });
-      console.log(response.data);
       if (response.data.error) {
         throw new Error(response.data.error);
       }
