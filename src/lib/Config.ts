@@ -28,6 +28,7 @@ class Config {
   version: string = '';
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
+  includeFailingTests: boolean = true;
 
   constructor() {
     this.detectWorkspaceDir();
@@ -42,6 +43,7 @@ class Config {
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.version = process.env.npm_package_version ?? '0.0.0';
+    this.includeFailingTests = Config.getStringFromConfig('includeFailingTests') != 'false';
   }
 
   // Find the where the package.json file is located

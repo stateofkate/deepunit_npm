@@ -14,7 +14,10 @@ export abstract class Tester {
     return testFileName;
   }
 
-  public async recombineTests(tempTestPaths: string[], finalizedTestPath: string) {
+  public async recombineTests(tempTestPaths: string[], finalizedTestPath: string, hasPassingTests: boolean) {
+    if (!hasPassingTests && !CONFIG.includeFailingTests) {
+      return;
+    }
     const testFiles = [];
     for (let filePath of tempTestPaths) {
       //todo: we should refactor this to just hold the fixed tests in memory instead of reading/writing from the file system
@@ -24,7 +27,16 @@ export abstract class Tester {
 
     const responseData = await Api.recombineTests(testFiles);
     if (responseData && responseData.testContent) {
-      Files.writeFileSync(finalizedTestPath, responseData.testContent);
+      let fileContent = responseData.testContent;
+      if (!hasPassingTests) {
+        fileContent = `
+          // DeepUnitAi generated these tests.
+          // Tests in this file DID NOT PASS but are left here so you can edit them
+          // To disable this feature, add "includeFailingTests": false to the deepunit.config.json.
+
+        `;
+      }
+      Files.writeFileSync(finalizedTestPath, fileContent);
     }
   }
 
