@@ -5,5 +5,6 @@
   "doProd": false,
   "password": "iwouldbesurprisedifanyoneguessed",
   "ignoredDirectories": [],
-  "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"]
+  "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"],
+  "includeFailingTests": false
 }
