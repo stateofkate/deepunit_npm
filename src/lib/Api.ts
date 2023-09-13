@@ -36,8 +36,8 @@ export class Api {
     };
 
     try {
+      debugMsg(`POST REQUEST ${path}`, data);
       const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPath(path), data, { headers });
-      debugMsg(`POST REQUEST ${path}`, data, response.data);
       if (response.data.error) {
         throw new Error(response.data.error);
       }
@@ -85,10 +85,14 @@ export class Api {
     return await this.post(ApiPaths.fixErrors, data);
   }
 
-  public static async recombineTests(testContents: string[]) {
+  public static async recombineTests(testContents: string[], prettierConfig: Object | undefined) {
     let data: RecombineTestData = {
       testFiles: testContents,
     };
+
+    if (prettierConfig) {
+      data['prettierConfig'] = prettierConfig;
+    }
 
     return await this.post(ApiPaths.recombineTests, data);
   }

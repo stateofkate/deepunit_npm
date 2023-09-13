@@ -231,4 +231,14 @@ export class Files {
 
     return [tsFile, htmlFile, correspondingFile];
   }
+
+  public static getPrettierConfig(): Object | undefined {
+    const prettierDefaultFilePath = '.prettierrc'; // TODO-CONFIG: add option for use to choose file path
+    if (Files.existsSync(prettierDefaultFilePath)) {
+      const fileContent = Files.readFileSync(prettierDefaultFilePath).toString();
+      if (fileContent) {
+        return JSON.parse(fileContent);
+      }
+    }
+  }
 }
