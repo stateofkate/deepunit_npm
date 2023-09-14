@@ -13,6 +13,7 @@ export function testFunction(arg: number): number {
   }
 }
 
+// @deep-unit-ignore-next-line
 export function checkFileIsNotEmpty(filePath: string): boolean {
   try {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -22,10 +23,12 @@ export function checkFileIsNotEmpty(filePath: string): boolean {
   }
 }
 
-export function confirmFiles(filePath: string): boolean {
+// confirm that file exists
+export function confirmFileExists(filePath: string): boolean {
   return checkIfFileExists(filePath);
 }
 
+// math utility to square a number
 export function squareNumber(num: number): number {
   return multiply(num, num);
 }
