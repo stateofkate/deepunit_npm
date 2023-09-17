@@ -37,6 +37,8 @@ export abstract class Tester {
 
         `;
       }
+
+      //TODO: APPEND TO END OF TEST FILE
       Files.writeFileSync(finalizedTestPath, fileContent);
     }
   }
