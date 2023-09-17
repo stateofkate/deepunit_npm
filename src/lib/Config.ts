@@ -35,8 +35,8 @@ class Config {
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
-    this.detectTypescriptExtension();
 
+    this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getStringFromConfig('doProd') === 'true';
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
@@ -165,20 +165,6 @@ class Config {
         console.error('The current working director is ' + process.cwd());
         process.exit(1);
       }
-    }
-  }
-
-  // TODO: Should we support both tsx and ts?
-  private detectTypescriptExtension(): void {
-    const configTypescript = Config.getStringFromConfig('typescriptExtension');
-    if (configTypescript) {
-      this.typescriptExtension = configTypescript;
-    } else if (this.frontendFramework === 'react') {
-      this.typescriptExtension = '.tsx';
-    } else if (this.frontendFramework === 'angular') {
-      this.typescriptExtension = '.ts';
-    } else {
-      this.typescriptExtension = '.ts';
     }
   }
 

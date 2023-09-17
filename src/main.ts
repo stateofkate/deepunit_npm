@@ -7,7 +7,6 @@ import { exitWithError, getFilesFlag } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
-import { JasmineTester } from './lib/testers/JasmineTester';
 
 export async function main() {
   Printer.printIntro();
@@ -40,13 +39,10 @@ export async function main() {
       const testFile = Tester.getTestName(file);
 
       let tester: Tester;
-      if (firstRun && CONFIG.testingFramework === TestingFrameworks.jasmine) {
-        tester = new JasmineTester();
-        firstRun = false;
-      } else if (firstRun && CONFIG.testingFramework === TestingFrameworks.jest) {
+      if (firstRun && CONFIG.testingFramework === TestingFrameworks.jest) {
         tester = new JestTester();
       } else {
-        return exitWithError('Unable to find a supported testing framework');
+        return exitWithError(`Unable to run DeepUnitAI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
 
       // make sure we are back in root dir
