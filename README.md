@@ -29,7 +29,10 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
   "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"],
 
   // when all tests for a file fail, this option allows DeepUnitAI to save the failing tests to a file so that you fix them manually
-  "includeFailingTests": false
+  "includeFailingTests": false,
+
+  // test only the files that are changed from the HEAD branch
+  "generateChangedFilesOnly": false
 }
 ```
 
