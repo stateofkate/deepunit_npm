@@ -8,7 +8,6 @@ const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; //
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
-export const generateForAllFiles: boolean = true; // instead of grabbing list of files from last commit, recursively search all directories in the project for .ts or html files
 export const maxFixFailingTestAttempts = 7;
 export const rootDir = process.cwd();
 
