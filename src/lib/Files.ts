@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG } from './Config';
+import { CONFIG, rootDir } from './Config';
 import { exitWithError } from './utils';
 
 export class Files {
@@ -223,13 +223,33 @@ export class Files {
     return [tsFile, htmlFile, correspondingFile];
   }
 
-  public static getPrettierConfig(): Object | undefined {
-    const prettierDefaultFilePath = '.prettierrc';
-    if (Files.existsSync(prettierDefaultFilePath)) {
-      const fileContent = Files.readFileSync(prettierDefaultFilePath).toString();
+  public static readJsonFile(path: fs.PathLike): Object | undefined {
+    if (Files.existsSync(path)) {
+      const fileContent = Files.readFileSync(path).toString();
       if (fileContent) {
         return JSON.parse(fileContent);
       }
     }
+    return undefined;
+  }
+
+  public static getPrettierConfig(): Object | undefined {
+    const prettierDefaultFilePath = '.prettierrc';
+    process.chdir(rootDir);
+
+    const prettierFileContent = Files.readJsonFile(prettierDefaultFilePath);
+    if (prettierFileContent) {
+      return prettierFileContent;
+    }
+
+    if (CONFIG.workspaceDir) {
+      const scopedPrettierFilePath = path.join(CONFIG.workspaceDir, prettierDefaultFilePath);
+      const scopedFileContent = Files.readJsonFile(scopedPrettierFilePath);
+      if (scopedFileContent) {
+        return scopedFileContent;
+      }
+    }
+
+    return undefined;
   }
 }
