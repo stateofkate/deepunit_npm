@@ -1,7 +1,6 @@
 import { Api } from '../Api';
 import { CONFIG, maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
-import { exitWithError } from '../utils';
 
 type FixManyErrorsResult = {
   hasPassingTests: boolean;
@@ -11,7 +10,7 @@ type FixManyErrorsResult = {
 
 export abstract class Tester {
   public static getTestName(file: string): string {
-    const testFileName = file.split('.').slice(0, -1).join('.') + CONFIG.testExtension;
+    const testFileName = file.split('.').slice(0, -1).join('.') + '.deepunitai' + CONFIG.testExtension;
     return testFileName;
   }
 
@@ -28,15 +27,12 @@ export abstract class Tester {
 
     const responseData = await Api.recombineTests(testFiles, prettierConfig);
     if (responseData && responseData.testContent) {
-      let fileContent = responseData.testContent;
+      let fileContent = `// DeepUnit.AI generated these tests on ${new Date()}\n`;
       if (!hasPassingTests) {
-        fileContent = `
-          // DeepUnit.AI generated these tests.
-          // Tests in this file DID NOT PASS but are left here so you can edit them
-          // To disable this feature, add "includeFailingTests": false to the deepunit.config.json.
-
-        `;
+        fileContent += `// NOTICE: Tests in this file DID NOT PASS but are left here so you can edit them\n// To disable this feature, add "includeFailingTests": false to the deepunit.config.json.\n`;
       }
+
+      fileContent += '\n' + responseData.testContent;
 
       //TODO: APPEND TO END OF TEST FILE
       Files.writeFileSync(finalizedTestPath, fileContent);

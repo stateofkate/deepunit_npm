@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { CONFIG, rootDir } from './lib/Config';
 import { Files } from './lib/Files';
-import { exitWithError, getFilesFlag } from './lib/utils';
+import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -87,6 +87,9 @@ export async function main() {
       console.log(`Generating test for ${sourceFileName}`);
 
       const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
+      if (!response.tests || isEmpty(response.tests)) {
+        exitWithError('Unable to continue, did not receive tests back from server.');
+      }
       let tests: Record<string, string> = response.tests;
       // Write the temporary test files, so we can test the generated tests
       let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
