@@ -31,7 +31,7 @@ export abstract class Tester {
       let fileContent = responseData.testContent;
       if (!hasPassingTests) {
         fileContent = `
-          // DeepUnitAi generated these tests.
+          // DeepUnit.AI generated these tests.
           // Tests in this file DID NOT PASS but are left here so you can edit them
           // To disable this feature, add "includeFailingTests": false to the deepunit.config.json.
 

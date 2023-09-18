@@ -16,7 +16,12 @@ export async function main() {
   const filesFlagArray: string[] = getFilesFlag();
   if (filesFlagArray.length > 0) {
     console.log('Finding files within --file flag');
-    filesToWriteTestsFor = filesFlagArray.filter((filePath) => Files.existsSync(filePath));
+    filesFlagArray.forEach((filePath) => {
+      if (Files.existsSync(filePath)) {
+        exitWithError(`${filePath} could not be found.`);
+      }
+    });
+    filesToWriteTestsFor = filesFlagArray;
   } else if (CONFIG.generateChangedFilesOnly) {
     console.log('Finding all changed files between current and HEAD branch.');
     filesToWriteTestsFor = Files.getChangedFiles();
@@ -29,7 +34,7 @@ export async function main() {
 
   // if we didn't get any files, return error
   if (filteredFileNames.length <= 0) {
-    return exitWithError(`Unable to run DeepUnitAI, No files to test were found. Check your config is set right or you are using the --file flag correctly.`);
+    return exitWithError(`No files to test were found. Check your config is set right or you are using the --file flag correctly.`);
   }
 
   Printer.printFilesToTest(filteredFileNames);
@@ -38,7 +43,6 @@ export async function main() {
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
-  let firstRun: boolean = true;
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
@@ -50,19 +54,12 @@ export async function main() {
       const testFileName = Tester.getTestName(file);
 
       let tester: Tester;
-      if (firstRun && CONFIG.testingFramework === TestingFrameworks.jest) {
+      if (CONFIG.testingFramework === TestingFrameworks.jest) {
         tester = new JestTester();
       } else {
-        return exitWithError(`Unable to run DeepUnitAI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
+        return exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
 
-      // make sure we are back in root dir
-      process.chdir(rootDir);
-      const originalTestFilePasses = tester.checkIfTestsPass(testFileName);
-
-      if (!originalTestFilePasses) {
-        console.log(`Test file ${testFileName}, does not pass it's tests, please fix the tests before we add to this file.`);
-      }
       // make sure we are back in root dir
       process.chdir(rootDir);
 

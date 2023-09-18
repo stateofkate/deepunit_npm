@@ -3,13 +3,13 @@ export class Printer {
 
   public static printIntro() {
     console.log(Printer.LINE_DIVIDER);
-    console.log('##### Generating unit tests with DeepUnitAI #####');
+    console.log('##### Generating unit tests with DeepUnit.AI #####');
     console.log(Printer.LINE_DIVIDER);
   }
 
   public static printSummary(failingTests: string[], testsWithErrors: string[], passingTests: string[]): void {
     console.log(Printer.LINE_DIVIDER);
-    console.log('##### Summary of DeepUnitAI Run #####');
+    console.log('##### Summary of DeepUnit.AI Run #####');
     console.log(Printer.LINE_DIVIDER);
 
     if (failingTests.length > 0) {

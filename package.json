@@ -1,7 +1,7 @@
 {
   "name": "deepunit",
   "version": "1.0.5",
-  "description": "In beta. Justin@deepunit.ai",
+  "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
     "watch": "tsc --watch",

@@ -19,7 +19,7 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
   // only used if you are using a mono repo, ie. (src)
   "workspaceDir": "",
 
-  // Get password from justin@deepunit.ai, this is for approved alpha users only
+  // Get password from support@deepunit.ai, this is for approved alpha users only
   "password": "securepassword",
 
   // which directories you want to ignore, path is from the current working directory, or workspaceDir if specified above
@@ -53,4 +53,4 @@ function example(): void {
 
 ## Contact
 
-If you have any questions, please contact `justin@deepunit.ai` for more details.
+If you have any questions, please contact `support@deepunit.ai` for more details.
