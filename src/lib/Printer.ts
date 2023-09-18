@@ -1,5 +1,5 @@
 export class Printer {
-  static LINE_DIVIDER = '#############################################';
+  static LINE_DIVIDER = '#################################################';
 
   public static printIntro() {
     console.log(Printer.LINE_DIVIDER);
@@ -34,5 +34,14 @@ export class Printer {
     }
 
     console.log('\n');
+  }
+
+  public static printFilesToTest(filePaths: string[]) {
+    // print all files we are going to test, only show 15 or it will go over the limits
+    if (filePaths.length < 15) {
+      filePaths.forEach((filePath) => console.log(`- ${filePath}`));
+    } else {
+      console.log(`Generating tests for ${filePaths.length} files.`);
+    }
   }
 }

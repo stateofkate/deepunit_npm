@@ -1,6 +1,7 @@
 import { Api } from '../Api';
 import { CONFIG, maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
+import { exitWithError } from '../utils';
 
 type FixManyErrorsResult = {
   hasPassingTests: boolean;
@@ -36,6 +37,8 @@ export abstract class Tester {
 
         `;
       }
+
+      //TODO: APPEND TO END OF TEST FILE
       Files.writeFileSync(finalizedTestPath, fileContent);
     }
   }
@@ -49,13 +52,7 @@ export abstract class Tester {
     testFile: string,
     testContent: string,
   ): Promise<any> {
-    try {
-      const response = await Api.generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
-      return response;
-    } catch (error) {
-      console.error(`Failed with error: ${error}`);
-      return undefined;
-    }
+    return await Api.generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
   }
 
   /**

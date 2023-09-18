@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { CONFIG } from './Config';
 import { TestingFrameworks, mockedGenerationConst } from '../main.consts';
-import { debugMsg } from './utils';
+import { debugMsg, exitWithError } from './utils';
 import { FixErrorsData, GenerateTestData, RecombineTestData } from './ApiTypes';
 
 type ApiBaseData = {
@@ -43,7 +43,10 @@ export class Api {
       }
       return response.data;
     } catch (error) {
-      console.error(`Failed with error: ${error}`);
+      if (((error as AxiosError).code = 'ECONNREFUSED')) {
+        exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
+      }
+      console.error(`Request Failed with error: ${error}`);
       return undefined;
     }
   }

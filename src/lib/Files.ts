@@ -8,7 +8,7 @@ export class Files {
   public static getChangedFiles(): string[] {
     const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
     const output = execSync(changedFilesCmd).toString();
-    return output.split('\n').filter(Boolean);
+    return output.split('\n');
   }
 
   public static getDiff(files: string[]): string {
@@ -133,25 +133,16 @@ export class Files {
     let testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {
-        Files.stashAndSave(testFilePath, testCode);
+        if (!fs.existsSync(testFilePath)) {
+          fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+        }
+        Files.writeFileSync(testFilePath, testCode);
         testPaths.push(testFilePath);
       } catch (e) {
         console.error({ testCode, message: 'Error while saving', e, testFilePath });
       }
     }
     return testPaths;
-  }
-
-  public static stashAndSave(testFilePath: string, testCode: string) {
-    //If the file does already exist we should add it to git and stash its contents. We should skip this if not since it will cause an error with git.
-    if (fs.existsSync(testFilePath)) {
-      // TODO: inform the user we stashed the changes or find a better way to tell them it is gone
-      console.log(`Stashing any uncommitted changes in ${testFilePath}...`);
-      execSync(`git add ${testFilePath} && git stash push ${testFilePath}`);
-    } else {
-      fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
-    }
-    Files.writeFileSync(testFilePath, testCode);
   }
 
   public static writeFileSync(file: string, data: string, options?: any) {
@@ -233,7 +224,7 @@ export class Files {
   }
 
   public static getPrettierConfig(): Object | undefined {
-    const prettierDefaultFilePath = '.prettierrc'; // TODO-CONFIG: add option for use to choose file path
+    const prettierDefaultFilePath = '.prettierrc';
     if (Files.existsSync(prettierDefaultFilePath)) {
       const fileContent = Files.readFileSync(prettierDefaultFilePath).toString();
       if (fileContent) {

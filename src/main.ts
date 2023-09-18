@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
 import { TestingFrameworks } from './main.consts';
-import { CONFIG, generateForAllFiles, rootDir } from './lib/Config';
+import { CONFIG, rootDir } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
-import { JasmineTester } from './lib/testers/JasmineTester';
 
 export async function main() {
   Printer.printIntro();
@@ -16,14 +15,25 @@ export async function main() {
   let filesToWriteTestsFor: string[];
   const filesFlagArray: string[] = getFilesFlag();
   if (filesFlagArray.length > 0) {
-    filesToWriteTestsFor = filesFlagArray;
-  } else if (generateForAllFiles) {
-    filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
-  } else {
+    console.log('Finding files within --file flag');
+    filesToWriteTestsFor = filesFlagArray.filter((filePath) => Files.existsSync(filePath));
+  } else if (CONFIG.generateChangedFilesOnly) {
+    console.log('Finding all changed files between current and HEAD branch.');
     filesToWriteTestsFor = Files.getChangedFiles();
+  } else {
+    console.log('Finding all eligible files in working directory');
+    filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
   }
-  const filteredChangedFiles = Files.filterFiles(filesToWriteTestsFor);
-  const filesByDirectory = Files.groupFilesByDirectory(filteredChangedFiles);
+
+  const filteredFileNames = Files.filterFiles(filesToWriteTestsFor);
+
+  // if we didn't get any files, return error
+  if (filteredFileNames.length <= 0) {
+    return exitWithError(`Unable to run DeepUnitAI, No files to test were found. Check your config is set right or you are using the --file flag correctly.`);
+  }
+
+  Printer.printFilesToTest(filteredFileNames);
+  const filesByDirectory = Files.groupFilesByDirectory(filteredFileNames);
 
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
@@ -34,64 +44,59 @@ export async function main() {
     while (filesInDirectory.length > 0) {
       const file = filesInDirectory.pop();
       if (file === undefined) {
-        continue;
+        break;
       }
 
-      const testFile = Tester.getTestName(file);
+      const testFileName = Tester.getTestName(file);
 
       let tester: Tester;
-      if (firstRun && CONFIG.testingFramework === TestingFrameworks.jasmine) {
-        tester = new JasmineTester();
-        firstRun = false;
-      } else if (firstRun && CONFIG.testingFramework === TestingFrameworks.jest) {
+      if (firstRun && CONFIG.testingFramework === TestingFrameworks.jest) {
         tester = new JestTester();
       } else {
-        return exitWithError('Unable to find a supported testing framework');
+        return exitWithError(`Unable to run DeepUnitAI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
 
       // make sure we are back in root dir
       process.chdir(rootDir);
-      if (firstRun) {
-        firstRun = false;
-        tester.checkIfTestsPass(testFile);
+      const originalTestFilePasses = tester.checkIfTestsPass(testFileName);
+
+      if (!originalTestFilePasses) {
+        console.log(`Test file ${testFileName}, does not pass it's tests, please fix the tests before we add to this file.`);
       }
       // make sure we are back in root dir
       process.chdir(rootDir);
 
-      if (!Files.existsSync(testFile)) {
-        // check if the file exists, if it does then we should create a file
-        // TODO: we should do this afterward, so we don't create empty files
-        Files.createFile(testFile);
+      let testFileContent = '';
+      if (Files.existsSync(testFileName)) {
+        testFileContent = Files.getExistingTestContent(testFileName);
       }
-      const testFileContent = Files.getExistingTestContent(testFile);
-      const [sourceFileName, htmlFile, correspondingFile] = Files.tsAndHtmlFromFile(file, filesInDirectory);
 
+      const [sourceFileName, htmlFileName, correspondingFile] = Files.tsAndHtmlFromFile(file, filesInDirectory);
       let filesToPass = [];
       if (sourceFileName && sourceFileName != correspondingFile) {
         filesToPass.push(sourceFileName);
       }
-      if (htmlFile && htmlFile != correspondingFile) {
-        filesToPass.push(htmlFile);
+      if (htmlFileName && htmlFileName != correspondingFile) {
+        filesToPass.push(htmlFileName);
       }
 
-      const diff = Files.getDiff(filesToPass);
-      const sourceFileContent: string = Files.getFileContent(sourceFileName);
-      const htmlFileContent = Files.getFileContent(htmlFile);
+      let sourceFileDiff = '';
+      if (CONFIG.generateChangedFilesOnly) {
+        sourceFileDiff = Files.getDiff(filesToPass);
+      }
+      const sourceFileContent = Files.getFileContent(sourceFileName);
+      const htmlFileContent = Files.getFileContent(htmlFileName);
 
-      let tempTestPaths: string[] = [];
       console.log(`Generating test for ${sourceFileName}`);
-      const response = await tester.generateTest(diff, sourceFileName, sourceFileContent, htmlFile, htmlFileContent, testFile, testFileContent);
-      try {
-        const tests = response.tests;
-        // TODO: fix the issue with which files so we can
-        tempTestPaths = Files.writeTestsToFiles(tests);
-      } catch (error) {
-        console.error({ message: 'Caught error trying to writeTestsToFiles', response, error });
-      }
+
+      const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
+      let tests: Record<string, string> = response.tests;
+      // Write the temporary test files, so we can test the generated tests
+      let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
       const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await tester.fixManyErrors(
         tempTestPaths,
-        diff,
+        sourceFileDiff,
         sourceFileName,
         sourceFileContent,
       );
@@ -99,15 +104,15 @@ export async function main() {
       console.log({ hasPassingTests, passedTests, tempTestPaths });
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
       const prettierConfig = Files.getPrettierConfig();
-      await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFile, hasPassingTests, prettierConfig);
+      await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, hasPassingTests, prettierConfig);
 
       //then we will need to delete all the temp test files.
       Files.deleteTempFiles(tempTestPaths);
 
       if (hasPassingTests) {
-        passingTests.push(testFile);
+        passingTests.push(testFileName);
       } else {
-        testsWithErrors.push(testFile);
+        testsWithErrors.push(testFileName);
       }
     }
   }
