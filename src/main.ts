@@ -17,7 +17,7 @@ export async function main() {
   if (filesFlagArray.length > 0) {
     console.log('Finding files within --file flag');
     filesFlagArray.forEach((filePath) => {
-      if (Files.existsSync(filePath)) {
+      if (!Files.existsSync(filePath)) {
         exitWithError(`${filePath} could not be found.`);
       }
     });
