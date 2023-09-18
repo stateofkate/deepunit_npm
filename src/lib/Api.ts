@@ -43,7 +43,7 @@ export class Api {
       }
       return response.data;
     } catch (error) {
-      if (((error as AxiosError).code = 'ECONNREFUSED')) {
+      if ((error as AxiosError).code == 'ECONNREFUSED') {
         exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);

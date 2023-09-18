@@ -66,6 +66,7 @@ export abstract class Tester {
       passedTests: string[];
       failedTestErrors: { [key: string]: string };
     } = this.getTestResults(tempTestPaths);
+    console.log(`After attempt ${attempts} We have ${result.failedTests.length} tests failing and ${result.passedTests.length} tests passing`);
     while (attempts < maxFixFailingTestAttempts && result.failedTests.length > 0) {
       if (!result.failedTests) {
         return {
@@ -79,8 +80,8 @@ export abstract class Tester {
         const errorMessage: string = result.failedTestErrors[failedtestName];
         const testContent: string = Files.getExistingTestContent(failedtestName);
 
-        try {
-          const response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
+        const response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
+        if (response.fixedTest) {
           const fixedTestCode = response.fixedTest;
           if (fixedTestCode.trim() === '') {
             console.error('Got back an empty test, this should never happen.');
@@ -88,9 +89,8 @@ export abstract class Tester {
           }
           Files.writeFileSync(failedtestName, fixedTestCode);
           return failedtestName;
-        } catch (error) {
-          console.error(error);
         }
+        return null;
       });
 
       console.log(`Attempt ${attempts} of ${maxFixFailingTestAttempts} to fix errors for ${result.failedTests.join(', ')}`);
@@ -100,6 +100,7 @@ export abstract class Tester {
 
       attempts++;
       result = this.getTestResults(tempTestPaths);
+      console.log(`After attempt ${attempts} We have ${result.failedTests.length} tests failing and ${result.passedTests.length} tests passing`);
     }
     return {
       hasPassingTests: result.passedTests.length > 0,

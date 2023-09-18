@@ -9,7 +9,7 @@ export class JestTester extends Tester {
     let mustContain = 0;
     if (result.testResults) {
       for (const testResult of result.testResults) {
-        if (testResult.message.includes('Your test suite must contain at least one test.')) {
+        if (testResult.message?.includes('Your test suite must contain at least one test.')) {
           mustContain++;
         }
       }
