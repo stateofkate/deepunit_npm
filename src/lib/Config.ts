@@ -8,7 +8,6 @@ const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; //
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
-export const generateForAllFiles: boolean = true; // instead of grabbing list of files from last commit, recursively search all directories in the project for .ts or html files
 export const maxFixFailingTestAttempts = 7;
 export const rootDir = process.cwd();
 
@@ -29,14 +28,15 @@ class Config {
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
+  generateChangedFilesOnly = false;
 
   constructor() {
     this.detectWorkspaceDir();
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
-    this.detectTypescriptExtension();
 
+    this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getStringFromConfig('doProd') === 'true';
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
@@ -44,6 +44,7 @@ class Config {
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.version = process.env.npm_package_version ?? '0.0.0';
     this.includeFailingTests = Config.getStringFromConfig('includeFailingTests') != 'false';
+    this.generateChangedFilesOnly = Config.getStringFromConfig('generateChangedFilesOnly') == 'true';
   }
 
   // Find the where the package.json file is located
@@ -165,20 +166,6 @@ class Config {
         console.error('The current working director is ' + process.cwd());
         process.exit(1);
       }
-    }
-  }
-
-  // TODO: Should we support both tsx and ts?
-  private detectTypescriptExtension(): void {
-    const configTypescript = Config.getStringFromConfig('typescriptExtension');
-    if (configTypescript) {
-      this.typescriptExtension = configTypescript;
-    } else if (this.frontendFramework === 'react') {
-      this.typescriptExtension = '.tsx';
-    } else if (this.frontendFramework === 'angular') {
-      this.typescriptExtension = '.ts';
-    } else {
-      this.typescriptExtension = '.ts';
     }
   }
 

@@ -19,7 +19,7 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
   // only used if you are using a mono repo, ie. (src)
   "workspaceDir": "",
 
-  // Get password from justin@deepunit.ai, this is for approved alpha users only
+  // Get password from support@deepunit.ai, this is for approved alpha users only
   "password": "securepassword",
 
   // which directories you want to ignore, path is from the current working directory, or workspaceDir if specified above
@@ -29,7 +29,10 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
   "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"],
 
   // when all tests for a file fail, this option allows DeepUnitAI to save the failing tests to a file so that you fix them manually
-  "includeFailingTests": false
+  "includeFailingTests": false,
+
+  // test only the files that are changed from the HEAD branch
+  "generateChangedFilesOnly": false
 }
 ```
 
@@ -50,4 +53,4 @@ function example(): void {
 
 ## Contact
 
-If you have any questions, please contact `justin@deepunit.ai` for more details.
+If you have any questions, please contact `support@deepunit.ai` for more details.
