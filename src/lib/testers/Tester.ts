@@ -73,6 +73,7 @@ export abstract class Tester {
       passedTests: string[];
       failedTestErrors: { [key: string]: string };
     } = this.getTestResults(tempTestPaths);
+    console.log(`After attempt ${attempts} We have ${result.failedTests.length} tests failing and ${result.passedTests.length} tests passing`);
     while (attempts < maxFixFailingTestAttempts && result.failedTests.length > 0) {
       if (!result.failedTests) {
         return {
@@ -107,6 +108,7 @@ export abstract class Tester {
 
       attempts++;
       result = this.getTestResults(tempTestPaths);
+      console.log(`After attempt ${attempts} We have ${result.failedTests.length} tests failing and ${result.passedTests.length} tests passing`);
     }
     return {
       hasPassingTests: result.passedTests.length > 0,
