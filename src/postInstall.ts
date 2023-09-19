@@ -17,7 +17,7 @@ if (fs.existsSync(configPath) && !fs.existsSync(targetPath)) {
     }
   });
 } else if (!fs.existsSync(configPath)) {
-  console.error(`${configPath} does not exist in the current directory.`);
+  console.error(`${configPath} does not exist in the current directory ${process.cwd()}`);
 }
 
 // Check if package.json exists
@@ -35,17 +35,3 @@ if (fs.existsSync(packageJsonPath)) {
 } else {
   console.error(`${packageJsonPath} does not exist.`);
 }
-
-/*
-import fs from 'fs';
-const packagePath = '../../package.json';
-if (fs.existsSync(packagePath)) {
-  const packy = fs.readFileSync(packagePath);
-} else {
-  console.error('no packy');
-}
-console.error('instally woooooo');
-
-fs.writeFileSync('asfgsdfgsdgrwetghwrthwathaqty34tggsdgrwetghwrthwathaqty34tggsdgrwetghwrthwathaqty34tggsdgrwetghwrthwathaqty34tgq35reergerQ.ts', 'fgasfg');
-process.exit(1);
-*/
