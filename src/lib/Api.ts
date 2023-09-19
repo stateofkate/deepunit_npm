@@ -88,9 +88,10 @@ export class Api {
     return await this.post(ApiPaths.fixErrors, data);
   }
 
-  public static async recombineTests(testContents: string[], prettierConfig: Object | undefined) {
+  public static async recombineTests(testContents: string[], testFileContent: string, prettierConfig: Object | undefined) {
     let data: RecombineTestData = {
       testFiles: testContents,
+      testFileContent: testFileContent,
     };
 
     if (prettierConfig) {
