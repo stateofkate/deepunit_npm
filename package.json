@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
@@ -10,14 +10,11 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
     "test": "jest",
     "push": "npm run build && npm publish",
-    "postinstall": "node dist/postInstall.js"
-  },
-  "postinstall": {
-    "<othermodule>/file": "src/postInstall.ts"
+    "postinstall": "dist/postInstall.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "DeepUnit.AI",
+  "license": "http://deepunit.ai/license",
   "devDependencies": {
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.5",
@@ -28,8 +25,9 @@
   },
   "bin": "./dist/main.js",
   "files": [
-    "dist/main.js",
+    "dist/*",
     "dist/main.consts.js",
+    "dist/postInstall.js",
     "deepunit.config.json"
   ],
   "dependencies": {
