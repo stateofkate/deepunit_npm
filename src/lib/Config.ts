@@ -22,7 +22,7 @@ class Config {
   password: string = 'nonerequired';
   doProd: boolean = true;
   apiHost: string = '';
-  version: string = '';
+  version: string;
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
@@ -32,16 +32,25 @@ class Config {
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
+    this.detectVersion();
 
+    this.version = this.detectVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getStringFromConfig('doProd') === 'true';
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
-    this.version = process.env.npm_package_version ?? '0.0.0';
     this.includeFailingTests = Config.getStringFromConfig('includeFailingTests') != 'false';
     this.generateChangedFilesOnly = Config.getStringFromConfig('generateChangedFilesOnly') == 'true';
+  }
+  private detectVersion(): string {
+    if (process.env.npm_package_version) {
+      return (this.version = process.env.npm_package_version);
+    } else {
+      console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case
+      process.exit(1);
+    }
   }
 
   private detectProjectType(): void {
