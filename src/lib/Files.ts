@@ -6,9 +6,50 @@ import { exitWithError } from './utils';
 
 export class Files {
   public static getChangedFiles(): string[] {
-    const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
+    const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
+    const currentDir = process.cwd();
+    const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
+    const changedFilesCmd = `git -C ${gitRoot} diff --name-only HEAD~1 HEAD -- ${relativePath ? relativePath + '/' : ''}`;
     const output = execSync(changedFilesCmd).toString();
-    return output.split('\n');
+    console.log('output');
+    console.log(output);
+    const files = output.split('\n').filter(Boolean); // filter out empty strings
+    //if we are not in the root of the git repo we must truncate the path leading to the working directory
+
+    const filteredFiles = this.filterExtensions(files);
+    const filesWithCorrectedPaths = this.findPathFromCurrentDirectory(filteredFiles);
+    console.log(filesWithCorrectedPaths);
+    return filesWithCorrectedPaths;
+  }
+  public static findPathFromCurrentDirectory(files: string[]): string[] {
+    const currentDir = process.cwd();
+    const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
+    const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
+
+    return files.map((file) => {
+      return file.replace(`${relativePath}/`, '');
+    });
+  }
+
+  public static filterExtensions(files: string[]): string[] {
+    let filteredFiles: string[] = [];
+    for (const file of files) {
+      if (
+        (file.endsWith('.ts') || file.endsWith('.js')) &&
+        !file.endsWith('.test.ts') &&
+        !file.endsWith('.test.tsx') &&
+        !file.endsWith('.test.js') &&
+        !file.endsWith('.spec.ts') &&
+        !file.endsWith('.spec.js') &&
+        !file.endsWith('.consts.ts') &&
+        !file.endsWith('.d.ts') &&
+        !file.endsWith('.module.ts') &&
+        !file.endsWith('.module.js')
+      ) {
+        filteredFiles.push(file);
+      }
+    }
+    return filteredFiles;
   }
 
   public static getDiff(files: string[]): string {
@@ -90,7 +131,7 @@ export class Files {
 
         if (stat.isDirectory()) {
           walk(fullPath);
-        } else if (extensions.some((ext) => file.endsWith(ext)) && !ignoreExtensions.some((ext) => file.endsWith(ext))) {
+        } else if (Files.filterExtensions([file])) {
           matches.push(fullPath);
         }
       }
@@ -110,13 +151,14 @@ export class Files {
    *   list: List of file paths that are not within the ignoreDirectories and do not match filenames in ignoredFiles.
    */
   public static filterFiles(files: string[]): string[] {
+    const filesWithValidExtensions = this.filterExtensions(files);
     const filteredFiles: string[] = [];
 
     const combinedIgnoredDirs = CONFIG.ignoredDirectories.map((dir) => path.join(CONFIG.workspaceDir, dir));
 
     const combinedIgnoredFiles = CONFIG.ignoredFiles.map((file) => path.join(CONFIG.workspaceDir, file));
 
-    for (const file of files) {
+    for (const file of filesWithValidExtensions) {
       if (!combinedIgnoredDirs.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !combinedIgnoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
       }
