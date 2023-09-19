@@ -1,4 +1,4 @@
-# DeepUnitAI
+# DeepUnit.AI
 
 Generating Tested Unit Tests with Artificial Intelligence.
 
@@ -28,7 +28,7 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
   // which files you want to ignore, path is from the current working directory, or workspaceDir if specified above
   "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"],
 
-  // when all tests for a file fail, this option allows DeepUnitAI to save the failing tests to a file so that you fix them manually
+  // when all tests for a file fail, this option allows DeepUnit.AI to save the failing tests to a file so that you fix them manually
   "includeFailingTests": false,
 
   // test only the files that are changed from the HEAD branch
@@ -42,7 +42,7 @@ To choose what to test, you have a few options
 
 1. Use the `ignoredDirectories` or `ignoredFiles` to ignore files, other than ones you want to test
 2. DeepUnit will automatically not test any functions that are already tested in the corresponding test files, if you are having a hard time getting it to generate a function, confirm it is not already used anywhere in the test file.
-3. If you have a function or method you would like DeepUnitAI not to test, add `// @deep-unit-ignore-next-line` in front of the function, like so:
+3. If you have a function or method you would like DeepUnit.AI not to test, add `// @deep-unit-ignore-next-line` in front of the function, like so:
 
 ```typescript
 // @deep-unit-ignore-next-line

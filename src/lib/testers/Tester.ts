@@ -14,7 +14,7 @@ export abstract class Tester {
     return testFileName;
   }
 
-  public async recombineTests(tempTestPaths: string[], finalizedTestPath: string, hasPassingTests: boolean, prettierConfig: Object | undefined) {
+  public async recombineTests(tempTestPaths: string[], finalizedTestPath: string, testFileContent: string, hasPassingTests: boolean, prettierConfig: Object | undefined) {
     if (!hasPassingTests && !CONFIG.includeFailingTests) {
       return;
     }
@@ -25,7 +25,7 @@ export abstract class Tester {
       testFiles.push(content);
     }
 
-    const responseData = await Api.recombineTests(testFiles, prettierConfig);
+    const responseData = await Api.recombineTests(testFiles, testFileContent, prettierConfig);
     if (responseData && responseData.testContent) {
       let fileContent = `// DeepUnit.AI generated these tests on ${new Date()}\n`;
       if (!hasPassingTests) {
