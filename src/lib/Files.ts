@@ -17,6 +17,7 @@ export class Files {
     //if we are not in the root of the git repo we must truncate the path leading to the working directory
 
     const filteredFiles = this.filterExtensions(files);
+    console.log(filteredFiles);
     const filesWithCorrectedPaths = this.findPathFromCurrentDirectory(filteredFiles);
     console.log(filesWithCorrectedPaths);
     return filesWithCorrectedPaths;
@@ -26,9 +27,13 @@ export class Files {
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
 
-    return files.map((file) => {
-      return file.replace(`${relativePath}/`, '');
-    });
+    if (relativePath) {
+      return files.map((file) => {
+        return file.replace(`${relativePath}/`, '');
+      });
+    } else {
+      return files;
+    }
   }
 
   public static filterExtensions(files: string[]): string[] {
