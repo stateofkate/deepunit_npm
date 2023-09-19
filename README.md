@@ -15,17 +15,15 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 {
   // what typescript extension you are using (only allowed one extension right now)
   "typescriptExtension": ".ts",
-
-  // only used if you are using a mono repo, ie. (src)
-  "workspaceDir": "",
+  
 
   // Get password from support@deepunit.ai, this is for approved alpha users only
   "password": "securepassword",
 
-  // which directories you want to ignore, path is from the current working directory, or workspaceDir if specified above
+  // which directories you want to ignore, path is from the current working directory
   "ignoredDirectories": [],
 
-  // which files you want to ignore, path is from the current working directory, or workspaceDir if specified above
+  // which files you want to ignore, path is from the current working directory
   "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"],
 
   // when all tests for a file fail, this option allows DeepUnit.AI to save the failing tests to a file so that you fix them manually

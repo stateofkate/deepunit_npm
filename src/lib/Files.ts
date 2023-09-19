@@ -115,7 +115,7 @@ export class Files {
 
   public static findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
     /**
-      Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
+      Find all files in all nested directories with the given extensions and ignore files with the given ignoreExtensions.
   
           Parameters:
       extensions (list): List of extensions to match.
@@ -125,7 +125,7 @@ export class Files {
       list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
       */
     const matches: string[] = [];
-    const walkDir = CONFIG.workspaceDir || 'src'; // replace with actual workspaceDir if needed
+    const walkDir = 'src';
 
     function walk(directory: string) {
       const files = fs.readdirSync(directory);
@@ -159,12 +159,8 @@ export class Files {
     const filesWithValidExtensions = this.filterExtensions(files);
     const filteredFiles: string[] = [];
 
-    const combinedIgnoredDirs = CONFIG.ignoredDirectories.map((dir) => path.join(CONFIG.workspaceDir, dir));
-
-    const combinedIgnoredFiles = CONFIG.ignoredFiles.map((file) => path.join(CONFIG.workspaceDir, file));
-
     for (const file of filesWithValidExtensions) {
-      if (!combinedIgnoredDirs.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !combinedIgnoredFiles.some((ignoreFile) => file == ignoreFile)) {
+      if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
       }
     }
@@ -287,14 +283,6 @@ export class Files {
     const prettierFileContent = Files.readJsonFile(prettierDefaultFilePath);
     if (prettierFileContent) {
       return prettierFileContent;
-    }
-
-    if (CONFIG.workspaceDir) {
-      const scopedPrettierFilePath = path.join(CONFIG.workspaceDir, prettierDefaultFilePath);
-      const scopedFileContent = Files.readJsonFile(scopedPrettierFilePath);
-      if (scopedFileContent) {
-        return scopedFileContent;
-      }
     }
 
     return undefined;

@@ -1,7 +1,6 @@
 {
   "frontendFramework": "node",
   "typescriptExtension": ".ts",
-  "workspaceDir": "",
   "doProd": true,
   "password": "notrequired",
   "generateChangedFilesOnly": true

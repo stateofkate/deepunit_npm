@@ -20,17 +20,7 @@ export class JestTester extends Tester {
     return 0 === result.numFailedTestSuites;
   }
 
-  public runTests(filePaths: string[]): any {
-    let relativePathArray: string[] = [];
-    if (CONFIG.workspaceDir) {
-      process.chdir(CONFIG.workspaceDir);
-      for (let i = 0; i < filePaths.length; i++) {
-        let relativePath = path.relative(CONFIG.workspaceDir, filePaths[i]);
-        relativePathArray.push(relativePath);
-      }
-    } else {
-      relativePathArray = filePaths;
-    }
+  public runTests(relativePathArray: string[]): any {
     const formattedPaths = relativePathArray.join(' ');
     let result;
     try {
