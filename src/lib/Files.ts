@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG, rootDir } from './Config';
+import { CONFIG } from './Config';
 import { exitWithError } from './utils';
 
 export class Files {
@@ -11,15 +11,10 @@ export class Files {
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
     const changedFilesCmd = `git -C ${gitRoot} diff --name-only HEAD~1 HEAD -- ${relativePath ? relativePath + '/' : ''}`;
     const output = execSync(changedFilesCmd).toString();
-    console.log('output');
-    console.log(output);
     const files = output.split('\n').filter(Boolean); // filter out empty strings
-    //if we are not in the root of the git repo we must truncate the path leading to the working directory
 
     const filteredFiles = this.filterExtensions(files);
-    console.log(filteredFiles);
     const filesWithCorrectedPaths = this.findPathFromCurrentDirectory(filteredFiles);
-    console.log(filesWithCorrectedPaths);
     return filesWithCorrectedPaths;
   }
   public static findPathFromCurrentDirectory(files: string[]): string[] {
@@ -278,7 +273,6 @@ export class Files {
 
   public static getPrettierConfig(): Object | undefined {
     const prettierDefaultFilePath = '.prettierrc';
-    process.chdir(rootDir);
 
     const prettierFileContent = Files.readJsonFile(prettierDefaultFilePath);
     if (prettierFileContent) {

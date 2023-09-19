@@ -8,8 +8,7 @@ const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; //
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
-export const maxFixFailingTestAttempts = 7;
-export const rootDir = process.cwd();
+export const maxFixFailingTestAttempts = 2;
 
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
@@ -46,7 +45,6 @@ class Config {
   }
 
   private detectProjectType(): void {
-    process.chdir(rootDir);
     const configValue = Config.getStringFromConfig('frontendFramework');
     if (configValue) {
       this.frontendFramework = configValue;
