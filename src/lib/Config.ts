@@ -32,9 +32,8 @@ class Config {
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
-    this.detectVersion();
 
-    this.version = this.detectVersion();
+    this.version = this.getVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getStringFromConfig('doProd') === 'true';
@@ -44,9 +43,11 @@ class Config {
     this.includeFailingTests = Config.getStringFromConfig('includeFailingTests') != 'false';
     this.generateChangedFilesOnly = Config.getStringFromConfig('generateChangedFilesOnly') == 'true';
   }
-  private detectVersion(): string {
+  private getVersion(): string {
+    console.log('process.env.npm_package_version');
+    console.log(process.env.npm_package_version);
     if (process.env.npm_package_version) {
-      return (this.version = process.env.npm_package_version);
+      return process.env.npm_package_version;
     } else {
       console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case
       process.exit(1);

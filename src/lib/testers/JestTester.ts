@@ -23,8 +23,8 @@ export class JestTester extends Tester {
   public runTests(relativePathArray: string[]): any {
     const formattedPaths = relativePathArray.join(' ');
     let result;
+    const command = `npx jest --json ${formattedPaths} --passWithNoTests`;
     try {
-      const command = `npx jest --json ${formattedPaths} --passWithNoTests`;
       result = execSync(command, { stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (error: any) {
       result = error;

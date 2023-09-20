@@ -10,7 +10,7 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
     "test": "jest",
     "push": "npm run prep && npm publish",
-    "prep": "rm -rf dist/* ; npm run build && chmod +x dist/postInstall.js && npm pack",
+    "tar": "rm -rf dist/* ; npm run build && chmod +x dist/postInstall.js && npm pack",
     "postinstall": "dist/postInstall.js"
   },
   "keywords": [],
