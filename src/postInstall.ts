@@ -35,3 +35,4 @@ if (fs.existsSync(packageJsonPath)) {
 } else {
   console.error(`${packageJsonPath} does not exist.`);
 }
+//todo: we need to check it package.jest.testRegex is set, if so we should use either .spec or .test when we give the files names

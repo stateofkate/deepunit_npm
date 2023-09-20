@@ -44,10 +44,10 @@ class Config {
     this.generateChangedFilesOnly = Config.getStringFromConfig('generateChangedFilesOnly') == 'true';
   }
   private getVersion(): string {
-    console.log('process.env.npm_package_version');
-    console.log(process.env.npm_package_version);
-    if (process.env.npm_package_version) {
-      return process.env.npm_package_version;
+    const packageJson = require('../../package.json');
+    const version = packageJson?.version;
+    if (version) {
+      return version;
     } else {
       console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case
       process.exit(1);
