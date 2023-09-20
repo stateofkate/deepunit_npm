@@ -8,14 +8,12 @@ const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; //
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
-export const maxFixFailingTestAttempts = 7;
-export const rootDir = process.cwd();
+export const maxFixFailingTestAttempts = 2;
 
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
  */
 class Config {
-  workspaceDir: string = '';
   frontendFramework: string = '';
   testExtension: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
@@ -24,62 +22,39 @@ class Config {
   password: string = 'nonerequired';
   doProd: boolean = true;
   apiHost: string = '';
-  version: string = '';
+  version: string;
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
-  generateChangedFilesOnly = false;
+  generateChangedFilesOnly = true;
 
   constructor() {
-    this.detectWorkspaceDir();
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
 
+    this.version = this.getVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getStringFromConfig('doProd') === 'true';
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
-    this.version = process.env.npm_package_version ?? '0.0.0';
     this.includeFailingTests = Config.getStringFromConfig('includeFailingTests') != 'false';
     this.generateChangedFilesOnly = Config.getStringFromConfig('generateChangedFilesOnly') == 'true';
   }
-
-  // Find the where the package.json file is located
-  /// If your package.json is not in the root directory set this to the directory it is located in.
-  // The autodetect Function will reset it to the root directory if package.json is not found in the directory specified
-
-  // TODO: this isn't right, we need the ability for the user to either select which folder they want to run ?????
-  detectWorkspaceDir(): void {
-    // go to the current working directory
-    process.chdir(rootDir);
-    // Check if the configuration file exists
-    let configWorkspaceDir = Config.getStringFromConfig('workspaceDir');
-    const packageJson = 'package.json';
-    let packageJsonPath = packageJson;
-    if (configWorkspaceDir) {
-      packageJsonPath = path.join(configWorkspaceDir, 'package.json');
-    }
-
-    if (configWorkspaceDir && fs.existsSync(packageJsonPath)) {
-      // If package.json exists, leave workspaceDir as it is
-      this.workspaceDir = configWorkspaceDir;
-      return;
-    } else if (fs.existsSync(packageJson)) {
-      // Looks like it wasn't in the config path, but is in the current working directory, reset workspaceDir
-      return;
+  private getVersion(): string {
+    const packageJson = require('../../package.json');
+    const version = packageJson?.version;
+    if (version) {
+      return version;
     } else {
-      console.error('Unable to find package.json at ' + packageJsonPath);
-      console.error('Current working directory is ' + process.cwd());
-      console.error('Please resolve the path and update the workspaceDir in deepunit.config.json');
+      console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case
       process.exit(1);
     }
   }
 
   private detectProjectType(): void {
-    process.chdir(rootDir);
     const configValue = Config.getStringFromConfig('frontendFramework');
     if (configValue) {
       this.frontendFramework = configValue;
@@ -87,12 +62,6 @@ class Config {
     }
     let angularJsonPath = 'angular.json';
     let packageJsonPath = 'package.json';
-
-    // If workspaceDir is not empty, join the path
-    if (this.workspaceDir) {
-      angularJsonPath = path.join(this.workspaceDir, 'angular.json');
-      packageJsonPath = path.join(this.workspaceDir, 'package.json');
-    }
 
     if (fs.existsSync(angularJsonPath)) {
       this.frontendFramework = 'angular';
@@ -120,13 +89,6 @@ class Config {
     let karmaConfigPath = 'karma.conf.js';
     let packageJsonPath = 'package.json';
 
-    // If workspaceDir is not empty, join the path
-    if (this.workspaceDir) {
-      jestConfigPath = path.join(this.workspaceDir, 'jest.config.js');
-      karmaConfigPath = path.join(this.workspaceDir, 'karma.conf.js');
-      packageJsonPath = path.join(this.workspaceDir, 'package.json');
-    }
-
     if (fs.existsSync(jestConfigPath)) {
       this.testingFramework = TestingFrameworks.jest;
       this.testExtension = '.test.ts';
@@ -145,7 +107,7 @@ class Config {
     }
   }
   private detectTsconfigTarget(): void {
-    let tsconfigPath: string | null = path.join(this.workspaceDir, 'tsconfig.json');
+    let tsconfigPath: string = 'tsconfig.json';
 
     while (tsconfigPath) {
       if (fs.existsSync(tsconfigPath)) {

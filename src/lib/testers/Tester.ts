@@ -80,7 +80,16 @@ export abstract class Tester {
         const errorMessage: string = result.failedTestErrors[failedtestName];
         const testContent: string = Files.getExistingTestContent(failedtestName);
 
-        const response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
+        let response;
+        try {
+          response = await Api.fixErrors(errorMessage, failedtestName, testContent, diff, sourceFileContent);
+        } catch (error) {
+          console.error(error);
+          return null;
+        }
+        if (response === undefined) {
+          return null;
+        }
         if (response.fixedTest) {
           const fixedTestCode = response.fixedTest;
           if (fixedTestCode.trim() === '') {

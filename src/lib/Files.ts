@@ -1,14 +1,55 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG, rootDir } from './Config';
+import { CONFIG } from './Config';
 import { exitWithError } from './utils';
 
 export class Files {
   public static getChangedFiles(): string[] {
-    const changedFilesCmd = 'git diff --name-only HEAD~1 HEAD';
+    const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
+    const currentDir = process.cwd();
+    const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
+    const changedFilesCmd = `git -C ${gitRoot} diff --name-only HEAD~1 HEAD -- ${relativePath ? relativePath + '/' : ''}`;
     const output = execSync(changedFilesCmd).toString();
-    return output.split('\n');
+    const files = output.split('\n').filter(Boolean); // filter out empty strings
+
+    const filteredFiles = this.filterExtensions(files);
+    const filesWithCorrectedPaths = this.findPathFromCurrentDirectory(filteredFiles);
+    return filesWithCorrectedPaths;
+  }
+  public static findPathFromCurrentDirectory(files: string[]): string[] {
+    const currentDir = process.cwd();
+    const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
+    const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
+
+    if (relativePath) {
+      return files.map((file) => {
+        return file.replace(`${relativePath}/`, '');
+      });
+    } else {
+      return files;
+    }
+  }
+
+  public static filterExtensions(files: string[]): string[] {
+    let filteredFiles: string[] = [];
+    for (const file of files) {
+      if (
+        (file.endsWith('.ts') || file.endsWith('.js')) &&
+        !file.endsWith('.test.ts') &&
+        !file.endsWith('.test.tsx') &&
+        !file.endsWith('.test.js') &&
+        !file.endsWith('.spec.ts') &&
+        !file.endsWith('.spec.js') &&
+        !file.endsWith('.consts.ts') &&
+        !file.endsWith('.d.ts') &&
+        !file.endsWith('.module.ts') &&
+        !file.endsWith('.module.js')
+      ) {
+        filteredFiles.push(file);
+      }
+    }
+    return filteredFiles;
   }
 
   public static getDiff(files: string[]): string {
@@ -69,7 +110,7 @@ export class Files {
 
   public static findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
     /**
-      Find all files in all nested directories within workspaceDir with the given extensions and ignore files with the given ignoreExtensions.
+      Find all files in all nested directories with the given extensions and ignore files with the given ignoreExtensions.
   
           Parameters:
       extensions (list): List of extensions to match.
@@ -79,7 +120,7 @@ export class Files {
       list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
       */
     const matches: string[] = [];
-    const walkDir = CONFIG.workspaceDir || 'src'; // replace with actual workspaceDir if needed
+    const walkDir = 'src';
 
     function walk(directory: string) {
       const files = fs.readdirSync(directory);
@@ -90,7 +131,7 @@ export class Files {
 
         if (stat.isDirectory()) {
           walk(fullPath);
-        } else if (extensions.some((ext) => file.endsWith(ext)) && !ignoreExtensions.some((ext) => file.endsWith(ext))) {
+        } else if (Files.filterExtensions([file])) {
           matches.push(fullPath);
         }
       }
@@ -110,14 +151,11 @@ export class Files {
    *   list: List of file paths that are not within the ignoreDirectories and do not match filenames in ignoredFiles.
    */
   public static filterFiles(files: string[]): string[] {
+    const filesWithValidExtensions = this.filterExtensions(files);
     const filteredFiles: string[] = [];
 
-    const combinedIgnoredDirs = CONFIG.ignoredDirectories.map((dir) => path.join(CONFIG.workspaceDir, dir));
-
-    const combinedIgnoredFiles = CONFIG.ignoredFiles.map((file) => path.join(CONFIG.workspaceDir, file));
-
-    for (const file of files) {
-      if (!combinedIgnoredDirs.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !combinedIgnoredFiles.some((ignoreFile) => file == ignoreFile)) {
+    for (const file of filesWithValidExtensions) {
+      if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
       }
     }
@@ -235,19 +273,10 @@ export class Files {
 
   public static getPrettierConfig(): Object | undefined {
     const prettierDefaultFilePath = '.prettierrc';
-    process.chdir(rootDir);
 
     const prettierFileContent = Files.readJsonFile(prettierDefaultFilePath);
     if (prettierFileContent) {
       return prettierFileContent;
-    }
-
-    if (CONFIG.workspaceDir) {
-      const scopedPrettierFilePath = path.join(CONFIG.workspaceDir, prettierDefaultFilePath);
-      const scopedFileContent = Files.readJsonFile(scopedPrettierFilePath);
-      if (scopedFileContent) {
-        return scopedFileContent;
-      }
     }
 
     return undefined;

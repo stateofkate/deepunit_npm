@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { TestingFrameworks } from './main.consts';
-import { CONFIG, rootDir } from './lib/Config';
+import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
@@ -43,6 +43,7 @@ export async function main() {
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
+  let serverNoResponse: (string | null)[] = [];
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
@@ -59,9 +60,6 @@ export async function main() {
       } else {
         return exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
-
-      // make sure we are back in root dir
-      process.chdir(rootDir);
 
       let testFileContent = '';
       if (Files.existsSync(testFileName)) {
@@ -87,8 +85,14 @@ export async function main() {
       console.log(`Generating test for ${sourceFileName}`);
 
       const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
-      if (!response.tests || isEmpty(response.tests)) {
-        exitWithError('Unable to continue, did not receive tests back from server.');
+      if (!response?.tests || isEmpty(response.tests)) {
+        serverNoResponse.push(sourceFileName);
+        console.log(`We did not receive a response for the server to generate a test for ${sourceFileName}`);
+        if (filesInDirectory.length > 0) {
+          continue;
+        } else {
+          break;
+        }
       }
       let tests: Record<string, string> = response.tests;
       // Write the temporary test files, so we can test the generated tests
@@ -117,7 +121,7 @@ export async function main() {
     }
   }
 
-  Printer.printSummary(failingTests, testsWithErrors, passingTests);
+  Printer.printSummary(failingTests, testsWithErrors, passingTests, serverNoResponse);
 
   process.exit(100);
 }
