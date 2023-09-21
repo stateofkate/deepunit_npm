@@ -34,8 +34,9 @@ export class Files {
   public static filterExtensions(files: string[]): string[] {
     let filteredFiles: string[] = [];
     for (const file of files) {
+      // TODO: make this a custom regex they can choose from
       if (
-        (file.endsWith('.ts') || file.endsWith('.js')) &&
+        (file.endsWith('.ts') || file.endsWith('.js') || file.endsWith('.tsx')) &&
         !file.endsWith('.test.ts') &&
         !file.endsWith('.test.tsx') &&
         !file.endsWith('.test.js') &&

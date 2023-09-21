@@ -24,7 +24,7 @@ export class Printer {
     this.printIndented(failingTests, '\nThe following tests were failing after your last commit. You will need to fix them before we can write new tests for you.:');
     this.printIndented(testsWithErrors, '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:');
     this.printIndented(passingTests, '\nWe successfully generated tests for the following files, and they pass without errors:');
-    this.printIndented(serverNoResponse, '\nWe did not get a test back from the server for the following files, please inform supper@deepunit.ai so we can fix this for you:');
+    this.printIndented(serverNoResponse, '\nWe did not get a test back from the server for the following files, please inform support@deepunit.ai so we can fix this for you:');
     console.log('\n');
   }
 
