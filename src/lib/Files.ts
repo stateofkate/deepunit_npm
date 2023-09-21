@@ -271,14 +271,65 @@ export class Files {
     return undefined;
   }
 
-  public static getPrettierConfig(): Object | undefined {
-    const prettierDefaultFilePath = '.prettierrc';
+  static getGitRootDirectory(): string | undefined {
+    try {
+      const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
+      return gitRoot;
+    } catch (error) {
+      console.error('Error while fetching Git root directory:', error);
+      return undefined;
+    }
+  }
 
-    const prettierFileContent = Files.readJsonFile(prettierDefaultFilePath);
-    if (prettierFileContent) {
-      return prettierFileContent;
+  static getPrettierConfig(): Object | undefined {
+    //fo now we only support .prettierrc because we ould need to parse all these other filetypes. We will wait for customers to request this.
+    //Prettier is available in so many places... this is close enough until someone complains we dont support their config: https://prettier.io/docs/en/configuration.html
+    const prettierConfigFiles = [
+      'package.json', // You'll need to manually check if package.json contains a "prettier" field
+      '.prettierrc',
+      '.prettierrc.json',
+      '.prettierrc.yml',
+      '.prettierrc.yaml',
+      '.prettierrc.js',
+      '.prettierrc.ts',
+      'prettier.config.js',
+      'prettier.config.ts',
+    ];
+
+    let directoriesToCheck = [process.cwd()];
+    const rootDirectory = this.getGitRootDirectory();
+    if (rootDirectory) {
+      directoriesToCheck.push(rootDirectory);
     }
 
+    for (const dir of directoriesToCheck) {
+      for (const configFile of prettierConfigFiles) {
+        const fullPath = path.join(dir, configFile);
+        if (fs.existsSync(fullPath)) {
+          if (configFile != '.prettierrc') {
+            console.error(`We currently do not support ${configFile}, please email support@deepunit.ai so we can add support for your configuration`);
+          } else {
+            const prettierFileContent = Files.readJsonFile(fullPath);
+            if (prettierFileContent) {
+              return prettierFileContent;
+            }
+          }
+          /* This code will work for other filetypes once we have a parser setup
+                   if (configFile === 'package.json') {
+            const packageJson = this.readJsonFile(fullPath);
+            if (packageJson && 'prettier' in packageJson && packageJson.prettier) {
+              return packageJson.prettier;
+            }
+          } else {
+            const prettierFileContent = Files.readJsonFile(fullPath);
+            if (prettierFileContent) {
+              return prettierFileContent;
+            }
+          }*/
+        }
+      }
+    }
+    console.error(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
     return undefined;
   }
 }
