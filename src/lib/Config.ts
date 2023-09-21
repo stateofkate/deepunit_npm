@@ -36,13 +36,26 @@ class Config {
     this.version = this.getVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
-    this.doProd = Config.getStringFromConfig('doProd') === 'true';
+    this.doProd = Config.getBoolFromConfig('doProd', true);
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
-    this.includeFailingTests = Config.getStringFromConfig('includeFailingTests') != 'false';
-    this.generateChangedFilesOnly = Config.getStringFromConfig('generateChangedFilesOnly') == 'true';
+    this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
+    this.generateChangedFilesOnly = Config.getBoolFromConfig('generateChangedFilesOnly', true);
   }
+
+  /**
+   * Get an boolean value from config (default to false, if the value is not exactly true, we also return false)
+   */
+  private static getBoolFromConfig(configProperty: string, defaultVal = false): boolean {
+    const configVal = Config.getStringFromConfig(configProperty);
+    if (configVal) {
+      return configVal == 'true';
+    }
+
+    return defaultVal;
+  }
+
   private getVersion(): string {
     const packageJson = require('../../package.json');
     const version = packageJson?.version;
