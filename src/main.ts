@@ -30,15 +30,13 @@ export async function main() {
     filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
   }
 
-  const filteredFileNames = Files.filterFiles(filesToWriteTestsFor);
-
   // if we didn't get any files, return error
-  if (filteredFileNames.length <= 0) {
+  if (filesToWriteTestsFor.length <= 0) {
     return exitWithError(`No files to test were found. Check your config is set right or you are using the --file flag correctly.`);
   }
 
-  Printer.printFilesToTest(filteredFileNames);
-  const filesByDirectory = Files.groupFilesByDirectory(filteredFileNames);
+  Printer.printFilesToTest(filesToWriteTestsFor);
+  const filesByDirectory = Files.groupFilesByDirectory(filesToWriteTestsFor);
 
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
