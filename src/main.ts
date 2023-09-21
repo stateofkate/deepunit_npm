@@ -105,7 +105,6 @@ export async function main() {
         sourceFileContent,
       );
 
-      console.log({ hasPassingTests, passedTests, tempTestPaths });
       //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
       const prettierConfig: Object | undefined = Files.getPrettierConfig();
       await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
