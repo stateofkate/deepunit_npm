@@ -65,6 +65,9 @@ export async function main() {
       let testFileContent = '';
       if (Files.existsSync(testFileName)) {
         testFileContent = Files.getExistingTestContent(testFileName);
+        if (testFileContent === null) {
+          continue;
+        }
       }
 
       const [sourceFileName, htmlFileName, correspondingFile] = Files.tsAndHtmlFromFile(file, filesInDirectory);

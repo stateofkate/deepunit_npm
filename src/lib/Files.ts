@@ -83,14 +83,14 @@ export class Files {
     }
   }
 
-  public static getExistingTestContent(file: string): string {
+  public static getExistingTestContent(file: string): string | null {
     let testContent: string = '';
     try {
       testContent = fs.readFileSync(file, 'utf-8');
     } catch (error) {
-      if (error instanceof Error) {
-        exitWithError('Unable to read file ' + file);
-      }
+      console.error(error);
+      console.error('Error reading the file, contact support@depunit.ai if this causes issues.');
+      return null;
     }
     return testContent;
   }
