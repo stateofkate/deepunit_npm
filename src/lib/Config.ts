@@ -2,6 +2,7 @@ import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
+import { exitWithError } from './utils';
 
 // HARDCODED CONFIG VALUES
 const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; // in order of importance
@@ -58,8 +59,7 @@ class Config {
     if (version) {
       return version;
     } else {
-      console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case
-      process.exit(1);
+      exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
     }
   }
 
@@ -129,13 +129,11 @@ class Config {
             tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;
           }
         } catch (error) {
-          console.log(error);
-          process.exit(1);
+          exitWithError(error);
         }
       } else {
         console.error('Error: unable to find tsconfig at ' + tsconfigPath);
-        console.error('The current working director is ' + process.cwd());
-        process.exit(1);
+        exitWithError('The current working directory is ' + process.cwd());
       }
     }
   }

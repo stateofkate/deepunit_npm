@@ -89,7 +89,7 @@ export class Files {
       testContent = fs.readFileSync(file, 'utf-8');
     } catch (error) {
       if (error instanceof Error) {
-        exitWithError('unable to read file ' + file);
+        exitWithError('Unable to read file ' + file);
       }
     }
     return testContent;

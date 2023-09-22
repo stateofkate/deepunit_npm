@@ -91,9 +91,7 @@ export async function main() {
       } else if (response.stateCode === StateCode.FileFullyTested) {
         alreadyTestedFiles.push(sourceFileName);
       } else if (response.stateCode === StateCode.WrongPassword) {
-        console.error(`Incorrect password. Please be sure it is configured correctly in deepunit.config.json. Current password: ${CONFIG.password}`);
-        console.error('Email support@deepunit.ai if you need help');
-        process.exit();
+        exitWithError(`Incorrect password. Please be sure it is configured correctly in deepunit.config.json. Current password: ${CONFIG.password}`);
       } else if (response.stateCode === StateCode.Success) {
         if (!response?.tests || isEmpty(response.tests)) {
           serverDidNotSendTests.push(sourceFileName);
