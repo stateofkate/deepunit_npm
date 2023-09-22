@@ -3,8 +3,8 @@ import { CONFIG, maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
 
 type FixManyErrorsResult = {
-  hasPassingTests: boolean;
   passedTests: { [key: string]: string[] };
+  failedTests: { [key: string]: string[] };
 };
 
 export type Tests = {
@@ -74,7 +74,10 @@ export abstract class Tester {
    * @param sourceFileContent
    */
   public async fixManyErrors(tempTestPaths: { [key: string]: string[] }, diff: string, tsFile: string | null, sourceFileContent: string): Promise<FixManyErrorsResult> {
-    const passingTests: { [key: string]: string[] } = {};
+    const finalResult: { passingTests: { [key: string]: string[] }; failedTests: { [key: string]: string[] } } = {
+      passingTests: {},
+      failedTests: {},
+    };
 
     for (const [testPart, testPaths] of Object.entries(tempTestPaths)) {
       let attempts = 0;
@@ -89,7 +92,7 @@ export abstract class Tester {
       while (attempts < maxFixFailingTestAttempts && result.failedTests.length > 0) {
         if (!result.failedTests) {
           // all tests are passing, assign it and move to next part of test file
-          passingTests[testPart] = result.passedTests;
+          finalResult.passingTests[testPart] = result.passedTests;
           continue;
         }
 
@@ -130,12 +133,13 @@ export abstract class Tester {
       }
 
       // assign whatever tests pass
-      passingTests[testPart] = result.passedTests;
+      finalResult.passingTests[testPart] = result.passedTests;
+      finalResult.failedTests[testPart] = result.failedTests;
     }
 
     return {
-      hasPassingTests: Object.values(passingTests).length > 0,
-      passedTests: passingTests,
+      passedTests: finalResult.passingTests,
+      failedTests: finalResult.failedTests,
     };
   }
 
