@@ -62,11 +62,13 @@ export async function main() {
         return exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
 
-      let testFileContent = '';
+      let testFileContent: string = '';
       if (Files.existsSync(testFileName)) {
-        testFileContent = Files.getExistingTestContent(testFileName);
+        const result: string | null = Files.getExistingTestContent(testFileName);
         if (testFileContent === null) {
           continue;
+        } else {
+          testFileContent = result as string;
         }
       }
 
@@ -104,7 +106,7 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await tester.fixManyErrors(
+        const { hasPassingTests, passedTests, failedTests }: { hasPassingTests: boolean; passedTests: string[] } = await tester.fixManyErrors(
           tempTestPaths,
           sourceFileDiff,
           sourceFileName,

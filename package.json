@@ -9,6 +9,8 @@
     "start": "ts-node src/main.ts",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
     "test": "jest",
+    "deleteTests": "find . -type f -name \"*.test.ts\" -exec rm -f {} \\;\n",
+    "deleteTempTests": "find . -type f -name \"*.deepunittemptest.test.ts\" -exec rm -f {} \\;\n",
     "push": "npm run prep && npm publish",
     "tar": "rm -rf dist/* ; npm run build && chmod +x dist/postInstall.js && npm pack",
     "postinstall": "dist/postInstall.js"

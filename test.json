@@ -1,0 +1,95 @@
+{
+  errorLevel: AxiosError: Request failed with status code 400
+  at settle (/Users/justinstrong/captain-hook/node_modules/axios/lib/core/settle.js:19:12)
+  at IncomingMessage.handleStreamEnd (/Users/justinstrong/captain-hook/node_modules/axios/lib/adapters/http.js:570:11)
+  at IncomingMessage.emit (node:events:525:35)
+  at IncomingMessage.emit (node:domain:489:12)
+  at endReadableNT (node:internal/streams/readable:1358:12)
+  at processTicksAndRejections (node:internal/process/task_queues:83:21) {
+  code: 'ERR_BAD_REQUEST',
+  config: {
+    transitional: [Object],
+    adapter: [Array],
+    transformRequest: [Array],
+    transformResponse: [Array],
+    timeout: 0,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: [Object],
+    validateStatus: [Function: validateStatus],
+    headers: [AxiosHeaders],
+    method: 'post',
+    url: 'http://localhost:8080/generate-test/new',
+    data: `{"frontendFramework":"typescript","testingFramework":"jest","scriptTarget":"es2016","version":"1.1.0","password":"iwouldbesurprisedifanyoneguessed","diffs":"diff --git a/src/lib/Config.ts b/src/lib/Config.ts\\nindex 8a1912b..9d4e3f5 100644\\n+++ b/src/lib/Config.ts\\n@@ -23 +23 @@ class Config {\\n+  doProd: boolean;\\n@@ -51,6 +51,2 @@ class Config {\\n+    const configVal = Config.getValueFromConfigFile(configProperty);\\n+    return typeof configVal === 'boolean' ? configVal : defaultVal;\\n","tsFile":{"src/lib/Config.ts":"import path from 'path';\\nimport * as fs from 'fs';\\nimport ts from 'typescript';\\nimport { TestingFrameworks } from '../main.consts';\\n\\n// HARDCODED CONFIG VALUES\\nconst configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; // in order of importance\\nconst prodBase = 'https://dumper.adaptable.app';\\nconst localHostBase = 'http://localhost:8080';\\n\\nexport const maxFixFailingTestAttempts = 2;\\n\\n/** Automatically Detected Project configs\\n * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect\\n */\\nclass Config {\\n  frontendFramework: string = '';\\n  testExtension: string = '';\\n  testingFramework: TestingFrameworks = TestingFrameworks.unknown;\\n  scriptTarget: string = '';\\n  typescriptExtension: string = '';\\n  password: string = 'nonerequired';\\n  doProd: boolean;\\n  apiHost: string = '';\\n  version: string;\\n  ignoredDirectories: string[] = [];\\n  ignoredFiles: string[] = [];\\n  includeFailingTests: boolean = true;\\n  generateChangedFilesOnly = true;\\n\\n  constructor() {\\n    this.detectProjectType();\\n    this.detectTsconfigTarget();\\n    this.detectTestFramework();\\n\\n    this.version = this.getVersion();\\n    this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';\\n    this.password = Config.getStringFromConfig('password') || 'nonerequired';\\n    this.doProd = Config.getBoolFromConfig('doProd', true);\\n    this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');\\n    this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');\\n    this.apiHost = this.doProd ? prodBase : localHostBase;\\n    this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);\\n    this.generateChangedFilesOnly = Config.getBoolFromConfig('generateChangedFilesOnly', true);\\n  }\\n\\n  /**\\n   * Get an boolean value from config (default to false, if the value is not exactly true, we also return false)\\n   */\\n  private static getBoolFromConfig(configProperty: string, defaultVal = false): boolean {\\n    const configVal = Config.getValueFromConfigFile(configProperty);\\n    return typeof configVal === 'boolean' ? configVal : defaultVal;\\n  }\\n\\n  private getVersion(): string {\\n    const packageJson = require('../../package.json');\\n    const version = packageJson?.version;\\n    if (version) {\\n      return version;\\n    } else {\\n      console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case\\n      process.exit(1);\\n    }\\n  }\\n\\n  private detectProjectType(): void {\\n    const configValue = Config.getStringFromConfig('frontendFramework');\\n    if (configValue) {\\n      this.frontendFramework = configValue;\\n      return;\\n    }\\n    let angularJsonPath = 'angular.json';\\n    let packageJsonPath = 'package.json';\\n\\n    if (fs.existsSync(angularJsonPath)) {\\n      this.frontendFramework = 'angular';\\n      return;\\n    } else if (fs.existsSync(packageJsonPath)) {\\n      let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));\\n      let dependencies = packageJson['dependencies'] || {};\\n      let devDependencies = packageJson['devDependencies'] || {};\\n      if ('react' in dependencies || 'react' in devDependencies) {\\n        this.frontendFramework = 'react';\\n        return;\\n      }\\n      if ('angular/common' in dependencies || 'angular/common' in devDependencies) {\\n        this.frontendFramework = 'angular';\\n        return;\\n      }\\n    }\\n    // Unable to find the framework\\n    console.log('WARNING: Unable to detect frontend framework, typescript extension');\\n    this.frontendFramework = 'unknown';\\n  }\\n\\n  private detectTestFramework(): void {\\n    let jestConfigPath = 'jest.config.js';\\n    let karmaConfigPath = 'karma.conf.js';\\n    let packageJsonPath = 'package.json';\\n\\n    if (fs.existsSync(jestConfigPath)) {\\n      this.testingFramework = TestingFrameworks.jest;\\n      this.testExtension = '.test.ts';\\n    } else if (fs.existsSync(karmaConfigPath)) {\\n      this.testingFramework = TestingFrameworks.jasmine;\\n      this.testExtension = '.spec.ts';\\n    } else if (fs.existsSync(packageJsonPath)) {\\n      let fileContent = fs.readFileSync(packageJsonPath, 'utf8');\\n      if (fileContent.includes('jest')) {\\n        this.testingFramework = TestingFrameworks.jest;\\n        this.testExtension = '.test.ts';\\n      } else if (fileContent.includes('jasmine-core')) {\\n        this.testingFramework = TestingFrameworks.jasmine;\\n        this.testExtension = '.spec.ts';\\n      }\\n    }\\n  }\\n  private detectTsconfigTarget(): void {\\n    let tsconfigPath: string = 'tsconfig.json';\\n\\n    while (tsconfigPath) {\\n      if (fs.existsSync(tsconfigPath)) {\\n        let contents: string = fs.readFileSync(tsconfigPath, 'utf8');\\n        try {\\n          let tsconfigJson = ts.parseConfigFileTextToJson('', contents);\\n          this.scriptTarget = tsconfigJson.config?.compilerOptions?.target ? tsconfigJson.config?.compilerOptions?.target : undefined;\\n          if (tsconfigPath != null) {\\n            // @ts-ignore\\n            tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;\\n          }\\n        } catch (error) {\\n          console.log(error);\\n          process.exit(1);\\n        }\\n      } else {\\n        console.error('Error: unable to find tsconfig at ' + tsconfigPath);\\n        console.error('The current working director is ' + process.cwd());\\n        process.exit(1);\\n      }\\n    }\\n  }\\n\\n  /**\\n   * Get an array value from config (supports all sub-types of array)\\n   */\\n  public static getArrayFromConfig(configProperty: string): string[] {\\n    const configVal = Config.getValueFromConfigFile(configProperty);\\n    if (configVal && Array.isArray(configVal)) {\\n      return configVal;\\n    }\\n\\n    return [];\\n  }\\n\\n  /**\\n   * Get an string value from config (even if the value is something else, we convert to string)\\n   */\\n  public static getStringFromConfig(configProperty: string): string {\\n    const configVal = Config.getValueFromConfigFile(configProperty);\\n    if (configVal) {\\n      return configVal.toString();\\n    }\\n\\n    return '';\\n  }\\n\\n  /**\\n   * HELPER FUNCTION: Get the json value from config\\n   */\\n  private static getValueFromConfigFile(configProperty: string): unknown {\\n    for (let configPath of configFilePaths) {\\n      if (fs.existsSync(configPath)) {\\n        let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));\\n\\n        if (configProperty in config) {\\n          let configValue = config[configProperty];\\n          return configValue;\\n        }\\n      }\\n    }\\n  }\\n}\\n\\nexport const CONFIG = new Config();\\n"},"testFile":{"src/lib/Config.deepunitai.test.ts":"// DeepUnit.AI generated these tests on Thu Sep 21 2023 02:23:59 GMT-0700 (Pacific Daylight Time)\\n// NOTICE: Tests in this file DID NOT PASS but are left here so you can edit them\\n// To disable this feature, add \\"includeFailingTests\\": false to the deepunit.config.json.\\n\\nimport * as fs from 'fs';\\nimport path from 'path';\\nimport ts from 'typescript';\\nimport { getVersion, Config, CONFIG, getValueFromConfigFile } from './Config';\\nimport { TestingFrameworks } from '../main.consts';\\nimport { existsSync, readFileSync } from 'fs';\\nimport { join } from 'path';\\n// We are writing tests for the getVersion function in the Config.ts file\\n// This function reads the version information from the package.json file and returns it\\n// If version information is not available, it logs an error message and terminates the process\\n// We want to make sure that the function correctly reads the package.json file and returns the version\\n// And, in case the version is not available, it should log an error message and terminate the process\\ndescribe('getVersion', function () {\\n  const packageJson = require('../../package.json');\\n  require('../../package.json');\\n  const version = packageJson?.version;\\n  let config: typeof Config;\\n  // Type has to be 'typeof Config' as Config is a const.\\n  beforeEach(() => {\\n    config = Config; // Assignment is direct as Config is a const.\\n  });\\n  let config: Config;\\n  beforeEach(() => {\\n    config = new Config();\\n  });\\n  const TestingFrameworks: ITestingFrameworks = {\\n    jest: 'jest',\\n    jasmine: 'jasmine',\\n    unknown: 'unknown',\\n  };\\n  const localHostBase = 'localhost';\\n  const prodBase = 'prod.host.com';\\n  const configFilePaths = ['deepunit.config.json'];\\n  let jestConfigPath = 'jest.config.js';\\n  let karmaConfigPath = 'karma.conf.js';\\n  let packageJsonPath = 'package.json';\\n  let fileContent = fs.readFileSync(packageJsonPath, 'utf8');\\n  // Reset all mocks before each test\\n  beforeEach(() => {\\n    jest.resetAllMocks();\\n  });\\n  export const CONFIG = new Config();\\n  beforeEach(() => {\\n    // This runs before each test\\n    // We instantiate a new Config object before each test to ensure isolation\\n    config = new Config();\\n  });\\n  afterEach(() => {\\n    // This runs after each test\\n    // We clear all jest mocks to ensure isolation between tests\\n    jest.clearAllMocks();\\n  });\\n  beforeEach(() => {\\n    config = Config;\\n  });\\n  afterEach(() => {\\n    jest.clearAllMocks();\\n  });\\n  beforeEach(() => {\\n    // This runs before each test\\n    // We instantiate a new Config object before each test to ensure isolation\\n    config = Config;\\n `... 11248 more characters
+},
+  request: ClientRequest {
+  _events: [Object: null prototype],
+  _eventsCount: 7,
+  _maxListeners: undefined,
+  outputData: [],
+  outputSize: 0,
+  writable: true,
+  destroyed: false,
+  _last: true,
+  chunkedEncoding: false,
+  shouldKeepAlive: false,
+  maxRequestsOnConnectionReached: false,
+  _defaultKeepAlive: true,
+  useChunkedEncodingByDefault: true,
+  sendDate: false,
+  _removedConnection: false,
+  _removedContLen: false,
+  _removedTE: false,
+  _contentLength: null,
+  _hasBody: true,
+  _trailer: '',
+  finished: true,
+  _headerSent: true,
+  _closed: false,
+  socket: [Socket],
+  _header: 'POST /generate-test/new HTTP/1.1\r\n' +
+  'Accept: application/json, text/plain, */*\r\n' +
+  'Content-Type: application/json\r\n' +
+  'User-Agent: axios/1.4.0\r\n' +
+  'Content-Length: 21248\r\n' +
+  'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+  'Host: localhost:8080\r\n' +
+  'Connection: close\r\n' +
+  '\r\n',
+  _keepAliveTimeout: 0,
+  _onPendingData: [Function: nop],
+  agent: [Agent],
+  socketPath: undefined,
+  method: 'POST',
+  maxHeaderSize: undefined,
+  insecureHTTPParser: undefined,
+  path: '/generate-test/new',
+  _ended: true,
+  res: [IncomingMessage],
+  aborted: false,
+  timeoutCb: null,
+  upgradeOrConnect: false,
+  parser: null,
+  maxHeadersCount: null,
+  reusedSocket: false,
+  host: 'localhost',
+  protocol: 'http:',
+  _redirectable: [Writable],
+[Symbol(kCapture)]: false,
+[Symbol(kNeedDrain)]: false,
+[Symbol(corked)]: 0,
+[Symbol(kOutHeaders)]: [Object: null prototype],
+[Symbol(kUniqueHeaders)]: null
+},
+response: {
+status: 400,
+statusText: 'Bad Request',
+headers: [AxiosHeaders],
+config: [Object],
+request: [ClientRequest],
+data: [Object]
+}
+}
+}

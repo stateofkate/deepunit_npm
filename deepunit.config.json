@@ -2,5 +2,5 @@
   "frontendFramework": "node",
   "typescriptExtension": ".ts",
   "password": "notrequired",
-  "generateChangedFilesOnly": true
+  "generateChangedFilesOnly": false
 }

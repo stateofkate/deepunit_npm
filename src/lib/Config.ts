@@ -60,6 +60,7 @@ class Config {
       return version;
     } else {
       exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
+      return ''; //Typescrip wants a return even tho we are going to process.exit()
     }
   }
 
@@ -129,7 +130,8 @@ class Config {
             tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;
           }
         } catch (error) {
-          exitWithError(error);
+          console.error(error);
+          exitWithError('Unable to read the tsconfig');
         }
       } else {
         console.error('Error: unable to find tsconfig at ' + tsconfigPath);
