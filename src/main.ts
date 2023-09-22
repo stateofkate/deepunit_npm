@@ -98,7 +98,7 @@ export async function main() {
       } else if (response.stateCode === StateCode.Success) {
         if (!response?.tests || isEmpty(response.tests)) {
           serverDidNotSendTests.push(sourceFileName);
-          console.error(`We did not receive a response form the server to generate a test for ${sourceFileName}. This should never happen`);
+          console.error(`We did not receive a response from the server to generate a test for ${sourceFileName}. This should never happen`);
         }
         let tests: Record<string, string> = response.tests;
         // Write the temporary test files, so we can test the generated tests
