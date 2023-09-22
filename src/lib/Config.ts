@@ -20,7 +20,7 @@ class Config {
   scriptTarget: string = '';
   typescriptExtension: string = '';
   password: string = 'nonerequired';
-  doProd: boolean = true;
+  doProd: boolean;
   apiHost: string = '';
   version: string;
   ignoredDirectories: string[] = [];
@@ -48,12 +48,8 @@ class Config {
    * Get an boolean value from config (default to false, if the value is not exactly true, we also return false)
    */
   private static getBoolFromConfig(configProperty: string, defaultVal = false): boolean {
-    const configVal = Config.getStringFromConfig(configProperty);
-    if (configVal) {
-      return configVal == 'true';
-    }
-
-    return defaultVal;
+    const configVal = Config.getValueFromConfigFile(configProperty);
+    return typeof configVal === 'boolean' ? configVal : defaultVal;
   }
 
   private getVersion(): string {
