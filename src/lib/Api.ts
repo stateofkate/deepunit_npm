@@ -42,12 +42,12 @@ export class Api {
         throw new Error(response.data.error);
       }
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       if ((error as AxiosError).code == 'ECONNREFUSED') {
         exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);
-      return undefined;
+      return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
     }
   }
 
