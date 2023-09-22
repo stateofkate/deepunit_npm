@@ -2,7 +2,7 @@ import { Api } from '../Api';
 import { CONFIG, maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
 
-type FixManyErrorsResult = {
+export type FixManyErrorsResult = {
   hasPassingTests: boolean;
   failedTests: string[];
   passedTests: string[];

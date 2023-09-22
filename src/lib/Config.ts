@@ -4,8 +4,9 @@ import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
 import { exitWithError } from './utils';
 
+const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
-const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; // in order of importance
+const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
@@ -28,11 +29,13 @@ class Config {
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
   generateChangedFilesOnly = true;
+  isDevBuild: boolean = false;
 
   constructor() {
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
+    this.determineDevBuild();
 
     this.version = this.getVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
@@ -92,6 +95,12 @@ class Config {
     // Unable to find the framework
     console.log('WARNING: Unable to detect frontend framework, typescript extension');
     this.frontendFramework = 'unknown';
+  }
+
+  private determineDevBuild() {
+    if (fs.existsSync(devConfig)) {
+      this.isDevBuild = true;
+    }
   }
 
   private detectTestFramework(): void {
