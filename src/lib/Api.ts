@@ -17,7 +17,12 @@ enum ApiPaths {
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
 }
-
+export enum StateCode {
+  'Success' = 0,
+  'WrongPassword' = 1,
+  'FileNotSupported' = 2,
+  'FileFullyTested' = 3,
+}
 const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;

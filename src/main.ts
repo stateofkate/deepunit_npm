@@ -7,6 +7,7 @@ import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
+import { StateCode } from './lib/Api';
 
 export async function main() {
   Printer.printIntro();
@@ -41,7 +42,9 @@ export async function main() {
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
-  let serverNoResponse: (string | null)[] = [];
+  let unsupportedFiles: (string | null)[] = [];
+  let alreadyTestedFiles: (string | null)[] = [];
+  let serverDidNotSendTests: (string | null)[] = [];
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
@@ -83,42 +86,47 @@ export async function main() {
       console.log(`Generating test for ${sourceFileName}`);
 
       const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
-      if (!response?.tests || isEmpty(response.tests)) {
-        serverNoResponse.push(sourceFileName);
-        console.log(`We did not receive a response for the server to generate a test for ${sourceFileName}`);
-        if (filesInDirectory.length > 0) {
-          continue;
-        } else {
-          break;
+      if (response.stateCode === StateCode.FileNotSupported) {
+        unsupportedFiles.push(sourceFileName);
+      } else if (response.stateCode === StateCode.FileFullyTested) {
+        alreadyTestedFiles.push(sourceFileName);
+      } else if (response.stateCode === StateCode.WrongPassword) {
+        console.error(`Incorrect password. Please be sure it is configured correctly in deepunit.config.json. Current password: ${CONFIG.password}`);
+        console.error('Email support@deepunit.ai if you need help');
+        process.exit();
+      } else if (response.stateCode === StateCode.Success) {
+        if (!response?.tests || isEmpty(response.tests)) {
+          serverDidNotSendTests.push(sourceFileName);
+          console.error(`We did not receive a response form the server to generate a test for ${sourceFileName}. This should never happen`);
         }
-      }
-      let tests: Record<string, string> = response.tests;
-      // Write the temporary test files, so we can test the generated tests
-      let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
+        let tests: Record<string, string> = response.tests;
+        // Write the temporary test files, so we can test the generated tests
+        let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-      const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await tester.fixManyErrors(
-        tempTestPaths,
-        sourceFileDiff,
-        sourceFileName,
-        sourceFileContent,
-      );
+        const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await tester.fixManyErrors(
+          tempTestPaths,
+          sourceFileDiff,
+          sourceFileName,
+          sourceFileContent,
+        );
 
-      //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-      const prettierConfig: Object | undefined = Files.getPrettierConfig();
-      await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
+        //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
+        const prettierConfig: Object | undefined = Files.getPrettierConfig();
+        await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
 
-      //then we will need to delete all the temp test files.
-      Files.deleteTempFiles(tempTestPaths);
+        //then we will need to delete all the temp test files.
+        Files.deleteTempFiles(tempTestPaths);
 
-      if (hasPassingTests) {
-        passingTests.push(testFileName);
-      } else {
-        testsWithErrors.push(testFileName);
+        if (hasPassingTests) {
+          passingTests.push(testFileName);
+        } else {
+          testsWithErrors.push(testFileName);
+        }
       }
     }
   }
 
-  Printer.printSummary(failingTests, testsWithErrors, passingTests, serverNoResponse);
+  Printer.printSummary(failingTests, testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
 
   process.exit(100);
 }
