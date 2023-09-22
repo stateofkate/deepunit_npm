@@ -14,7 +14,7 @@ export type FixErrorsData = {
 };
 
 export type RecombineTestData = {
-  testFiles: string[];
+  testFiles: { [key: string]: string[] };
   prettierConfig?: Object;
   testFileContent: string;
 };

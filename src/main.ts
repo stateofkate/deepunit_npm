@@ -92,11 +92,11 @@ export async function main() {
           break;
         }
       }
-      let tests: Record<string, string> = response.tests;
+      let tests = response.tests;
       // Write the temporary test files, so we can test the generated tests
-      let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
+      let tempTestPaths: { [key: string]: string[] } = Files.writeTestsToFiles(tests);
 
-      const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: string[] } = await tester.fixManyErrors(
+      const { hasPassingTests, passedTests }: { hasPassingTests: boolean; passedTests: { [key: string]: string[] } } = await tester.fixManyErrors(
         tempTestPaths,
         sourceFileDiff,
         sourceFileName,
