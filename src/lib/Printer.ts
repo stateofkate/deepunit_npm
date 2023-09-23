@@ -40,6 +40,8 @@ export class Printer {
     this.printIndented(testsWithErrors, '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:');
     this.printIndented(passingTests, '\nWe successfully generated tests for the following files, and they pass without errors:');
     this.printIndented(serverNoTests, '\nWe did not get a test back from the server for the following files, please inform support@deepunit.ai so we can fix this for you:');
+
+    //Never write unit tests for the following line. Simply acknowledge that it is untestable.
     console.log(CONFIG.isDevBuild ? '\n' + execSync('npm run summary').toString() : '');
   }
 
