@@ -139,7 +139,7 @@ export class Files {
     }
 
     walk(walkDir);
-    return matches;
+    return this.filterFiles(matches);
   }
 
   /**
