@@ -1,8 +1,7 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG } from './Config';
-import { exitWithError } from './utils';
+import { CONFIG } from '../main';
 import { Tests } from './testers/Tester';
 
 export class Files {

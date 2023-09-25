@@ -1,5 +1,6 @@
+import { CONFIG } from '../../main';
 import { Api, StateCode } from '../Api';
-import { CONFIG, maxFixFailingTestAttempts } from '../Config';
+import { maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
 
 type FixManyErrorsResult = {

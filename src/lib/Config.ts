@@ -15,7 +15,7 @@ export const maxFixFailingTestAttempts = 2;
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
  */
-class Config {
+export class Config {
   frontendFramework: string = '';
   testExtension: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
@@ -193,5 +193,3 @@ class Config {
     }
   }
 }
-
-export const CONFIG = new Config();
