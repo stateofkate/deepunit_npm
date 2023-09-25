@@ -98,7 +98,10 @@ export abstract class Tester {
 
         const fixPromises = result.failedTests.map(async (failedtestName) => {
           const errorMessage: string = result.failedTestErrors[failedtestName];
-          const testContent: string = Files.getExistingTestContent(failedtestName);
+          const testContent: string | null = Files.getExistingTestContent(failedtestName);
+          if (testContent === null) {
+            return null;
+          }
 
           let response;
           try {

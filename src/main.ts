@@ -5,8 +5,10 @@ import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
-import { Tester } from './lib/testers/Tester';
+import { FixManyErrorsResult, Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
+import { StateCode } from './lib/Api';
+import { execSync } from 'child_process';
 
 export async function main() {
   Printer.printIntro();
@@ -41,7 +43,9 @@ export async function main() {
   let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
-  let serverNoResponse: (string | null)[] = [];
+  let unsupportedFiles: (string | null)[] = [];
+  let alreadyTestedFiles: (string | null)[] = [];
+  let serverDidNotSendTests: (string | null)[] = [];
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
@@ -59,9 +63,14 @@ export async function main() {
         return exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
 
-      let testFileContent = '';
+      let testFileContent: string = '';
       if (Files.existsSync(testFileName)) {
-        testFileContent = Files.getExistingTestContent(testFileName);
+        const result: string | null = Files.getExistingTestContent(testFileName);
+        if (testFileContent === null) {
+          continue;
+        } else {
+          testFileContent = result as string;
+        }
       }
 
       const [sourceFileName, htmlFileName, correspondingFile] = Files.tsAndHtmlFromFile(file, filesInDirectory);
@@ -83,39 +92,44 @@ export async function main() {
       console.log(`Generating test for ${sourceFileName}`);
 
       const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
-      if (!response?.tests || isEmpty(response.tests)) {
-        serverNoResponse.push(sourceFileName);
-        console.log(`We did not receive a response for the server to generate a test for ${sourceFileName}`);
-        if (filesInDirectory.length > 0) {
+      if (response.stateCode === StateCode.FileNotSupported) {
+        unsupportedFiles.push(sourceFileName);
+      } else if (response.stateCode === StateCode.FileFullyTested) {
+        alreadyTestedFiles.push(sourceFileName);
+      } else if (response.stateCode === StateCode.WrongPassword) {
+        exitWithError(`Incorrect password. Please be sure it is configured correctly in deepunit.config.json. Current password: ${CONFIG.password}`);
+      } else if (response.stateCode === StateCode.Success) {
+        if (!response?.tests || isEmpty(response.tests)) {
+          serverDidNotSendTests.push(sourceFileName);
+          console.error(`We did not receive a response from the server to generate a test for ${sourceFileName}. This should never happen`);
           continue;
-        } else {
-          break;
         }
-      }
-      let tests = response.tests;
-      // Write the temporary test files, so we can test the generated tests
-      let tempTestPaths: { [key: string]: string[] } = Files.writeTestsToFiles(tests);
+        let tests = response.tests;
+        // Write the temporary test files, so we can test the generated tests
+        let tempTestPaths: { [key: string]: string[] } = Files.writeTestsToFiles(tests);
 
-      const { failedTests, passedTests } = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
+        const { failedTests, passedTests } = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
 
-      //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-      const prettierConfig: Object | undefined = Files.getPrettierConfig();
-      const hasPassingTests = Object.values(passedTests).length > 0;
-      await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
+        //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
+        const prettierConfig: Object | undefined = Files.getPrettierConfig();
+        const hasPassingTests = Object.values(passedTests).length > 0;
+        await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
 
-      //then we will need to delete all the temp test files.
-      Files.deleteTempFiles(tempTestPaths);
+        //then we will need to delete all the temp test files.
+        Files.deleteTempFiles(CONFIG.isDevBuild ? failedTests : tempTestPaths);
 
-      if (hasPassingTests) {
-        passingTests.push(testFileName);
+        if (hasPassingTests) {
+          passingTests.push(testFileName);
+        } else {
+          testsWithErrors.push(testFileName);
+        }
       } else {
-        testsWithErrors.push(testFileName);
+        console.log(CONFIG.isDevBuild ? 'Invalid stateCode received from the backend' : 'DeepUnit is out of date, please run "npm install deepunit@latest --save-dev"');
       }
     }
   }
 
-  Printer.printSummary(failingTests, testsWithErrors, passingTests, serverNoResponse);
-
+  Printer.printSummary(failingTests, testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
   process.exit(100);
 }
 

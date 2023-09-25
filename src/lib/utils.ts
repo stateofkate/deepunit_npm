@@ -77,7 +77,6 @@ export function getFilesFlag(): string[] {
 }
 
 export function exitWithError(error: string) {
-  console.log('Unable to run DeepUnit.AI, the following error Has Occurred.');
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
   process.exit(1);
