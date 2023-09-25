@@ -30,11 +30,13 @@ class Config {
   includeFailingTests: boolean = true;
   generateChangedFilesOnly = true;
   isDevBuild: boolean = false;
+  prodTesting: boolean = false;
 
   constructor() {
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
+    this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.determineDevBuild();
 
     this.version = this.getVersion();
@@ -98,8 +100,10 @@ class Config {
   }
 
   private determineDevBuild() {
-    if (fs.existsSync(devConfig)) {
+    if (fs.existsSync(devConfig) && !this.prodTesting) {
       this.isDevBuild = true;
+    } else if (fs.existsSync(devConfig) && this.prodTesting) {
+      console.log('DeepUnit is running in production testing mode');
     }
   }
 
