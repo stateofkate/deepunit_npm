@@ -2,9 +2,11 @@ import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
+import { exitWithError } from './utils';
 
+const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
-const configFilePaths = ['deepunit.dev.config.json', 'deepunit.config.json']; // in order of importance
+const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
@@ -20,18 +22,22 @@ class Config {
   scriptTarget: string = '';
   typescriptExtension: string = '';
   password: string = 'nonerequired';
-  doProd: boolean = true;
+  doProd: boolean;
   apiHost: string = '';
   version: string;
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
   generateChangedFilesOnly = true;
+  isDevBuild: boolean = false;
+  prodTesting: boolean = false;
 
   constructor() {
     this.detectProjectType();
     this.detectTsconfigTarget();
     this.detectTestFramework();
+    this.prodTesting = Config.getBoolFromConfig('prodTesting');
+    this.determineDevBuild();
 
     this.version = this.getVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
@@ -48,12 +54,8 @@ class Config {
    * Get an boolean value from config (default to false, if the value is not exactly true, we also return false)
    */
   private static getBoolFromConfig(configProperty: string, defaultVal = false): boolean {
-    const configVal = Config.getStringFromConfig(configProperty);
-    if (configVal) {
-      return configVal == 'true';
-    }
-
-    return defaultVal;
+    const configVal = Config.getValueFromConfigFile(configProperty);
+    return typeof configVal === 'boolean' ? configVal : defaultVal;
   }
 
   private getVersion(): string {
@@ -62,8 +64,8 @@ class Config {
     if (version) {
       return version;
     } else {
-      console.error('Unable to detect DeepUnit version, please contact support@deepunit.ai for assistance'); //should never happen but in case
-      process.exit(1);
+      exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
+      return ''; //Typescrip wants a return even tho we are going to process.exit()
     }
   }
 
@@ -95,6 +97,14 @@ class Config {
     // Unable to find the framework
     console.log('WARNING: Unable to detect frontend framework, typescript extension');
     this.frontendFramework = 'unknown';
+  }
+
+  private determineDevBuild() {
+    if (fs.existsSync(devConfig) && !this.prodTesting) {
+      this.isDevBuild = true;
+    } else if (fs.existsSync(devConfig) && this.prodTesting) {
+      console.log('DeepUnit is running in production testing mode');
+    }
   }
 
   private detectTestFramework(): void {
@@ -133,13 +143,12 @@ class Config {
             tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;
           }
         } catch (error) {
-          console.log(error);
-          process.exit(1);
+          console.error(error);
+          exitWithError('Unable to read the tsconfig');
         }
       } else {
         console.error('Error: unable to find tsconfig at ' + tsconfigPath);
-        console.error('The current working director is ' + process.cwd());
-        process.exit(1);
+        exitWithError('The current working directory is ' + process.cwd());
       }
     }
   }

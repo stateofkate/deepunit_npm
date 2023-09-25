@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
@@ -9,6 +9,9 @@
     "start": "ts-node src/main.ts",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
     "test": "jest",
+    "deleteTests": "find . -type f -name \"*.test.ts\" -exec rm -f {} \\;\n",
+    "deleteTempTests": "find . -type f -name \"*.deepunittemptest.test.ts\" -exec rm -f {} \\;\n",
+    "summary": "npx jest --colors 2>&1 | awk '/FAIL/ {print \"\\033[31m\" $0 \"\\033[0m\"} /PASS/ {print \"\\033[32m\" $0 \"\\033[0m\"}'",
     "push": "npm run prep && npm publish",
     "tar": "rm -rf dist/* ; npm run build && chmod +x dist/postInstall.js && npm pack",
     "postinstall": "dist/postInstall.js"

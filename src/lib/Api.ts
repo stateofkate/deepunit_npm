@@ -17,7 +17,12 @@ enum ApiPaths {
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
 }
-
+export enum StateCode {
+  'Success' = 0,
+  'WrongPassword' = 1,
+  'FileNotSupported' = 2,
+  'FileFullyTested' = 3,
+}
 const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;
@@ -42,12 +47,12 @@ export class Api {
         throw new Error(response.data.error);
       }
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       if ((error as AxiosError).code == 'ECONNREFUSED') {
         exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);
-      return undefined;
+      return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
     }
   }
 
