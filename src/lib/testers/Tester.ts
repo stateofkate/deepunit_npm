@@ -1,4 +1,4 @@
-import { Api } from '../Api';
+import { Api, StateCode } from '../Api';
 import { CONFIG, maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
 
@@ -63,7 +63,7 @@ export abstract class Tester {
     htmlFileContent: string | null,
     testFile: string,
     testContent: string,
-  ): Promise<{ tests: Tests }> {
+  ): Promise<{ tests: Tests; stateCode: StateCode }> {
     return await Api.generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
   }
 

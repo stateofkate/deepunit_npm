@@ -5,10 +5,9 @@ import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
-import { FixManyErrorsResult, Tester } from './lib/testers/Tester';
+import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { StateCode } from './lib/Api';
-import { execSync } from 'child_process';
 
 export async function main() {
   Printer.printIntro();
