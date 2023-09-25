@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { CONFIG } from './Config';
+import { CONFIG } from '../main';
 
 export class Printer {
   static LINE_DIVIDER = '#################################################';

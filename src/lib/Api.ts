@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { CONFIG } from './Config';
+import { AUTH, CONFIG } from '../main';
 import { TestingFrameworks, mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
 import { FixErrorsData, GenerateTestData, RecombineTestData } from './ApiTypes';
@@ -10,6 +10,7 @@ type ApiBaseData = {
   scriptTarget: string;
   version: string;
   password: string;
+  email: string | null;
 };
 
 enum ApiPaths {
@@ -37,6 +38,7 @@ export class Api {
       scriptTarget: CONFIG.scriptTarget,
       version: CONFIG.version,
       password: CONFIG.password,
+      email: AUTH.getEmail(),
       ...customData,
     };
 

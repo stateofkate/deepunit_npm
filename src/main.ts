@@ -1,16 +1,24 @@
 #!/usr/bin/env node
 
 import { TestingFrameworks } from './main.consts';
-import { CONFIG } from './lib/Config';
+import { Config } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { StateCode } from './lib/Api';
+import { Auth } from './lib/Auth';
+
+// global classes
+export const CONFIG = new Config();
+export let AUTH: Auth;
 
 export async function main() {
   Printer.printIntro();
+
+  // setup the auth channel and see if they are logged in or not
+  AUTH = await Auth.init();
 
   // Get files that need to be tested
   let filesToWriteTestsFor: string[];

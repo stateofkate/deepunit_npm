@@ -1,4 +1,4 @@
-import { CONFIG } from './Config';
+import { CONFIG } from '../main';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production

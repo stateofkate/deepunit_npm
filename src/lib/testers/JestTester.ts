@@ -1,7 +1,5 @@
 import { execSync } from 'child_process';
 import { Tester } from './Tester';
-import { CONFIG } from '../Config';
-import path from 'path';
 
 export class JestTester extends Tester {
   public checkIfTestsPass(testFilePath: string): boolean {
