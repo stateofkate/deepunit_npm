@@ -5,7 +5,7 @@ import { Config } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
-import { Tester } from './lib/testers/Tester';
+import { FixManyErrorsResult, Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
@@ -111,15 +111,14 @@ export async function main() {
           console.error(`We did not receive a response from the server to generate a test for ${sourceFileName}. This should never happen`);
           continue;
         }
-        let tests = response.tests;
+        let tests: Record<string, string> = response.tests;
         // Write the temporary test files, so we can test the generated tests
-        let tempTestPaths: { [key: string]: string[] } = Files.writeTestsToFiles(tests);
+        let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        const { failedTests, passedTests } = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
+        const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
 
         //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
         const prettierConfig: Object | undefined = Files.getPrettierConfig();
-        const hasPassingTests = Object.values(passedTests).length > 0;
         await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
 
         //then we will need to delete all the temp test files.

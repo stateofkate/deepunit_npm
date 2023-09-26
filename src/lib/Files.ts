@@ -2,7 +2,6 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from '../main';
-import { Tests } from './testers/Tester';
 
 export class Files {
   public static getChangedFiles(): string[] {
@@ -168,20 +167,17 @@ export class Files {
     return !rel.startsWith('../') && rel !== '..';
   }
 
-  public static writeTestsToFiles(tests: Tests): { [key: string]: string[] } {
-    let testPaths: { [key: string]: string[] } = {};
-    for (const [testFilePart, tempTests] of Object.entries(tests)) {
-      testPaths[testFilePart] = [];
-      for (const [testFilePath, testCode] of Object.entries(tempTests)) {
-        try {
-          if (!fs.existsSync(testFilePath)) {
-            fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
-          }
-          Files.writeFileSync(testFilePath, testCode);
-          testPaths[testFilePart].push(testFilePath);
-        } catch (e) {
-          console.error({ testCode, message: 'Error while saving', e, testFilePath });
+  public static writeTestsToFiles(tests: Record<string, string>): string[] {
+    let testPaths: string[] = [];
+    for (const [testFilePath, testCode] of Object.entries(tests)) {
+      try {
+        if (!fs.existsSync(testFilePath)) {
+          fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
         }
+        Files.writeFileSync(testFilePath, testCode);
+        testPaths.push(testFilePath);
+      } catch (e) {
+        console.error({ testCode, message: 'Error while saving', e, testFilePath });
       }
     }
     return testPaths;
@@ -196,18 +192,16 @@ export class Files {
     }
   }
 
-  public static deleteTempFiles(tempTestPaths: { [key: string]: string[] }) {
-    for (const tempFiles of Object.values(tempTestPaths)) {
-      tempFiles.forEach((filePath) => {
-        try {
-          // delete the file
-          fs.unlinkSync(filePath);
-        } catch (err) {
-          console.error(`Error deleting file: ${filePath}`);
-          console.error(err);
-        }
-      });
-    }
+  public static deleteTempFiles(tempTestPaths: string[]) {
+    tempTestPaths.forEach((filePath) => {
+      try {
+        // delete the file
+        fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error(`Error deleting file: ${filePath}`);
+        console.error(err);
+      }
+    });
   }
 
   public static groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
