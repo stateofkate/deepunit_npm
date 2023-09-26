@@ -115,7 +115,11 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
+        // REMOVED for RELEASE
+        // const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
+
+        const { failedTests, passedTests } = tester.getTestResults(tempTestPaths);
+        const hasPassingTests = passedTests.length > 0;
 
         //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
         const prettierConfig: Object | undefined = Files.getPrettierConfig();
