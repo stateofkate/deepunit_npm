@@ -285,7 +285,7 @@ export class Files {
     //fo now we only support .prettierrc because we ould need to parse all these other filetypes. We will wait for customers to request this.
     //Prettier is available in so many places... this is close enough until someone complains we dont support their config: https://prettier.io/docs/en/configuration.html
     const prettierConfigFiles = [
-      'package.json', // You'll need to manually check if package.json contains a "prettier" field
+      // 'package.json', // You'll need to manually check if package.json contains a "prettier" field
       '.prettierrc',
       '.prettierrc.json',
       '.prettierrc.yml',
