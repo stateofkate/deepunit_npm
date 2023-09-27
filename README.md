@@ -5,7 +5,7 @@ AI-Powered Unit Test Generation: Ensured Reliability through Post-Creation Testi
 ## Release State
 
 Currently in **Alpha** release.
-Password is passed around on per request basis. The application generates working tests fairly consistently, but does require a lot of supervision from user currently.
+The application generates working tests fairly consistently, but does require a lot of supervision from user currently.
 
 ## Authentication
 
@@ -19,9 +19,6 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 {
   // what typescript extension you are using (only allowed one extension right now)
   "typescriptExtension": ".ts",
-
-  // Get password from support@deepunit.ai, this is for approved alpha users only
-  "password": "No password? email support@deepunit.ai",
 
   // which directories you want to ignore, path is from the current working directory
   "ignoredDirectories": [],

@@ -1,7 +1,6 @@
 {
   "frontendFramework": "node",
   "typescriptExtension": ".ts",
-  "password": "No password? email support@deepunit.ai",
   "generateChangedFilesOnly": false,
   "ignoredFiles": []
 }
