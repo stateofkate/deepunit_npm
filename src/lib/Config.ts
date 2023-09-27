@@ -2,7 +2,7 @@ import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
-import { exitWithError } from './utils';
+import { exitWithError, getGenerateAllFilesFlag } from './utils';
 
 const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
@@ -28,7 +28,7 @@ export class Config {
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
-  generateChangedFilesOnly = true;
+  generateAllFiles: boolean;
   isDevBuild: boolean = false;
   prodTesting: boolean = false;
 
@@ -47,7 +47,7 @@ export class Config {
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
-    this.generateChangedFilesOnly = Config.getBoolFromConfig('generateChangedFilesOnly', true);
+    this.generateAllFiles = getGenerateAllFilesFlag();
   }
 
   /**

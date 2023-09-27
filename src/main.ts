@@ -5,7 +5,7 @@ import { Config } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
-import { FixManyErrorsResult, Tester } from './lib/testers/Tester';
+import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
@@ -31,12 +31,12 @@ export async function main() {
       }
     });
     filesToWriteTestsFor = filesFlagArray;
-  } else if (CONFIG.generateChangedFilesOnly) {
-    console.log('Finding all changed files between current and HEAD branch.');
-    filesToWriteTestsFor = Files.getChangedFiles();
-  } else {
+  } else if (CONFIG.generateAllFiles) {
     console.log('Finding all eligible files in working directory');
     filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
+  } else {
+    console.log('Finding all changed files between current and HEAD branch.');
+    filesToWriteTestsFor = Files.getChangedFiles();
   }
 
   // if we didn't get any files, return error
@@ -90,7 +90,7 @@ export async function main() {
       }
 
       let sourceFileDiff = '';
-      if (CONFIG.generateChangedFilesOnly) {
+      if (!CONFIG.generateAllFiles) {
         sourceFileDiff = Files.getDiff(filesToPass);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);

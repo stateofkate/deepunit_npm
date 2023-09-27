@@ -76,6 +76,22 @@ export function getFilesFlag(): string[] {
   return files;
 }
 
+/**
+ * Get whether we are doing all files or only changed files
+ */
+export function getGenerateAllFilesFlag(): boolean {
+  const args = process.argv.slice(2);
+
+  let result = false;
+  args.forEach((arg) => {
+    if (arg === '--a' || arg === '--all') {
+      result = true;
+    }
+  });
+
+  return result;
+}
+
 export function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');

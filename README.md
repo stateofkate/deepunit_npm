@@ -28,9 +28,6 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 
   // when all tests for a file fail, this option allows DeepUnit.AI to save the failing tests to a file so that you fix them manually
   "includeFailingTests": false,
-
-  // test only the files that are changed from the HEAD branch
-  "generateChangedFilesOnly": false
 }
 ```
 
@@ -39,6 +36,7 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 To choose what to test, you have a few options
 
 - Use the `--file` flag to choose what files you would like to test (the files should be separated by a "`,`")
+- Use the `--all` flag to do generate tests for all eligible files in the workspace.
 - Without any file flag, it will automatically try to find all files that it can write tests for in your workspace.
 - Use the `ignoredDirectories` or `ignoredFiles` to ignore files, other than ones you want to test
 - If you would like to only run tests for the files that have changes in your current git working branch, enable `generateChangedFilesOnly` in the configuration.
