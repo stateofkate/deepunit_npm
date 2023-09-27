@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH, CONFIG } from '../main';
 import { TestingFrameworks, mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { FixErrorsData, GenerateTestData, RecombineTestData } from './ApiTypes';
+import { FixErrorsData, GenerateTestData, RecombineTestData, SendResultData } from './ApiTypes';
 
 type ApiBaseData = {
   frontendFramework: string;
@@ -17,6 +17,7 @@ enum ApiPaths {
   generate = '/generate-test/new',
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
+  sendResults = '/generate-test/send-results',
 }
 export enum StateCode {
   'Success' = 0,
@@ -43,8 +44,9 @@ export class Api {
     };
 
     try {
-      debugMsg(`POST REQUEST ${path}`, data);
-      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPath(path), data, { headers });
+      const apiPathToCall = apiPath(path);
+      debugMsg(`POST REQUEST ${apiPathToCall}`, data);
+      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPathToCall, data, { headers });
       if (response.data.error) {
         throw new Error(response.data.error);
       }
@@ -106,5 +108,14 @@ export class Api {
     }
 
     return await this.post(ApiPaths.recombineTests, data);
+  }
+
+  public static sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>) {
+    const data: SendResultData = {
+      failedTests,
+      passedTests,
+      tests,
+    };
+    this.post(ApiPaths.sendResults, data).then((r) => console.log('it wporks'));
   }
 }

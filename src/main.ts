@@ -7,7 +7,7 @@ import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { FixManyErrorsResult, Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
-import { StateCode } from './lib/Api';
+import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
 
 // global classes
@@ -119,16 +119,16 @@ export async function main() {
         // const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
 
         const { failedTests, passedTests } = tester.getTestResults(tempTestPaths);
-        const hasPassingTests = passedTests.length > 0;
+        Api.sendResults(failedTests, passedTests, tests);
 
         //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
         const prettierConfig: Object | undefined = Files.getPrettierConfig();
-        await tester.recombineTests(hasPassingTests ? passedTests : tempTestPaths, testFileName, testFileContent, hasPassingTests, prettierConfig);
+        await tester.recombineTests(passedTests.length > 0 ? passedTests : tempTestPaths, testFileName, testFileContent, passedTests.length > 0, prettierConfig);
 
         //then we will need to delete all the temp test files.
         Files.deleteTempFiles(CONFIG.isDevBuild ? failedTests : tempTestPaths);
 
-        if (hasPassingTests) {
+        if (passedTests.length > 0) {
           passingTests.push(testFileName);
         } else {
           testsWithErrors.push(testFileName);

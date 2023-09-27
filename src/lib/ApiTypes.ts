@@ -18,3 +18,8 @@ export type RecombineTestData = {
   prettierConfig?: Object;
   testFileContent: string;
 };
+export type SendResultData = {
+  failedTests: string[];
+  passedTests: string[];
+  tests: Record<string, string>;
+};
