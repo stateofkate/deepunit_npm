@@ -1,24 +1,27 @@
 # DeepUnit.AI
 
-Generating Tested Unit Tests with Artificial Intelligence.
+AI-Powered Unit Test Generation: Ensured Reliability through Post-Creation Testing.
 
 ## Release State
 
 Currently in **Alpha** release.
 Password is passed around on per request basis. The application generates working tests fairly consistently, but does require a lot of supervision from user currently.
 
+## Authentication
+
+For a seamless experience with DeepUnit.Ai, we ask users to provide a valid email upon the initial application setup. This email serves as your identifier across all your git repositories and is saved in the `~/.deepunit` file. If ever you wish to update your email, simply delete the `.deepunit` file in your home directory and restart the application.
+
 ## Config
 
 Here is an example of the `deepunit.config.json` with comments explaining each purpose.
 
-```json
+```javascript
 {
   // what typescript extension you are using (only allowed one extension right now)
   "typescriptExtension": ".ts",
-  
 
   // Get password from support@deepunit.ai, this is for approved alpha users only
-  "password": "securepassword",
+  "password": "No password? email support@deepunit.ai",
 
   // which directories you want to ignore, path is from the current working directory
   "ignoredDirectories": [],
@@ -38,9 +41,11 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 
 To choose what to test, you have a few options
 
-1. Use the `ignoredDirectories` or `ignoredFiles` to ignore files, other than ones you want to test
-2. DeepUnit will automatically not test any functions that are already tested in the corresponding test files, if you are having a hard time getting it to generate a function, confirm it is not already used anywhere in the test file.
-3. If you have a function or method you would like DeepUnit.AI not to test, add `// @deep-unit-ignore-next-line` in front of the function, like so:
+- Use the `--file` flag to choose what files you would like to test (the files should be separated by a "`,`")
+- Without any file flag, it will automatically try to find all files that it can write tests for in your workspace.
+- Use the `ignoredDirectories` or `ignoredFiles` to ignore files, other than ones you want to test
+- If you would like to only run tests for the files that have changes in your current git working branch, enable `generateChangedFilesOnly` in the configuration.
+- If you have a function, method, or entire class you would like DeepUnit.AI not to test, add `// @deep-unit-ignore-next-line` in front of the function or class, like so:
 
 ```typescript
 // @deep-unit-ignore-next-line
@@ -48,6 +53,18 @@ function example(): void {
   // ... other code
 }
 ```
+
+```typescript
+// @deep-unit-ignore-next-line
+class NoneTestableClass() {
+  example(): void {
+    // ... other code
+  }
+}
+```
+
+_Note:
+DeepUnit.Ai intelligently skips functions that already have tests in the corresponding test files. If you encounter issues generating a test for a specific function, ensure that it hasn't been tested elsewhere in the file._
 
 ## Contact
 
