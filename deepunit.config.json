@@ -1,6 +1,5 @@
 {
   "frontendFramework": "node",
   "typescriptExtension": ".ts",
-  "generateChangedFilesOnly": false,
   "ignoredFiles": []
 }
