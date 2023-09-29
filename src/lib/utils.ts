@@ -1,4 +1,8 @@
 import { CONFIG } from '../main';
+import { Api } from './Api';
+import { createInterface } from 'readline';
+import { Color, Printer } from './Printer';
+import { execSync } from 'child_process';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
@@ -96,4 +100,58 @@ export function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
   process.exit(1);
+}
+
+export async function validateVersionIsUpToDate(): Promise<void> {
+  const { latestVersion } = await Api.getLatestVersion();
+  const versionRegex = new RegExp(/^\d\.\d\.\d$/);
+  let needsUpdating;
+  if (versionRegex.test(latestVersion.trim()) && versionRegex.test(CONFIG.version.trim())) {
+    const latestVersionNumbers = latestVersion.split('.');
+    const versionNumbers = CONFIG.version.split('.');
+
+    if (versionNumbers.length < 2 || latestVersionNumbers.length < 2 || versionNumbers[0] < latestVersionNumbers[0] || versionNumbers[1] < latestVersionNumbers[1]) {
+      needsUpdating = true;
+    }
+  } else {
+    exitWithError('Unable to process version.');
+  }
+
+  if (needsUpdating) {
+    console.log('\n' + Color.red('DeepUnit is running an outdated version. We no longer support this version.'));
+    console.log('Please upgrade by running:');
+    console.log(Color.yellow('npm install [package-name]@latest -D'));
+    console.log('or by typing "y" and then pressing enter.');
+    const wantsToUpdate = await getYesOrNoAnswer('Update DeepUnit?');
+    if (wantsToUpdate) {
+      try {
+        console.log('Updating deepunit...');
+        const stdout = execSync('npm install -D deepunit@latest');
+        console.log(stdout.toString().trim());
+      } catch (error) {
+        exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
+      }
+    } else {
+      // they don't want to update, to bad
+      process.exit(100);
+    }
+  }
+}
+
+export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const yesAnswers = ['y', 'yes'];
+
+  return new Promise((resolve) => {
+    rl.question(prompt + ' (type y/n):', (answer) => {
+      if (yesAnswers.includes(answer.trim().toLowerCase())) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  });
 }

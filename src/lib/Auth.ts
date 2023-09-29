@@ -1,5 +1,5 @@
 import * as os from 'os';
-import * as readline from 'readline';
+import { createInterface } from 'readline';
 import { Files } from './Files';
 
 export class Auth {
@@ -22,7 +22,7 @@ export class Auth {
   }
 
   private promptForEmail(): Promise<void> {
-    const rl = readline.createInterface({
+    const rl = createInterface({
       input: process.stdin,
       output: process.stdout,
     });
@@ -60,7 +60,6 @@ export class Auth {
         const matches = content.match(/EMAIL=(.+)/);
         if (matches && matches[1]) {
           this.email = matches[1];
-          console.log(`Loaded email: ${this.email}`);
         }
       }
       resolve();

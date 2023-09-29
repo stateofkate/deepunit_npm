@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { Config } from './lib/Config';
 import { Files } from './lib/Files';
-import { exitWithError, getFilesFlag, isEmpty } from './lib/utils';
+import { exitWithError, getFilesFlag, isEmpty, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -19,6 +19,9 @@ export async function main() {
 
   // setup the auth channel and see if they are logged in or not
   AUTH = await Auth.init();
+
+  // check to confirm we still support this version
+  await validateVersionIsUpToDate();
 
   // Get files that need to be tested
   let filesToWriteTestsFor: string[];

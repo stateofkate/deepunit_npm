@@ -18,6 +18,7 @@ enum ApiPaths {
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
   sendResults = '/generate-test/send-results',
+  getLatestVersion = '/generate-test/get-latest-version',
 }
 export enum StateCode {
   'Success' = 0,
@@ -30,7 +31,7 @@ const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths, customData: T) {
+  public static async post<T>(path: ApiPaths, customData?: T) {
     const headers = { 'Content-Type': 'application/json' };
 
     let data: ApiBaseData = {
@@ -116,6 +117,10 @@ export class Api {
       passedTests,
       tests,
     };
-    this.post(ApiPaths.sendResults, data).then((r) => console.log('it wporks'));
+    this.post(ApiPaths.sendResults, data);
+  }
+
+  public static async getLatestVersion(): Promise<{ latestVersion: string }> {
+    return this.post(ApiPaths.getLatestVersion);
   }
 }
