@@ -47,7 +47,6 @@ export async function main() {
   Printer.printFilesToTest(filesToWriteTestsFor);
   const filesByDirectory = Files.groupFilesByDirectory(filesToWriteTestsFor);
 
-  let failingTests: string[] = [];
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
   let unsupportedFiles: (string | null)[] = [];
@@ -139,7 +138,7 @@ export async function main() {
     }
   }
 
-  Printer.printSummary(failingTests, testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+  Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
   process.exit(100);
 }
 
