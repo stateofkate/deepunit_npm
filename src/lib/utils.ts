@@ -104,7 +104,7 @@ export function exitWithError(error: string) {
 
 export async function validateVersionIsUpToDate(): Promise<void> {
   const { latestVersion } = await Api.getLatestVersion();
-  const versionRegex = new RegExp(/^\d\.\d\.\d$/);
+  const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
   if (versionRegex.test(latestVersion.trim()) && versionRegex.test(CONFIG.version.trim())) {
     const latestVersionNumbers = latestVersion.split('.');
@@ -157,5 +157,5 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
 
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
   const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
-  console.log(stdout.toString());
+  console.log(stdout.buffer.toString());
 }

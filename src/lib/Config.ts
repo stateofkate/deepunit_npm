@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
 import { exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage } from './utils';
-import { execSync } from 'child_process';
 
 const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
@@ -195,24 +194,30 @@ export class Config {
   }
 
   public async confirmAllPackagesNeeded() {
-    console.log(this.frontendFramework);
     if (this.frontendFramework == 'react') {
-      const requiredPackaged = ['@testing-library/react', '@testing-library/react-hooks'];
+      await this.confirmRunningReactVersion18();
+
+      const requiredPackaged = [
+        { name: '@testing-library/react', installVersion: 'release-12.x' },
+        { name: '@testing-library/react-hooks' },
+        { name: 'react-router-dom', installVersion: 'classic' },
+      ];
 
       let neededPackages = [];
       for (let requiredPackage of requiredPackaged) {
-        if (!this.hasPackagedInstalled(requiredPackage)) {
+        if (!this.getPackageVersionIfInstalled(requiredPackage.name)) {
           neededPackages.push(requiredPackage);
         }
       }
 
       // if missing packages, request to install them
       if (neededPackages.length > 0) {
-        console.log(`In order to generate unit tests for ${this.frontendFramework}, we require the following packages to be installed:\n`);
-        neededPackages.forEach((p) => console.log(' - ' + p));
+        console.log(`In order to generate unit tests for ${this.frontendFramework}, we require the following dev dependencies to be installed:\n`);
+        neededPackages.forEach((p) => console.log(' - ' + p.name));
         const wantsToInstallDependencies = await getYesOrNoAnswer('Install Required Packages?');
         if (wantsToInstallDependencies) {
-          installPackage(neededPackages.join(' '), true);
+          const remappedPacks = neededPackages.map((p) => (p.installVersion ? `${p.name}@${p.installVersion}` : p.name));
+          installPackage(remappedPacks.join(' '), true);
         } else {
           console.error(`Packages are required to run, please install the missing packages.`);
           process.exit(100);
@@ -221,18 +226,40 @@ export class Config {
     }
   }
 
-  private hasPackagedInstalled(requiredPackaged: string): boolean {
+  // REACT KLUDGE: we do not support react 18 yet
+  private async confirmRunningReactVersion18() {
+    const reactVersion = this.getPackageVersionIfInstalled('react');
+    const versionRegex = new RegExp(/([\d.]+)/);
+    if (!reactVersion) {
+      exitWithError('React is a missing dependency, yet we assume you are using react. There is an issue, please check your config that you are not forcing it to be react.');
+    } else {
+      const versionNumbers = reactVersion.match(versionRegex);
+      if (versionNumbers && versionNumbers[0].split('.') && versionNumbers[0].split('.').length == 3 && !isNaN(+versionNumbers[0].split('.')[0])) {
+        const number = versionNumbers[0].split('.')[0];
+        if (+number >= 18) {
+          exitWithError('We currently do not support react version 18 and above. Please contact us to request this feature.');
+        }
+      } else {
+        exitWithError('Unable to parse react version number.');
+      }
+    }
+  }
+
+  private getPackageVersionIfInstalled(requiredPackaged: string): string | null {
     let packageJsonPath = 'package.json';
 
     if (fs.existsSync(packageJsonPath)) {
       let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
       let dependencies = packageJson['dependencies'] || {};
       let devDependencies = packageJson['devDependencies'] || {};
-      if (requiredPackaged in dependencies || requiredPackaged in devDependencies) {
-        return true;
+      if (requiredPackaged in dependencies) {
+        return dependencies[requiredPackaged];
+      }
+      if (requiredPackaged in devDependencies) {
+        return devDependencies[requiredPackaged];
       }
     }
 
-    return false;
+    return null;
   }
 }
