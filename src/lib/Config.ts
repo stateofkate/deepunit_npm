@@ -2,7 +2,8 @@ import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
-import { exitWithError, getGenerateAllFilesFlag } from './utils';
+import { exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage } from './utils';
+import { execSync } from 'child_process';
 
 const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
@@ -191,5 +192,47 @@ export class Config {
         }
       }
     }
+  }
+
+  public async confirmAllPackagesNeeded() {
+    console.log(this.frontendFramework);
+    if (this.frontendFramework == 'react') {
+      const requiredPackaged = ['@testing-library/react', '@testing-library/react-hooks'];
+
+      let neededPackages = [];
+      for (let requiredPackage of requiredPackaged) {
+        if (!this.hasPackagedInstalled(requiredPackage)) {
+          neededPackages.push(requiredPackage);
+        }
+      }
+
+      // if missing packages, request to install them
+      if (neededPackages.length > 0) {
+        console.log(`In order to generate unit tests for ${this.frontendFramework}, we require the following packages to be installed:\n`);
+        neededPackages.forEach((p) => console.log(' - ' + p));
+        const wantsToInstallDependencies = await getYesOrNoAnswer('Install Required Packages?');
+        if (wantsToInstallDependencies) {
+          installPackage(neededPackages.join(' '), true);
+        } else {
+          console.error(`Packages are required to run, please install the missing packages.`);
+          process.exit(100);
+        }
+      }
+    }
+  }
+
+  private hasPackagedInstalled(requiredPackaged: string): boolean {
+    let packageJsonPath = 'package.json';
+
+    if (fs.existsSync(packageJsonPath)) {
+      let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      let dependencies = packageJson['dependencies'] || {};
+      let devDependencies = packageJson['devDependencies'] || {};
+      if (requiredPackaged in dependencies || requiredPackaged in devDependencies) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

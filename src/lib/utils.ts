@@ -126,8 +126,7 @@ export async function validateVersionIsUpToDate(): Promise<void> {
     if (wantsToUpdate) {
       try {
         console.log('Updating deepunit...');
-        const stdout = execSync('npm install -D deepunit@latest');
-        console.log(stdout.toString().trim());
+        installPackage('deepunit@latest', true);
       } catch (error) {
         exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
       }
@@ -154,4 +153,9 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
       }
     });
   });
+}
+
+export function installPackage(newPackage: string, isDevDep?: boolean): void {
+  const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
+  console.log(stdout.toString());
 }
