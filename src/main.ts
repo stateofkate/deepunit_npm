@@ -9,6 +9,7 @@ import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
+import { execSync } from 'child_process';
 
 // global classes
 export const CONFIG = new Config();
@@ -34,7 +35,7 @@ export async function main() {
       }
     });
     filesToWriteTestsFor = filesFlagArray;
-  } else if (CONFIG.generateAllFiles) {
+  } else if (CONFIG.generateAllFiles || !CONFIG.isGitRepository) {
     console.log('Finding all eligible files in working directory');
     filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
   } else {
@@ -83,7 +84,7 @@ export async function main() {
       }
 
       let sourceFileDiff = '';
-      if (!CONFIG.generateAllFiles) {
+      if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
         sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);

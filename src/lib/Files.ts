@@ -98,13 +98,15 @@ export class Files {
     // Create a new file
     Files.writeFileSync(filename, '');
 
-    // Run git add on the file
-    try {
-      execSync(`git add ${filename}`);
-    } catch (error) {
-      console.error(filename);
-      console.error(error);
-      console.error(`Error running git add: `);
+    if (CONFIG.isGitRepository) {
+      // Run git add on the file
+      try {
+        execSync(`git add ${filename}`);
+      } catch (error) {
+        console.error(filename);
+        console.error(error);
+        console.error(`Error running git add: `);
+      }
     }
   }
 
@@ -297,9 +299,11 @@ export class Files {
     ];
 
     let directoriesToCheck = [process.cwd()];
-    const rootDirectory = this.getGitRootDirectory();
-    if (rootDirectory) {
-      directoriesToCheck.push(rootDirectory);
+    if (CONFIG.isGitRepository) {
+      const rootDirectory = this.getGitRootDirectory();
+      if (rootDirectory) {
+        directoriesToCheck.push(rootDirectory);
+      }
     }
 
     for (const dir of directoriesToCheck) {

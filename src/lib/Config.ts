@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
 import { exitWithError, getGenerateAllFilesFlag } from './utils';
+import { execSync } from 'child_process';
 
 const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
@@ -32,14 +33,15 @@ export class Config {
   isDevBuild: boolean = false;
   prodTesting: boolean = false;
   testingLanguageOverride: string = '';
+  isGitRepository: boolean = false;
 
   constructor() {
     this.detectProjectType();
-    this.detectTsconfigTarget();
     this.detectTestFramework();
-    this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.determineDevBuild();
 
+    this.scriptTarget = this.getsConfigTarget() ?? 'ESNext';
+    this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.version = this.getVersion();
     this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
     this.password = Config.getStringFromConfig('password') || 'nonerequired';
@@ -50,6 +52,7 @@ export class Config {
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
     this.generateAllFiles = getGenerateAllFilesFlag();
     this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
+    this.isGitRepository = this.isInGitRepo();
   }
 
   /**
@@ -68,6 +71,18 @@ export class Config {
     } else {
       exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
       return ''; //Typescrip wants a return even tho we are going to process.exit()
+    }
+  }
+
+  private isInGitRepo(): boolean {
+    try {
+      execSync('git rev-parse --is-inside-work-tree', { stdio: 'pipe' });
+      return true;
+    } catch (error: any) {
+      if (error.message && typeof error.message === 'string' && error.message.includes('not a git repository')) {
+        return false;
+      }
+      throw error; // If the error is something else, we might want to rethrow it.
     }
   }
 
@@ -135,15 +150,19 @@ export class Config {
       this.testSuffix = 'test';
     }
   }
-  private detectTsconfigTarget(): void {
-    let tsconfigPath: string = 'tsconfig.json';
+
+  private getsConfigTarget(): string | undefined {
+    let tsconfigPath: string | undefined = 'tsconfig.json';
 
     while (tsconfigPath) {
       if (fs.existsSync(tsconfigPath)) {
         let contents: string = fs.readFileSync(tsconfigPath, 'utf8');
         try {
           let tsconfigJson = ts.parseConfigFileTextToJson('', contents);
-          this.scriptTarget = tsconfigJson.config?.compilerOptions?.target ? tsconfigJson.config?.compilerOptions?.target : undefined;
+          const scriptTarget = tsconfigJson.config?.compilerOptions?.target;
+          if (scriptTarget) {
+            return scriptTarget;
+          }
           if (tsconfigPath != null) {
             // @ts-ignore
             tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;
@@ -153,8 +172,7 @@ export class Config {
           exitWithError('Unable to read the tsconfig');
         }
       } else {
-        console.error('Error: unable to find tsconfig at ' + tsconfigPath);
-        exitWithError('The current working directory is ' + process.cwd());
+        tsconfigPath = undefined;
       }
     }
   }
