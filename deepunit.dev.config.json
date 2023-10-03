@@ -1,5 +1,4 @@
 {
-  "frontendFramework": "typescript",
   "typescriptExtension": ".ts",
   "doProd": false,
   "ignoredDirectories": [],

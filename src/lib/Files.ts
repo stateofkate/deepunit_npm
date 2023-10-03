@@ -34,18 +34,24 @@ export class Files {
     let filteredFiles: string[] = [];
     for (const file of files) {
       // TODO: make this a custom regex they can choose from
-      if (
-        (file.endsWith('.ts') || file.endsWith('.js') || file.endsWith('.tsx')) &&
-        !file.endsWith('.test.ts') &&
-        !file.endsWith('.test.tsx') &&
-        !file.endsWith('.test.js') &&
-        !file.endsWith('.spec.ts') &&
-        !file.endsWith('.spec.js') &&
-        !file.endsWith('.consts.ts') &&
-        !file.endsWith('.d.ts') &&
-        !file.endsWith('.module.ts') &&
-        !file.endsWith('.module.js')
-      ) {
+      const excludedSuffixes = [
+        '.test.ts',
+        '.test.tsx',
+        '.test.js',
+        '.spec.ts',
+        '.spec.tsx',
+        '.spec.js',
+        '.module.ts',
+        '.module.tsx',
+        '.module.js',
+        '.consts.ts',
+        '.consts.tsx',
+        '.d.ts',
+      ];
+
+      const includedExtensions = ['.ts', '.js', '.tsx'];
+
+      if (includedExtensions.some((ext) => file.endsWith(ext)) && !excludedSuffixes.some((suffix) => file.endsWith(suffix))) {
         filteredFiles.push(file);
       }
     }
