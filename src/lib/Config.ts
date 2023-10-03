@@ -21,8 +21,6 @@ export class Config {
   testSuffix: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
-  typescriptExtension: string = '';
-  password: string = 'nonerequired';
   doProd: boolean;
   apiHost: string = '';
   version: string;
@@ -37,14 +35,17 @@ export class Config {
 
   constructor() {
     this.detectProjectType();
-    this.detectTestFramework();
     this.determineDevBuild();
+
+    this.detectTestFramework();
+    const testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
+    if (testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(testingFrameworkOverride)) {
+      this.testingFramework = testingFrameworkOverride as TestingFrameworks;
+    }
 
     this.scriptTarget = this.getsConfigTarget() ?? 'ESNext';
     this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.version = this.getVersion();
-    this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
-    this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getBoolFromConfig('doProd', true);
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');

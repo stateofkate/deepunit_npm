@@ -37,7 +37,8 @@ export async function main() {
     filesToWriteTestsFor = filesFlagArray;
   } else if (CONFIG.generateAllFiles || !CONFIG.isGitRepository) {
     console.log('Finding all eligible files in working directory');
-    filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
+    // TODO: add a regex to filter what extensions we accept
+    filesToWriteTestsFor = Files.findFiles();
   } else {
     console.log('Finding all changed files between current and HEAD branch.');
     filesToWriteTestsFor = Files.getChangedFiles();
@@ -96,8 +97,6 @@ export async function main() {
         unsupportedFiles.push(sourceFileName);
       } else if (response.stateCode === StateCode.FileFullyTested) {
         alreadyTestedFiles.push(sourceFileName);
-      } else if (response.stateCode === StateCode.WrongPassword) {
-        exitWithError(`Incorrect password. Please be sure it is configured correctly in deepunit.config.json. Current password: ${CONFIG.password}`);
       } else if (response.stateCode === StateCode.Success) {
         if (!response?.tests || isEmpty(response.tests)) {
           serverDidNotSendTests.push(sourceFileName);

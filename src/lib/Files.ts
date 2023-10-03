@@ -110,7 +110,7 @@ export class Files {
     }
   }
 
-  public static findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
+  public static findFiles(): string[] {
     /**
       Find all files in all nested directories with the given extensions and ignore files with the given ignoreExtensions.
   
@@ -228,39 +228,6 @@ export class Files {
 
   public static readFileSync(path: fs.PathLike) {
     return fs.readFileSync(path);
-  }
-
-  public static tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
-    const baseFile = path.basename(file, path.extname(file));
-    const extension = path.extname(file);
-    let correspondingFile: string | null = null;
-
-    if (extension === CONFIG.typescriptExtension) {
-      correspondingFile = `${baseFile}.html`;
-    } else if (extension === '.html') {
-      correspondingFile = `${baseFile}${CONFIG.typescriptExtension}`;
-    }
-
-    let htmlFile: string | null = null;
-    let tsFile: string | null = null;
-
-    if (correspondingFile && filesInDirectory.includes(correspondingFile)) {
-      if (extension === CONFIG.typescriptExtension) {
-        tsFile = file;
-        htmlFile = correspondingFile;
-      } else {
-        tsFile = correspondingFile;
-        htmlFile = file;
-      }
-    } else {
-      if (extension === CONFIG.typescriptExtension) {
-        tsFile = file;
-      } else {
-        htmlFile = file;
-      }
-    }
-
-    return [tsFile, htmlFile, correspondingFile];
   }
 
   public static readJsonFile(path: fs.PathLike): Object | undefined {

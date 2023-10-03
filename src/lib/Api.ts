@@ -9,7 +9,6 @@ type ApiBaseData = {
   testingFramework: TestingFrameworks;
   scriptTarget: string;
   version: string;
-  password: string;
   email: string | null;
 };
 
@@ -22,9 +21,8 @@ enum ApiPaths {
 }
 export enum StateCode {
   'Success' = 0,
-  'WrongPassword' = 1,
-  'FileNotSupported' = 2,
-  'FileFullyTested' = 3,
+  'FileNotSupported' = 1,
+  'FileFullyTested' = 2,
 }
 const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
 
@@ -39,7 +37,6 @@ export class Api {
       testingFramework: CONFIG.testingFramework,
       scriptTarget: CONFIG.scriptTarget,
       version: CONFIG.version,
-      password: CONFIG.password,
       email: AUTH.getEmail(),
       ...customData,
     };
