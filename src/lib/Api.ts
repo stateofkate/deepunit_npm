@@ -61,26 +61,21 @@ export class Api {
     }
   }
 
-  public static async generateTest(
-    diffs: string,
-    tsFile: string | null,
-    tsFileContent: string | null,
-    htmlFile: string | null,
-    htmlFileContent: string | null,
-    testFile: string,
-    testContent: string,
-  ): Promise<any> {
+  public static async generateTest(diffs: string, sourceFileName: string | null, sourceFileContent: string | null, testFileName: string, testFileContent: string): Promise<any> {
+    if (!sourceFileName || !sourceFileContent) {
+      return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
+    }
     let data: GenerateTestData = {
       diffs,
+      sourceFile: { [sourceFileName]: sourceFileContent },
     };
-    if (tsFile && tsFileContent) {
-      data.tsFile = { [tsFile]: tsFileContent };
+
+    if (CONFIG.testingLanguageOverride) {
+      data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
-    if (htmlFile && htmlFileContent) {
-      data.htmlFile = { [htmlFile]: htmlFileContent };
-    }
-    if (testFile || testContent) {
-      data.testFile = { [testFile]: testContent };
+    if (testFileName || testFileContent) {
+      // test file is optional
+      data.testFile = { [testFileName]: testFileContent };
     }
 
     return await this.post(ApiPaths.generate, data);

@@ -58,12 +58,12 @@ export async function main() {
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
-      const file = filesInDirectory.pop();
-      if (file === undefined) {
+      const sourceFileName = filesInDirectory.pop();
+      if (sourceFileName === undefined) {
         break;
       }
 
-      const testFileName = Tester.getTestName(file);
+      const testFileName = Tester.getTestName(sourceFileName);
 
       let tester: Tester;
       if (CONFIG.testingFramework === TestingFrameworks.jest) {
@@ -82,25 +82,15 @@ export async function main() {
         }
       }
 
-      const [sourceFileName, htmlFileName, correspondingFile] = Files.tsAndHtmlFromFile(file, filesInDirectory);
-      let filesToPass = [];
-      if (sourceFileName && sourceFileName != correspondingFile) {
-        filesToPass.push(sourceFileName);
-      }
-      if (htmlFileName && htmlFileName != correspondingFile) {
-        filesToPass.push(htmlFileName);
-      }
-
       let sourceFileDiff = '';
       if (!CONFIG.generateAllFiles) {
-        sourceFileDiff = Files.getDiff(filesToPass);
+        sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);
-      const htmlFileContent = Files.getFileContent(htmlFileName);
 
       console.log(`Generating test for ${sourceFileName}`);
 
-      const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
+      const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent);
       if (response.stateCode === StateCode.FileNotSupported) {
         unsupportedFiles.push(sourceFileName);
       } else if (response.stateCode === StateCode.FileFullyTested) {

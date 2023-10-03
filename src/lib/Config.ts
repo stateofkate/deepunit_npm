@@ -8,7 +8,7 @@ const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
 const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
-const localHostBase = 'http://localhost:8080';
+const localHostBase = 'http://localhost:8085';
 
 export const maxFixFailingTestAttempts = 2;
 
@@ -17,7 +17,7 @@ export const maxFixFailingTestAttempts = 2;
  */
 export class Config {
   frontendFramework: string = '';
-  testExtension: string = '';
+  testSuffix: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
   typescriptExtension: string = '';
@@ -31,6 +31,7 @@ export class Config {
   generateAllFiles: boolean;
   isDevBuild: boolean = false;
   prodTesting: boolean = false;
+  testingLanguageOverride: string = '';
 
   constructor() {
     this.detectProjectType();
@@ -48,6 +49,7 @@ export class Config {
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
     this.generateAllFiles = getGenerateAllFilesFlag();
+    this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
   }
 
   /**
@@ -114,19 +116,23 @@ export class Config {
 
     if (fs.existsSync(jestConfigPath)) {
       this.testingFramework = TestingFrameworks.jest;
-      this.testExtension = '.test.ts';
+      this.testSuffix = 'test';
     } else if (fs.existsSync(karmaConfigPath)) {
       this.testingFramework = TestingFrameworks.jasmine;
-      this.testExtension = '.spec.ts';
+      this.testSuffix = 'spec';
     } else if (fs.existsSync(packageJsonPath)) {
       let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
       if (fileContent.includes('jest')) {
         this.testingFramework = TestingFrameworks.jest;
-        this.testExtension = '.test.ts';
+        this.testSuffix = 'test';
       } else if (fileContent.includes('jasmine-core')) {
         this.testingFramework = TestingFrameworks.jasmine;
-        this.testExtension = '.spec.ts';
+        this.testSuffix = 'spec';
       }
+    }
+
+    if (!this.testSuffix) {
+      this.testSuffix = 'test';
     }
   }
   private detectTsconfigTarget(): void {

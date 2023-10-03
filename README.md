@@ -28,6 +28,13 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 
   // when all tests for a file fail, this option allows DeepUnit.AI to save the failing tests to a file so that you fix them manually
   "includeFailingTests": false,
+
+  // what gets added between the name of file and the extension. Example if set to 'spec': Utils.ts -> Utils.spec.ts (default set to test)
+  "testSuffix": "test"
+
+  // What language you want the tests to generate in (forcing it to be a specific language)
+  // Options are "javascript" or "typescript" right now
+  "testingLanguageOverride": "javascript"
 }
 ```
 
