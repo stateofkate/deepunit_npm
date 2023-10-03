@@ -9,7 +9,7 @@ const devConfig: string = 'deepunit.dev.config.json';
 // HARDCODED CONFIG VALUES
 const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
-const localHostBase = 'http://localhost:8085';
+const localHostBase = 'http://localhost:8080';
 
 export const maxFixFailingTestAttempts = 2;
 
