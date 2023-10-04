@@ -104,17 +104,19 @@ export class Files {
     // Create a new file
     Files.writeFileSync(filename, '');
 
-    // Run git add on the file
-    try {
-      execSync(`git add ${filename}`);
-    } catch (error) {
-      console.error(filename);
-      console.error(error);
-      console.error(`Error running git add: `);
+    if (CONFIG.isGitRepository) {
+      // Run git add on the file
+      try {
+        execSync(`git add ${filename}`);
+      } catch (error) {
+        console.error(filename);
+        console.error(error);
+        console.error(`Error running git add: `);
+      }
     }
   }
 
-  public static findFiles(extensions: string[], ignoreExtensions: string[]): string[] {
+  public static findFiles(): string[] {
     /**
       Find all files in all nested directories with the given extensions and ignore files with the given ignoreExtensions.
   
@@ -234,39 +236,6 @@ export class Files {
     return fs.readFileSync(path);
   }
 
-  public static tsAndHtmlFromFile(file: string, filesInDirectory: string[]): [string | null, string | null, string | null] {
-    const baseFile = path.basename(file, path.extname(file));
-    const extension = path.extname(file);
-    let correspondingFile: string | null = null;
-
-    if (extension === CONFIG.typescriptExtension) {
-      correspondingFile = `${baseFile}.html`;
-    } else if (extension === '.html') {
-      correspondingFile = `${baseFile}${CONFIG.typescriptExtension}`;
-    }
-
-    let htmlFile: string | null = null;
-    let tsFile: string | null = null;
-
-    if (correspondingFile && filesInDirectory.includes(correspondingFile)) {
-      if (extension === CONFIG.typescriptExtension) {
-        tsFile = file;
-        htmlFile = correspondingFile;
-      } else {
-        tsFile = correspondingFile;
-        htmlFile = file;
-      }
-    } else {
-      if (extension === CONFIG.typescriptExtension) {
-        tsFile = file;
-      } else {
-        htmlFile = file;
-      }
-    }
-
-    return [tsFile, htmlFile, correspondingFile];
-  }
-
   public static readJsonFile(path: fs.PathLike): Object | undefined {
     if (Files.existsSync(path)) {
       const fileContent = Files.readFileSync(path).toString();
@@ -303,9 +272,11 @@ export class Files {
     ];
 
     let directoriesToCheck = [process.cwd()];
-    const rootDirectory = this.getGitRootDirectory();
-    if (rootDirectory) {
-      directoriesToCheck.push(rootDirectory);
+    if (CONFIG.isGitRepository) {
+      const rootDirectory = this.getGitRootDirectory();
+      if (rootDirectory) {
+        directoriesToCheck.push(rootDirectory);
+      }
     }
 
     for (const dir of directoriesToCheck) {

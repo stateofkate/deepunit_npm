@@ -3,8 +3,9 @@ import * as fs from 'fs';
 import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
 import { exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage } from './utils';
-
+import { execSync } from 'child_process';
 const devConfig: string = 'deepunit.dev.config.json';
+
 // HARDCODED CONFIG VALUES
 const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
@@ -17,11 +18,9 @@ export const maxFixFailingTestAttempts = 2;
  */
 export class Config {
   frontendFramework: string = '';
-  testExtension: string = '';
+  testSuffix: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
-  typescriptExtension: string = '';
-  password: string = 'nonerequired';
   doProd: boolean;
   apiHost: string = '';
   version: string;
@@ -31,23 +30,30 @@ export class Config {
   generateAllFiles: boolean;
   isDevBuild: boolean = false;
   prodTesting: boolean = false;
+  testingLanguageOverride: string = '';
+  isGitRepository: boolean = false;
 
   constructor() {
     this.detectProjectType();
-    this.detectTsconfigTarget();
-    this.detectTestFramework();
-    this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.determineDevBuild();
 
+    this.detectTestFramework();
+    const testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
+    if (testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(testingFrameworkOverride)) {
+      this.testingFramework = testingFrameworkOverride as TestingFrameworks;
+    }
+
+    this.scriptTarget = this.getsConfigTarget() ?? 'ESNext';
+    this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.version = this.getVersion();
-    this.typescriptExtension = Config.getStringFromConfig('typescriptExtension') ?? '.ts';
-    this.password = Config.getStringFromConfig('password') || 'nonerequired';
     this.doProd = Config.getBoolFromConfig('doProd', true);
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
     this.generateAllFiles = getGenerateAllFilesFlag();
+    this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
+    this.isGitRepository = this.isInGitRepo();
   }
 
   /**
@@ -66,6 +72,18 @@ export class Config {
     } else {
       exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
       return ''; //Typescrip wants a return even tho we are going to process.exit()
+    }
+  }
+
+  private isInGitRepo(): boolean {
+    try {
+      execSync('git rev-parse --is-inside-work-tree', { stdio: 'pipe' });
+      return true;
+    } catch (error: any) {
+      if (error.message && typeof error.message === 'string' && error.message.includes('not a git repository')) {
+        return false;
+      }
+      throw error; // If the error is something else, we might want to rethrow it.
     }
   }
 
@@ -114,30 +132,38 @@ export class Config {
 
     if (fs.existsSync(jestConfigPath)) {
       this.testingFramework = TestingFrameworks.jest;
-      this.testExtension = '.test.ts';
+      this.testSuffix = 'test';
     } else if (fs.existsSync(karmaConfigPath)) {
       this.testingFramework = TestingFrameworks.jasmine;
-      this.testExtension = '.spec.ts';
+      this.testSuffix = 'spec';
     } else if (fs.existsSync(packageJsonPath)) {
       let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
       if (fileContent.includes('jest')) {
         this.testingFramework = TestingFrameworks.jest;
-        this.testExtension = '.test.ts';
+        this.testSuffix = 'test';
       } else if (fileContent.includes('jasmine-core')) {
         this.testingFramework = TestingFrameworks.jasmine;
-        this.testExtension = '.spec.ts';
+        this.testSuffix = 'spec';
       }
     }
+
+    if (!this.testSuffix) {
+      this.testSuffix = 'test';
+    }
   }
-  private detectTsconfigTarget(): void {
-    let tsconfigPath: string = 'tsconfig.json';
+
+  private getsConfigTarget(): string | undefined {
+    let tsconfigPath: string | undefined = 'tsconfig.json';
 
     while (tsconfigPath) {
       if (fs.existsSync(tsconfigPath)) {
         let contents: string = fs.readFileSync(tsconfigPath, 'utf8');
         try {
           let tsconfigJson = ts.parseConfigFileTextToJson('', contents);
-          this.scriptTarget = tsconfigJson.config?.compilerOptions?.target ? tsconfigJson.config?.compilerOptions?.target : undefined;
+          const scriptTarget = tsconfigJson.config?.compilerOptions?.target;
+          if (scriptTarget) {
+            return scriptTarget;
+          }
           if (tsconfigPath != null) {
             // @ts-ignore
             tsconfigPath = tsconfigJson.config?.extends ? path.join(path.dirname(tsconfigPath), tsconfigJson.config?.extends) : null;
@@ -147,8 +173,7 @@ export class Config {
           exitWithError('Unable to read the tsconfig');
         }
       } else {
-        console.error('Error: unable to find tsconfig at ' + tsconfigPath);
-        exitWithError('The current working directory is ' + process.cwd());
+        tsconfigPath = undefined;
       }
     }
   }

@@ -9,6 +9,7 @@ import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
+import { execSync } from 'child_process';
 
 // global classes
 export const CONFIG = new Config();
@@ -37,9 +38,10 @@ export async function main() {
       }
     });
     filesToWriteTestsFor = filesFlagArray;
-  } else if (CONFIG.generateAllFiles) {
+  } else if (CONFIG.generateAllFiles || !CONFIG.isGitRepository) {
     console.log('Finding all eligible files in working directory');
-    filesToWriteTestsFor = Files.findFiles([CONFIG.typescriptExtension, '.html'], ['.spec.ts', '.test.tsx', '.test.ts', '.consts.ts', '.module.ts']);
+    // TODO: add a regex to filter what extensions we accept
+    filesToWriteTestsFor = Files.findFiles();
   } else {
     console.log('Finding all changed files between current and HEAD branch.');
     filesToWriteTestsFor = Files.getChangedFiles();
@@ -61,12 +63,12 @@ export async function main() {
   for (const directory in filesByDirectory) {
     let filesInDirectory = filesByDirectory[directory];
     while (filesInDirectory.length > 0) {
-      const file = filesInDirectory.pop();
-      if (file === undefined) {
+      const sourceFileName = filesInDirectory.pop();
+      if (sourceFileName === undefined) {
         break;
       }
 
-      const testFileName = Tester.getTestName(file);
+      const testFileName = Tester.getTestName(sourceFileName);
 
       let tester: Tester;
       if (CONFIG.testingFramework === TestingFrameworks.jest) {
@@ -85,31 +87,19 @@ export async function main() {
         }
       }
 
-      const [sourceFileName, htmlFileName, correspondingFile] = Files.tsAndHtmlFromFile(file, filesInDirectory);
-      let filesToPass = [];
-      if (sourceFileName && sourceFileName != correspondingFile) {
-        filesToPass.push(sourceFileName);
-      }
-      if (htmlFileName && htmlFileName != correspondingFile) {
-        filesToPass.push(htmlFileName);
-      }
-
       let sourceFileDiff = '';
-      if (!CONFIG.generateAllFiles) {
-        sourceFileDiff = Files.getDiff(filesToPass);
+      if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
+        sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);
-      const htmlFileContent = Files.getFileContent(htmlFileName);
 
       console.log(`Generating test for ${sourceFileName}`);
 
-      const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, htmlFileName, htmlFileContent, testFileName, testFileContent);
+      const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent);
       if (response.stateCode === StateCode.FileNotSupported) {
         unsupportedFiles.push(sourceFileName);
       } else if (response.stateCode === StateCode.FileFullyTested) {
         alreadyTestedFiles.push(sourceFileName);
-      } else if (response.stateCode === StateCode.WrongPassword) {
-        exitWithError(`Incorrect password. Please be sure it is configured correctly in deepunit.config.json. Current password: ${CONFIG.password}`);
       } else if (response.stateCode === StateCode.Success) {
         if (!response?.tests || isEmpty(response.tests)) {
           serverDidNotSendTests.push(sourceFileName);

@@ -1,8 +1,8 @@
 export type GenerateTestData = {
   diffs: string;
-  tsFile?: { [key: string]: string };
-  htmlFile?: { [key: string]: string };
+  sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string };
+  testingLanguageOverride?: string;
 };
 
 export type FixErrorsData = {

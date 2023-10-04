@@ -11,7 +11,9 @@ export type FixManyErrorsResult = {
 
 export abstract class Tester {
   public static getTestName(file: string): string {
-    const testFileName = file.split('.').slice(0, -1).join('.') + '.deepunitai' + CONFIG.testExtension;
+    const fileParts = file.split('.');
+    const fileExt = fileParts[fileParts.length - 1];
+    const testFileName = fileParts.slice(0, -1).join('.') + '.deepunitai.' + CONFIG.testSuffix + '.' + fileExt;
     return testFileName;
   }
 
@@ -40,16 +42,8 @@ export abstract class Tester {
     }
   }
 
-  public async generateTest(
-    diffs: string,
-    tsFile: string | null,
-    tsFileContent: string | null,
-    htmlFile: string | null,
-    htmlFileContent: string | null,
-    testFile: string,
-    testContent: string,
-  ): Promise<any> {
-    return await Api.generateTest(diffs, tsFile, tsFileContent, htmlFile, htmlFileContent, testFile, testContent);
+  public async generateTest(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string): Promise<any> {
+    return await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent);
   }
 
   /**
