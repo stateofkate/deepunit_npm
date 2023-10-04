@@ -104,7 +104,7 @@ export function exitWithError(error: string) {
 
 export async function validateVersionIsUpToDate(): Promise<void> {
   const { latestVersion } = await Api.getLatestVersion();
-  const versionRegex = new RegExp(/^\d\.\d\.\d$/);
+  const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
   if (versionRegex.test(latestVersion.trim()) && versionRegex.test(CONFIG.version.trim())) {
     const latestVersionNumbers = latestVersion.split('.');
@@ -126,8 +126,7 @@ export async function validateVersionIsUpToDate(): Promise<void> {
     if (wantsToUpdate) {
       try {
         console.log('Updating deepunit...');
-        const stdout = execSync('npm install -D deepunit@latest');
-        console.log(stdout.toString().trim());
+        installPackage('deepunit@latest', true);
       } catch (error) {
         exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
       }
@@ -154,4 +153,9 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
       }
     });
   });
+}
+
+export function installPackage(newPackage: string, isDevDep?: boolean): void {
+  const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
+  console.log(stdout.buffer.toString());
 }
