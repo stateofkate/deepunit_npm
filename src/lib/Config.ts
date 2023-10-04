@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { TestingFrameworks } from '../main.consts';
 import { exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage } from './utils';
 import { execSync } from 'child_process';
+import { Color } from './Printer';
 const devConfig: string = 'deepunit.dev.config.json';
 
 // HARDCODED CONFIG VALUES
@@ -220,7 +221,10 @@ export class Config {
 
   public async confirmAllPackagesNeeded() {
     if (this.frontendFramework == 'react') {
-      await this.confirmRunningReactVersion18();
+      // if it is version 18, let them deal with dependencies
+      if (this.confirmRunningReactVersion18()) {
+        return;
+      }
 
       const requiredPackaged = [
         { name: '@testing-library/react', installVersion: 'release-12.x' },
@@ -244,30 +248,35 @@ export class Config {
           const remappedPacks = neededPackages.map((p) => (p.installVersion ? `${p.name}@${p.installVersion}` : p.name));
           installPackage(remappedPacks.join(' '), true);
         } else {
-          console.error(`Packages are required to run, please install the missing packages.`);
-          process.exit(100);
+          console.error(
+            Color.yellow(
+              'Packages are required to run tests, please install the missing packages or enable includeFailingTests in the config, so you can manage the dependencies yourself.',
+            ),
+          );
         }
       }
     }
   }
 
   // REACT KLUDGE: we do not support react 18 yet
-  private async confirmRunningReactVersion18() {
+  private confirmRunningReactVersion18(): boolean {
     const reactVersion = this.getPackageVersionIfInstalled('react');
     const versionRegex = new RegExp(/([\d.]+)/);
     if (!reactVersion) {
-      exitWithError('React is a missing dependency, yet we assume you are using react. There is an issue, please check your config that you are not forcing it to be react.');
+      console.warn('React is a missing dependency, yet we assume you are using react. There is an issue, please check your config that you are not forcing it to be react.');
     } else {
       const versionNumbers = reactVersion.match(versionRegex);
       if (versionNumbers && versionNumbers[0].split('.') && versionNumbers[0].split('.').length == 3 && !isNaN(+versionNumbers[0].split('.')[0])) {
         const number = versionNumbers[0].split('.')[0];
         if (+number >= 18) {
-          exitWithError('We currently do not support react version 18 and above. Please contact us to request this feature.');
+          console.warn(Color.yellow('We currently do not support react version 18 and above. You may continue although imports might not work right.'));
+          return true;
         }
       } else {
-        exitWithError('Unable to parse react version number.');
+        console.error('Unable to parse react version number.');
       }
     }
+    return false;
   }
 
   private getPackageVersionIfInstalled(requiredPackaged: string): string | null {
