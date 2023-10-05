@@ -103,11 +103,12 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
-  public static sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>) {
+  public static sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>, failedTestErrors: any) {
     const data: SendResultData = {
       failedTests,
       passedTests,
       tests,
+      failedTestErrors,
     };
     this.post(ApiPaths.sendResults, data);
   }

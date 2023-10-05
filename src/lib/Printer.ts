@@ -33,11 +33,11 @@ export class Printer {
     this.printIndented(unsupportedFiles, '\nThe following files are not currently supported. Contact support@deepunit.ai so we can add support:');
     this.printIndented(
       alreadyTestedFiles,
-      '\nThe following files were already fully tested so we did not attempt to write anymore. Contact support@deepunit.ai if you need help with this:',
+      '\nThe following files were already fully tested so we did not attempt to write any more. Contact support@deepunit.ai if you need help with this:',
     );
     const errorTestsMessage = CONFIG.includeFailingTests
-      ? '\nThe following tests were generated but deleted. Run DeepUnit again or set includeFailingTests true in deepunit.config.json to keep failing test'
-      : '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:';
+      ? '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:'
+      : '\nThe following tests were generated but deleted. Run DeepUnit again or set includeFailingTests true in deepunit.config.json to keep failing test';
     this.printIndented(testsWithErrors, errorTestsMessage);
     this.printIndented(passingTests, '\nWe successfully generated tests for the following files, and they pass without errors:');
     this.printIndented(serverNoTests, '\nWe did not get a test back from the server for the following files, please inform support@deepunit.ai so we can fix this for you:');
