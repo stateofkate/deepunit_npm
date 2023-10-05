@@ -113,18 +113,23 @@ export async function main() {
         // REMOVED for RELEASE
         // const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
 
-        const { failedTests, passedTests } = tester.getTestResults(tempTestPaths);
-        Api.sendResults(failedTests, passedTests, tests);
+        const { failedTests, passedTests, failedTestErrors } = tester.getTestResults(tempTestPaths);
+        Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
 
         //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
         const prettierConfig: Object | undefined = Files.getPrettierConfig();
-        await tester.recombineTests(passedTests.length > 0 ? passedTests : tempTestPaths, testFileName, testFileContent, passedTests.length > 0, prettierConfig);
+        let testsToKeep: string[] = CONFIG.includeFailingTests ? tempTestPaths : passedTests;
+        await tester.recombineTests(testsToKeep, testFileName, testFileContent, passedTests.length > 0, prettierConfig);
 
         //then we will need to delete all the temp test files.
-        Files.deleteTempFiles(CONFIG.isDevBuild ? failedTests : tempTestPaths);
+        Files.deleteTempFiles(tempTestPaths);
 
         if (passedTests.length > 0) {
-          passingTests.push(testFileName);
+          if (CONFIG.includeFailingTests && failedTests.length > 0) {
+            testsWithErrors.push(testFileName);
+          } else {
+            passingTests.push(testFileName);
+          }
         } else {
           testsWithErrors.push(testFileName);
         }
