@@ -88,7 +88,7 @@ export async function main() {
       }
 
       let sourceFileDiff = '';
-      if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
+      if (!CONFIG.generateAllFiles && filesFlagArray.length === 0 && CONFIG.isGitRepository) {
         sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);
