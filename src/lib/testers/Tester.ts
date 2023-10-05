@@ -32,7 +32,7 @@ export abstract class Tester {
     if (responseData && responseData.testContent) {
       let fileContent = '';
       if (!hasPassingTests) {
-        fileContent += `// NOTICE: Tests in this file DID NOT PASS but are left here so you can edit them\n// To disable this feature, add "includeFailingTests": true to the deepunit.config.json.\n\n`;
+        fileContent += `// NOTICE: Tests in this file DID NOT PASS but are left here so you can edit them\n// To disable this feature, add "includeFailingTests": false to the deepunit.config.json.\n\n`;
       }
 
       fileContent += responseData.testContent;
