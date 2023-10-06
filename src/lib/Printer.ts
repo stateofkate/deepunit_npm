@@ -39,7 +39,7 @@ export class Printer {
       ? '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:'
       : '\nThe following tests were generated but deleted. Run DeepUnit again or set includeFailingTests true in deepunit.config.json to keep failing test';
     this.printIndented(testsWithErrors, errorTestsMessage);
-    this.printIndented(passingTests, '\nWe successfully generated tests for the following files, and they pass without errors:');
+    this.printIndented(passingTests, '\nWe successfully generated passing tests for the following files:');
     this.printIndented(serverNoTests, '\nWe did not get a test back from the server for the following files, please inform support@deepunit.ai so we can fix this for you:');
 
     //Never write unit tests for the following line. Simply acknowledge that it is untestable.
