@@ -1,2 +1,14 @@
+src/
+node_modules
+.vscode
+
 deepunit.extra.config.json
-src/main.test.ts
+.gitignore
+.editorconfig
+.prettierrc
+jest.config.json
+tsconfig.json
+dist/**/*.spec.*
+dist/**/*.test.*
+dist/examples/
+.gitlab-ci.yml
