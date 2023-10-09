@@ -90,10 +90,19 @@ export class Api {
     return await this.post(ApiPaths.fixErrors, data);
   }
 
-  public static async recombineTests(testContents: string[], testFileContent: string, prettierConfig: Object | undefined) {
+  public static async recombineTests(
+    tempTests: { [key: string]: string },
+    testFileContent: string,
+    failedItBlocks: { [key: string]: string[] },
+    failedTests: string[],
+    prettierConfig: Object | undefined,
+  ) {
     let data: RecombineTestData = {
-      testFiles: testContents,
+      testFiles: tempTests,
       testFileContent: testFileContent,
+      failedItBlocks,
+      failedTests,
+      includeFailingTests: CONFIG.includeFailingTests,
     };
 
     if (prettierConfig) {
@@ -104,6 +113,10 @@ export class Api {
   }
 
   public static sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>, failedTestErrors: any) {
+    // we do not want analytics for development builds
+    if (!CONFIG.doProd) {
+      return;
+    }
     const data: SendResultData = {
       failedTests,
       passedTests,
