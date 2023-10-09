@@ -113,10 +113,6 @@ export class Api {
   }
 
   public static sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>, failedTestErrors: any) {
-    // we do not want analytics for development builds
-    if (!CONFIG.doProd) {
-      return;
-    }
     const data: SendResultData = {
       failedTests,
       passedTests,

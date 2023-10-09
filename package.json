@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
