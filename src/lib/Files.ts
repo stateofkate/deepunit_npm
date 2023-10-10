@@ -128,7 +128,8 @@ export class Files {
       list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
       */
     const matches: string[] = [];
-    const walkDir = 'src';
+    const src = 'src';
+    const walkDir = fs.existsSync(src) ? src : '';
 
     function walk(directory: string) {
       const files = fs.readdirSync(directory);
