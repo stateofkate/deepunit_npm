@@ -1,5 +1,5 @@
 {
-  "ignoredDirectories": [],
+  "ignoredDirectories": ["node_modules"],
   "ignoredFiles": [],
   "includeFailingTests": false,
   "testSuffix": "test"
