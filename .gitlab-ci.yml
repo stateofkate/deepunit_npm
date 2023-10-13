@@ -1,0 +1,81 @@
+image: node:18
+
+variables:
+  ARTIFACT_DOWNLOAD_ATTEMPTS: 2 # Number of retries for restoring saved artifacts.
+  FORCE_COLOR: '1' # Whether to force colour output in compatible tooling.
+  GET_SOURCES_ATTEMPTS: 2 # Number of retries for git commands.
+  RESTORE_CACHE_ATTEMPTS: 2 # Number of retries for restoring cached files.
+
+stages:
+  - prepare
+  - verify
+  - build
+  - publish
+
+# Installs all dependencies.
+install:
+  stage: prepare
+  interruptible: true
+  retry: 1
+  dependencies: []
+  artifacts:
+    name: 'deps_$CI_COMMIT_REF_SLUG'
+    paths:
+      - node_modules/
+    when: on_success
+    expire_in: 12h
+  script:
+    - npm install --no-progress --no-audit --no-fund --verbose
+  only:
+    - master
+    - merge_requests
+
+# Runs the test suite.
+test:
+  stage: verify
+  interruptible: true
+  retry: 1
+  dependencies:
+    - install
+  script:
+    - npm run test:cov
+  only:
+    - master
+    - merge_requests
+
+# generate dist folder
+build:
+  stage: build
+  interruptible: true
+  retry: 1
+  artifacts:
+    name: dist_$CI_COMMIT_REF_SLUG'
+    paths:
+      - dist/
+    when: on_success
+    expire_in: 12h
+  dependencies:
+    - install
+  script:
+    - npm run build
+  only:
+    - master
+
+# Publishes the package to npm.
+publish:
+  stage: publish
+  interruptible: false
+  retry: 1
+  dependencies:
+    - install
+    - build
+  script:
+    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
+    - npm publish --verbose
+  resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
+  rules:
+    - if: '$CI_DEPLOY_FREEZE != null'
+      when: never
+    - if: '$CI_COMMIT_REF_NAME != "master"'
+      when: never
+    - when: on_success
