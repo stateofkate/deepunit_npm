@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
@@ -10,8 +10,8 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
     "test": "jest",
     "test:cov": "npx jest --coverage --verbose --runInBand --passWithNoTests",
-    "deleteTests": "find . -type f -name \"*.test.ts\" -exec rm -f {} \\;\n",
-    "deleteTempTests": "find . -type f -name \"*.deepunittemptest.test.ts\" -exec rm -f {} \\;\n",
+    "dt": "find . -type f -name \"*.test.ts\" -exec rm -f {} \\;\n",
+    "dtt": "find . -type f -name \"*.deepunittemptest.test.ts\" -exec rm -f {} \\;\n",
     "summary": "npx jest src --colors 2>&1 | awk '/FAIL/ {print \"\\033[31m\" $0 \"\\033[0m\"} /PASS/ {print \"\\033[32m\" $0 \"\\033[0m\"}'",
     "push": "npm run build && npm publish",
     "tar": "npm run build && npm pack",
