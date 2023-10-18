@@ -44,7 +44,7 @@ export class Config {
       this.testingFramework = testingFrameworkOverride as TestingFrameworks;
     }
 
-    this.scriptTarget = this.getsConfigTarget() ?? 'ESNext';
+    this.scriptTarget = this.getsConfigTarget() ?? 'unknown';
     this.prodTesting = Config.getBoolFromConfig('prodTesting');
     this.version = this.getVersion();
     this.doProd = Config.getBoolFromConfig('doProd', true);
