@@ -49,7 +49,7 @@ export class Files {
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
 
     let changedFiles: string[] = [];
-    let getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`, `git -C ${gitRoot} diff --name-only HEAD~1`];
+    let getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`];
 
     while (getChangedFileCmds.length > 0) {
       const currentCommand = getChangedFileCmds.pop() + ` -- ${relativePath ? relativePath + '/' : ''}`;
