@@ -4,6 +4,7 @@ import path from 'path';
 import { CONFIG } from '../main';
 import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, setupYargs } from './utils';
 import * as glob from 'glob';
+import { Color } from './Printer';
 
 export class Files {
   public static getFilesToTest(): string[] {
@@ -36,7 +37,8 @@ export class Files {
     // if we didn't get any files, return error
     if (filteredFiles.length <= 0) {
       exitWithError(
-        `Run deepunit with flag -h for more information.\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.`,
+        Color.yellow('Run deepunit with flag -h for more information.') +
+          '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
       );
     }
 
