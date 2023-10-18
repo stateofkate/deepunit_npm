@@ -21,11 +21,12 @@ export async function main() {
   // setup the auth channel and see if they are logged in or not
   AUTH = await Auth.init();
 
-  // confirm we have all packages for type of project
-  await CONFIG.confirmAllPackagesNeeded();
-
   // check to confirm we still support this version
   await validateVersionIsUpToDate();
+  Files.setup();
+
+  // confirm we have all packages for type of project
+  await CONFIG.confirmAllPackagesNeeded();
 
   // Get files that need to be tested
   let filesToWriteTestsFor: string[];
