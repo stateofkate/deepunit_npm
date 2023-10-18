@@ -111,16 +111,14 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        // REMOVED for RELEASE
-        // const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
+        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = tester.getTestResults(tempTestPaths);
 
-        const { failedTests, passedTests, failedTestErrors } = tester.getTestResults(tempTestPaths);
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
 
         //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
         const prettierConfig: Object | undefined = Files.getPrettierConfig();
-        let testsToKeep: string[] = CONFIG.includeFailingTests ? tempTestPaths : passedTests;
-        await tester.recombineTests(testsToKeep, testFileName, testFileContent, passedTests.length > 0, prettierConfig);
+
+        await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
         //then we will need to delete all the temp test files.
         Files.deleteTempFiles(tempTestPaths);

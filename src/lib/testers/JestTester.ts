@@ -1,23 +1,7 @@
 import { execSync } from 'child_process';
-import { Tester } from './Tester';
+import { TestResults, Tester } from './Tester';
 
 export class JestTester extends Tester {
-  public checkIfTestsPass(testFilePath: string): boolean {
-    const result = this.runTests([testFilePath]);
-    let mustContain = 0;
-    if (result.testResults) {
-      for (const testResult of result.testResults) {
-        if (testResult.message?.includes('Your test suite must contain at least one test.')) {
-          mustContain++;
-        }
-      }
-    }
-    if (result.numFailedTestSuites === 0 || result.numFailedTestSuites - mustContain === 0) {
-      return true;
-    }
-    return 0 === result.numFailedTestSuites;
-  }
-
   public runTests(relativePathArray: string[]): any {
     const formattedPaths = relativePathArray.join(' ');
     let result;
@@ -68,28 +52,29 @@ export class JestTester extends Tester {
   } {
     const result = this.runTests(files);
     if (result.numFailedTestSuites === 0) {
-      return { passedTests: files, failedTests: [], failedTestErrors: {} };
+      return { passedTests: files, failedTests: [], failedTestErrors: {}, failedItBlocks: {} };
     } else if (result.testResults) {
       let passedTests: string[] = [];
       let failedTests: string[] = [];
       let failedTestErrors: any = {};
+      let failedItBlocks: { [key: string]: string[] } = {};
       for (const testResult of result.testResults) {
         const testPathFound: string | undefined = files.find((substring) => testResult.name.endsWith(substring));
-        const testPath = testPathFound ? testPathFound : testResult.name;
-        if (!testPath) {
-          console.warn('unable to find the testPath');
-        }
+        const testPath = testPathFound ? testPathFound : (testResult.name as string);
+
         if (testResult.status === 'failed') {
-          if (testResult.message.includes('Your test suite must contain at least one test.')) {
-            console.error('this test failed because it does not contain a test suite. Weird.');
-          }
           failedTests.push(testPath);
           failedTestErrors[testPath] = testResult.message;
+          // handle what "it" blocks failed
+          const failedItStatements = testResult.assertionResults.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
+          if (failedItStatements.length > 0) {
+            failedItBlocks[testPath] = failedItStatements;
+          }
         } else if (testResult.status == 'passed') {
           passedTests.push(testPath);
         }
       }
-      return { passedTests, failedTestErrors, failedTests };
+      return { passedTests, failedTestErrors, failedTests, failedItBlocks };
     }
 
     throw new Error('Unable to run tests for ' + files.concat(', '));

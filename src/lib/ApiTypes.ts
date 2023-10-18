@@ -1,3 +1,12 @@
+import { TestingFrameworks } from '../main.consts';
+
+export type ApiBaseData = {
+  frontendFramework: string;
+  testingFramework: TestingFrameworks;
+  version: string;
+  email: string | null;
+};
+
 export type GenerateTestData = {
   diffs: string;
   sourceFile?: { [key: string]: string };
@@ -14,9 +23,13 @@ export type FixErrorsData = {
 };
 
 export type RecombineTestData = {
-  testFiles: string[];
+  testFiles: { [key: string]: string };
   prettierConfig?: Object;
   testFileContent: string;
+  failedItBlocks: { [key: string]: string[] };
+  failedTests: string[];
+  includeFailingTests: boolean;
+  scriptTarget: string;
 };
 export type SendResultData = {
   failedTests: string[];
