@@ -67,17 +67,17 @@ export function isEmpty(obj: Object) {
  * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
  * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
  */
-export function getFilesFlag(): string[] {
+export function getFilesFlag(): string[] | undefined {
   const args = process.argv.slice(2);
-  let files: string[] = [];
+  let pattern: string[] | undefined;
 
   args.forEach((arg, index) => {
-    if ((arg === '--f' || arg === '--file' || arg === '--files') && index + 1 < args.length) {
-      files = files.concat(args[index + 1].split(','));
+    if ((arg === '-f' || arg === '--f' || arg === '--file' || arg === '--files') && index + 1 < args.length) {
+      pattern = args[index + 1].split(',');
     }
   });
 
-  return files;
+  return pattern;
 }
 
 /**

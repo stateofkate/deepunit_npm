@@ -3,13 +3,12 @@
 import { TestingFrameworks } from './main.consts';
 import { Config } from './lib/Config';
 import { Files } from './lib/Files';
-import { exitWithError, getFilesFlag, isEmpty, validateVersionIsUpToDate } from './lib/utils';
+import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, isEmpty, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
-import { execSync } from 'child_process';
 
 // global classes
 export const CONFIG = new Config();
@@ -29,32 +28,11 @@ export async function main() {
   await CONFIG.confirmAllPackagesNeeded();
 
   // Get files that need to be tested
-  let filesToWriteTestsFor: string[];
-  const filesFlagArray: string[] = getFilesFlag();
-  if (filesFlagArray.length > 0) {
-    console.log('Finding files within --file flag');
-    filesFlagArray.forEach((filePath) => {
-      if (!Files.existsSync(filePath)) {
-        exitWithError(`${filePath} could not be found.`);
-      }
-    });
-    filesToWriteTestsFor = filesFlagArray;
-  } else if (CONFIG.generateAllFiles || !CONFIG.isGitRepository) {
-    console.log('Finding all eligible files in working directory');
-    // TODO: add a regex to filter what extensions we accept
-    filesToWriteTestsFor = Files.findFiles();
-  } else {
-    console.log('Finding all changed files between current and HEAD branch.');
-    filesToWriteTestsFor = Files.getChangedFiles();
-  }
+  const filesToTest = Files.getFilesToTest();
 
-  // if we didn't get any files, return error
-  if (filesToWriteTestsFor.length <= 0) {
-    return exitWithError(`No files to test were found. Check your config is set right or you are using the --file flag correctly.`);
-  }
+  Printer.printFilesToTest(filesToTest);
 
-  Printer.printFilesToTest(filesToWriteTestsFor);
-  const filesByDirectory = Files.groupFilesByDirectory(filesToWriteTestsFor);
+  const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
 
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
@@ -89,7 +67,8 @@ export async function main() {
       }
 
       let sourceFileDiff = '';
-      if (!CONFIG.generateAllFiles && filesFlagArray.length === 0 && CONFIG.isGitRepository) {
+      if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
+        // TODO: add back files check
         sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);
