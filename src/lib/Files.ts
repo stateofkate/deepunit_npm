@@ -323,13 +323,11 @@ export class Files {
       // Read package.json
       const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
-      // Modify package.json (example: add a new script)
       packageJson.scripts = packageJson.scripts || {};
       packageJson.scripts.deepunit = 'deepunit';
 
       // Write package.json
       fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
-      console.log(`Added "deepunit" script to ${packagePath}`);
     } else {
       console.log("No package.json found! That's gonna be a problem. DeepUnit probably will not be successful at running.");
       console.log(`Current working directory is ${process.cwd()}`);
