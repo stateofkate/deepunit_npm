@@ -21,7 +21,7 @@ export class JestTester extends Tester {
   public runTests(relativePathArray: string[]): any {
     const formattedPaths = relativePathArray.join(' ');
     let result;
-    const command = `npx jest --json ${formattedPaths} --passWithNoTests`; //we should maybe add the --runTestsByPath flag, but I want to make the most minimal changes possible right now
+    const command = `npx jest --json ${formattedPaths} --passWithNoTests  --runInBand`; //we should maybe add the --runTestsByPath flag, but I want to make the most minimal changes possible right now
     try {
       result = execSync(command, { stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (error: any) {
