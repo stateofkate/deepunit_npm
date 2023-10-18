@@ -310,4 +310,29 @@ export class Files {
     console.error(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
     return undefined;
   }
+
+  public static setup() {
+    const configPath = 'deepunit.config.json';
+    if (!fs.existsSync(configPath)) {
+      const configFileContent =
+        '{\n' + '  "ignoredDirectories": ["node_modules"],\n' + '  "ignoredFiles": [],\n' + '  "includeFailingTests": false,\n' + '  "testSuffix": "test"\n' + '}\n';
+      fs.writeFileSync(configPath, configFileContent);
+    }
+    const packagePath = 'package.json';
+    if (fs.existsSync(packagePath)) {
+      // Read package.json
+      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+      // Modify package.json (example: add a new script)
+      packageJson.scripts = packageJson.scripts || {};
+      packageJson.scripts.deepunit = 'deepunit';
+
+      // Write package.json
+      fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
+      console.log(`Added "deepunit" script to ${packagePath}`);
+    } else {
+      console.log("No package.json found! That's gonna be a problem. DeepUnit probably will not be successful at running.");
+      console.log(`Current working directory is ${process.cwd()}`);
+    }
+  }
 }
