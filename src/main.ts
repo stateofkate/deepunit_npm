@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { Config } from './lib/Config';
 import { Files } from './lib/Files';
-import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, isEmpty, validateVersionIsUpToDate } from './lib/utils';
+import { exitWithError, getFilesFlag, isEmpty, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -15,6 +15,8 @@ export const CONFIG = new Config();
 export let AUTH: Auth;
 
 export async function main() {
+  setupYargs();
+
   Printer.printIntro();
 
   // setup the auth channel and see if they are logged in or not

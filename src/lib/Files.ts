@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from '../main';
-import { exitWithError, getFilesFlag, getGenerateAllFilesFlag } from './utils';
+import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, setupYargs } from './utils';
 import * as glob from 'glob';
 
 export class Files {
@@ -35,7 +35,9 @@ export class Files {
 
     // if we didn't get any files, return error
     if (filteredFiles.length <= 0) {
-      exitWithError(`No files to test were found. Check your config is set right or that you are using the --file flag correctly.`);
+      exitWithError(
+        `Run deepunit with flag -h for more information.\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.`,
+      );
     }
 
     return filteredFiles;
@@ -70,7 +72,6 @@ export class Files {
   public static filterExtensions(files: string[]): string[] {
     let filteredFiles: string[] = [];
     for (const file of files) {
-      // TODO: make this a custom regex they can choose from
       const excludedSuffixes = [
         '.test.ts',
         '.test.tsx',

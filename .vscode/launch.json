@@ -11,7 +11,7 @@
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["run", "start"],
-            "args": ["--", "--file", "src/**/Tester.ts"]
+            "args": ["--","--file", "src/**/basic.ts"]
           },
           {
             "name": "Launch all",
@@ -20,7 +20,7 @@
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["run", "start"],
-            "args": ["--", "--a"]
+            "args": ["--", "--all"]
           },
           {
             "name": "Launch diff",

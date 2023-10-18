@@ -113,8 +113,6 @@ export class Config {
         return;
       }
     }
-    // Unable to find the framework
-    console.log('WARNING: Unable to detect frontend framework, typescript extension');
     this.frontendFramework = '';
   }
 
