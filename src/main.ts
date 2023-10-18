@@ -67,8 +67,8 @@ export async function main() {
       }
 
       let sourceFileDiff = '';
-      if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
-        // TODO: add back files check
+      const files = getFilesFlag() ?? [];
+      if (!CONFIG.generateAllFiles && files.length <= 0 && CONFIG.isGitRepository) {
         sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);

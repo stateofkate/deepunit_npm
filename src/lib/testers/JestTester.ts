@@ -45,11 +45,7 @@ export class JestTester extends Tester {
     return str;
   }
 
-  public getTestResults(files: string[]): {
-    failedTests: string[];
-    passedTests: string[];
-    failedTestErrors: { [key: string]: string };
-  } {
+  public getTestResults(files: string[]): TestResults {
     const result = this.runTests(files);
     if (result.numFailedTestSuites === 0) {
       return { passedTests: files, failedTests: [], failedTestErrors: {}, failedItBlocks: {} };
