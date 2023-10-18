@@ -14,8 +14,7 @@
     "deleteTempTests": "find . -type f -name \"*.deepunittemptest.test.ts\" -exec rm -f {} \\;\n",
     "summary": "npx jest src --colors 2>&1 | awk '/FAIL/ {print \"\\033[31m\" $0 \"\\033[0m\"} /PASS/ {print \"\\033[32m\" $0 \"\\033[0m\"}'",
     "push": "npm run build && npm publish",
-    "tar": "npm run build && npm pack",
-    "postinstall": "if [ -f dist/postInstall.js ]; then node dist/postInstall.js; fi"
+    "tar": "npm run build && npm pack"
   },
   "keywords": [],
   "author": "DeepUnit.AI",
