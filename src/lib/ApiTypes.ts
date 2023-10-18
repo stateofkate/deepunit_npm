@@ -22,5 +22,6 @@ export type SendResultData = {
   failedTests: string[];
   passedTests: string[];
   tests: Record<string, string>;
-  failedTestErrors: any;
+  failedTestErrors: { [key: string]: string };
+  scriptTarget: string;
 };
