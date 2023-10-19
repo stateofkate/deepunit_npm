@@ -87,7 +87,7 @@ export class Files {
       return '';
     }
   }
-
+  //test
   public static getExistingTestContent(file: string): string | null {
     let testContent: string = '';
     try {
