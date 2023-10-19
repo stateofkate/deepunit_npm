@@ -3,6 +3,9 @@ import { Api } from './Api';
 import { createInterface } from 'readline';
 import { Color, Printer } from './Printer';
 import { execSync } from 'child_process';
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
+import { Arguments } from 'yargs';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
@@ -61,39 +64,6 @@ export function isEmpty(obj: Object) {
   }
 
   return true;
-}
-
-/**
- * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
- * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
- */
-export function getFilesFlag(): string[] {
-  const args = process.argv.slice(2);
-  let files: string[] = [];
-
-  args.forEach((arg, index) => {
-    if ((arg === '--f' || arg === '--file' || arg === '--files') && index + 1 < args.length) {
-      files = files.concat(args[index + 1].split(','));
-    }
-  });
-
-  return files;
-}
-
-/**
- * Get whether we are doing all files or only changed files
- */
-export function getGenerateAllFilesFlag(): boolean {
-  const args = process.argv.slice(2);
-
-  let result = false;
-  args.forEach((arg) => {
-    if (arg === '--a' || arg === '--all') {
-      result = true;
-    }
-  });
-
-  return result;
 }
 
 export function exitWithError(error: string) {
@@ -158,4 +128,49 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
   const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
   console.log(stdout.buffer.toString());
+}
+
+/**
+ * Flags
+ */
+
+interface ParsedArgs extends Arguments {
+  f?: string;
+  file?: string;
+  files?: string;
+  a?: boolean;
+  all?: boolean;
+}
+
+export function setupYargs() {
+  return yargs(hideBin(process.argv))
+    .usage('Usage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.')
+    .option('f', {
+      alias: ['file', 'files'],
+      type: 'string',
+      description: 'Test only files that match pattern. Example: --f */main.ts,subfolder/number.ts,src/**',
+    })
+    .option('a', {
+      alias: ['all'],
+      type: 'boolean',
+      description: 'Generate all files in the project that can be tested.',
+    })
+    .help()
+    .alias('h', 'help');
+}
+
+export function getFilesFlag(): string[] | undefined {
+  const argv = setupYargs().argv as ParsedArgs;
+
+  if (argv.f || argv.file || argv.files) {
+    const files = argv.f || argv.file || argv.files;
+    return typeof files === 'string' ? files.split(',') : undefined;
+  }
+
+  return undefined;
+}
+
+export function getGenerateAllFilesFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.a || argv.all);
 }

@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
@@ -35,7 +35,9 @@
   ],
   "dependencies": {
     "axios": "^1.4.0",
-    "typescript": "^5.1.6"
+    "glob": "^10.3.10",
+    "typescript": "^5.1.6",
+    "yargs": "^17.7.2"
   },
   "compilerOptions": {
     "esModuleInterop": true

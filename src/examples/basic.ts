@@ -75,3 +75,11 @@ export function circleArea(radius: number): number {
   if (radius < 0) throw new Error('Radius cannot be negative');
   return Math.PI * Math.pow(radius, 2);
 }
+
+export function is32Bit(num: number): boolean {
+  if (num > 2_147_483_647) {
+    return false;
+  }
+
+  return true;
+}

@@ -5,13 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch via npm",
+            "name": "Launch file",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["run", "start"],
-            "args": ["--", "--file", "src/examples/basic.ts"]
+            "args": ["--","--file", "src/**/basic.ts"]
+          },
+          {
+            "name": "Launch all",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start"],
+            "args": ["--", "--all"]
+          },
+          {
+            "name": "Launch diff",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start"],
           }
     ]
 }
