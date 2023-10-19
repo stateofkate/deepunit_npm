@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { TestingFrameworks } from './main.consts';
-import { Config } from './lib/Config';
+import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
@@ -11,7 +11,6 @@ import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
 
 // global classes
-export const CONFIG = new Config();
 export let AUTH: Auth;
 
 export async function main() {
@@ -123,4 +122,6 @@ export async function main() {
   process.exit(100);
 }
 
-main();
+if (require.main === module) {
+  main();
+}

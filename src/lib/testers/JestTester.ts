@@ -4,21 +4,19 @@ import { TestResults, Tester } from './Tester';
 export class JestTester extends Tester {
   public runTests(relativePathArray: string[]): any {
     const formattedPaths = relativePathArray.join(' ');
+
     let result;
     const command = `npx jest --json ${formattedPaths} --passWithNoTests  --runInBand`; //we should maybe add the --runTestsByPath flag, but I want to make the most minimal changes possible right now
     try {
       result = execSync(command, { stdio: ['ignore', 'pipe', 'ignore'] });
     } catch (error: any) {
       result = error;
-      if (error.stdout) {
-        result = JSON.parse(error.stdout.toString());
-      } else {
-        // If there's no stdout, rethrow the error
-        throw error;
-      }
     }
     if (!result.numFailedTestSuites) {
-      return JSON.parse(result.toString());
+      const results = JestTester.extractJSONs(result.toString());
+      if (results.length > 0) {
+        return JSON.parse(results[0]);
+      }
     }
     return result;
   }
@@ -52,5 +50,56 @@ export class JestTester extends Tester {
     }
 
     throw new Error('Unable to run tests for ' + files.concat(', '));
+  }
+
+  public static extractJSONs(text: string) {
+    let results = [];
+    let stack = [];
+    let startIdx = 0;
+    let insideString = false; // Flag to indicate whether we are inside a JSON string
+    let quoteChar = ''; // To store the type of quote (single or double)
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if ((char === '"' || char === "'") && stack.length > 0 && (i === 0 || text[i - 1] !== '\\')) {
+        // Check if we're entering or leaving a JSON string
+        if (insideString) {
+          // We're possibly leaving a JSON string, but only if the char matches the starting quote
+          if (char === quoteChar) {
+            insideString = false;
+            quoteChar = '';
+          }
+        } else {
+          // We're entering a JSON string
+          insideString = true;
+          quoteChar = char;
+        }
+      }
+
+      // If inside a string, ignore other characters
+      if (insideString) {
+        continue;
+      }
+
+      if (char === '{') {
+        stack.push('{');
+        if (stack.length === 1) {
+          // Remember the index where the JSON string started
+          startIdx = i;
+        }
+      } else if (char === '}') {
+        if (stack.length === 0) {
+          // unmatched }, ignore
+          continue;
+        }
+        stack.pop();
+        if (stack.length === 0) {
+          // Complete JSON found, extract substring
+          results.push(text.slice(startIdx, i + 1));
+        }
+      }
+    }
+
+    return results;
   }
 }

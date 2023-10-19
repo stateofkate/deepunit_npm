@@ -6,3 +6,4 @@ dist
 # we don't want to include generated tests, if we want to keep them, change it to just .test.ts
 *.deepunitai.test.ts
 deepunit.config.json
+*.deepunittemptest.test.ts

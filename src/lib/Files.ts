@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG } from '../main';
+import { CONFIG } from './Config';
 import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, setupYargs } from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';

@@ -1,6 +1,5 @@
-import { CONFIG } from '../../main';
+import { CONFIG } from '../Config';
 import { Api } from '../Api';
-import { maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
 
 export type TestResults = {

@@ -1,8 +1,9 @@
 import axios, { AxiosError } from 'axios';
-import { AUTH, CONFIG } from '../main';
+import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
 import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendResultData } from './ApiTypes';
+import { CONFIG } from './Config';
 
 enum ApiPaths {
   generate = '/generate-test/new',
