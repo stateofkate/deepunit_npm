@@ -21,22 +21,44 @@ export class JestTester extends Tester {
   public runTests(relativePathArray: string[]): any {
     const formattedPaths = relativePathArray.join(' ');
     let result;
-    const command = `npx jest --json ${formattedPaths} --passWithNoTests`;
+    const command = `npx jest --json ${formattedPaths} --passWithNoTests  --runInBand`; //we should maybe add the --runTestsByPath flag, but I want to make the most minimal changes possible right now
     try {
       result = execSync(command, { stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (error: any) {
       result = error;
       if (error.stdout) {
-        result = JSON.parse(error.stdout.toString());
+        result = JSON.parse(this.extractJSON(error.stdout.toString()));
       } else {
         // If there's no stdout, rethrow the error
         throw error;
       }
     }
     if (!result.numFailedTestSuites) {
-      return JSON.parse(result.toString());
+      return JSON.parse(this.extractJSON(result.toString()));
     }
     return result;
+  }
+
+  public extractJSON(str: string): string {
+    let openBraces = 0;
+    let closeBraces = 0;
+    let startIndex = 0;
+
+    // Find the start index of the JSON object
+    startIndex = str.indexOf('{');
+    if (startIndex === -1) {
+      return str;
+    }
+
+    for (let i = startIndex; i < str.length; i++) {
+      if (str[i] === '{') openBraces++;
+      if (str[i] === '}') closeBraces++;
+
+      if (openBraces === closeBraces) {
+        return str.substring(startIndex, i + 1);
+      }
+    }
+    return str;
   }
 
   public getTestResults(files: string[]): {
