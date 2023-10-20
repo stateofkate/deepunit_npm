@@ -306,7 +306,7 @@ export class Files {
         }
       }
     }
-    console.error(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
+    console.log(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
     return undefined;
   }
 

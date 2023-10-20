@@ -28,6 +28,8 @@ export async function main() {
   // confirm we have all packages for type of project
   await CONFIG.confirmAllPackagesNeeded();
 
+  const prettierConfig: Object | undefined = Files.getPrettierConfig();
+
   // Get files that need to be tested
   const filesToTest = Files.getFilesToTest();
 
@@ -94,9 +96,6 @@ export async function main() {
         const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
-
-        //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-        const prettierConfig: Object | undefined = Files.getPrettierConfig();
 
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 

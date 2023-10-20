@@ -68,6 +68,7 @@ export class JestTester extends Tester {
           failedTestErrors[testPath] = testResult.jestResult.message;
           // handle what "it" blocks failed
           const failedItStatements = testResult.jestResult.assertionResults.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
+          // if there is any failed statements set it
           if (failedItStatements.length > 0) {
             failedItBlocks[testPath] = failedItStatements;
           }
