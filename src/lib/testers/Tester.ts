@@ -13,6 +13,12 @@ export type TestResults = {
   failedItBlocks: { [key: string]: string[] };
 };
 
+export type TestResult = {
+  file: string;
+  testFailedWithError: undefined | string;
+  jestResult: undefined | any;
+};
+
 export abstract class Tester {
   public static getTestName(file: string): string {
     const fileParts = file.split('.');
@@ -43,5 +49,5 @@ export abstract class Tester {
    * Check if the test works in the framework
    * @param files
    */
-  public abstract getTestResults(files: string[]): TestResults;
+  public abstract getTestResults(files: string[]): Promise<TestResults>;
 }

@@ -91,7 +91,7 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = tester.getTestResults(tempTestPaths);
+        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
 
