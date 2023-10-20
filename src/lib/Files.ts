@@ -268,14 +268,7 @@ export class Files {
     //Prettier is available in so many places... this is close enough until someone complains we dont support their config: https://prettier.io/docs/en/configuration.html
     const prettierConfigFiles = [
       // 'package.json', // You'll need to manually check if package.json contains a "prettier" field
-      '.prettierrc',
       '.prettierrc.json',
-      '.prettierrc.yml',
-      '.prettierrc.yaml',
-      '.prettierrc.js',
-      '.prettierrc.ts',
-      'prettier.config.js',
-      'prettier.config.ts',
     ];
 
     let directoriesToCheck = [process.cwd()];
