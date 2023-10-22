@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG } from '../main';
+import { CONFIG } from './Config';
 import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, setupYargs } from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
@@ -268,14 +268,7 @@ export class Files {
     //Prettier is available in so many places... this is close enough until someone complains we dont support their config: https://prettier.io/docs/en/configuration.html
     const prettierConfigFiles = [
       // 'package.json', // You'll need to manually check if package.json contains a "prettier" field
-      '.prettierrc',
       '.prettierrc.json',
-      '.prettierrc.yml',
-      '.prettierrc.yaml',
-      '.prettierrc.js',
-      '.prettierrc.ts',
-      'prettier.config.js',
-      'prettier.config.ts',
     ];
 
     let directoriesToCheck = [process.cwd()];
@@ -313,7 +306,7 @@ export class Files {
         }
       }
     }
-    console.error(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
+    console.log(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
     return undefined;
   }
 

@@ -1,4 +1,4 @@
-import { CONFIG } from '../main';
+import { CONFIG } from './Config';
 import { Api } from './Api';
 import { createInterface } from 'readline';
 import { Color, Printer } from './Printer';

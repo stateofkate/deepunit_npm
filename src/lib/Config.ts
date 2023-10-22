@@ -295,3 +295,5 @@ export class Config {
     return null;
   }
 }
+
+export const CONFIG = new Config();

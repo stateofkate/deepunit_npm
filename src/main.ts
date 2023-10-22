@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { TestingFrameworks } from './main.consts';
-import { Config } from './lib/Config';
+import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { exitWithError, getFilesFlag, isEmpty, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
@@ -11,7 +11,6 @@ import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
 
 // global classes
-export const CONFIG = new Config();
 export let AUTH: Auth;
 
 export async function main() {
@@ -28,6 +27,8 @@ export async function main() {
 
   // confirm we have all packages for type of project
   await CONFIG.confirmAllPackagesNeeded();
+
+  const prettierConfig: Object | undefined = Files.getPrettierConfig();
 
   // Get files that need to be tested
   const filesToTest = Files.getFilesToTest();
@@ -92,12 +93,9 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = tester.getTestResults(tempTestPaths);
+        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
-
-        //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-        const prettierConfig: Object | undefined = Files.getPrettierConfig();
 
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
@@ -123,4 +121,6 @@ export async function main() {
   process.exit(100);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
