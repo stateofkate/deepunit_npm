@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
 import { TestingFrameworks } from './main.consts';
-import { Config } from './lib/Config';
+import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
-import { exitWithError, getFilesFlag, isEmpty, validateVersionIsUpToDate } from './lib/utils';
+import { exitWithError, getFilesFlag, isEmpty, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
-import { execSync } from 'child_process';
 
 // global classes
-export const CONFIG = new Config();
 export let AUTH: Auth;
 
 export async function main() {
+  setupYargs();
+
   Printer.printIntro();
 
   // setup the auth channel and see if they are logged in or not
@@ -28,33 +28,14 @@ export async function main() {
   // confirm we have all packages for type of project
   await CONFIG.confirmAllPackagesNeeded();
 
+  const prettierConfig: Object | undefined = Files.getPrettierConfig();
+
   // Get files that need to be tested
-  let filesToWriteTestsFor: string[];
-  const filesFlagArray: string[] = getFilesFlag();
-  if (filesFlagArray.length > 0) {
-    console.log('Finding files within --file flag');
-    filesFlagArray.forEach((filePath) => {
-      if (!Files.existsSync(filePath)) {
-        exitWithError(`${filePath} could not be found.`);
-      }
-    });
-    filesToWriteTestsFor = filesFlagArray;
-  } else if (CONFIG.generateAllFiles || !CONFIG.isGitRepository) {
-    console.log('Finding all eligible files in working directory');
-    // TODO: add a regex to filter what extensions we accept
-    filesToWriteTestsFor = Files.findFiles();
-  } else {
-    console.log('Finding all changed files between current and HEAD branch.');
-    filesToWriteTestsFor = Files.getChangedFiles();
-  }
+  const filesToTest = Files.getFilesToTest();
 
-  // if we didn't get any files, return error
-  if (filesToWriteTestsFor.length <= 0) {
-    return exitWithError(`No files to test were found. Check your config is set right or you are using the --file flag correctly.`);
-  }
+  Printer.printFilesToTest(filesToTest);
 
-  Printer.printFilesToTest(filesToWriteTestsFor);
-  const filesByDirectory = Files.groupFilesByDirectory(filesToWriteTestsFor);
+  const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
 
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
@@ -89,7 +70,8 @@ export async function main() {
       }
 
       let sourceFileDiff = '';
-      if (!CONFIG.generateAllFiles && filesFlagArray.length === 0 && CONFIG.isGitRepository) {
+      const files = getFilesFlag() ?? [];
+      if (!CONFIG.generateAllFiles && files.length <= 0 && CONFIG.isGitRepository) {
         sourceFileDiff = Files.getDiff([sourceFileName]);
       }
       const sourceFileContent = Files.getFileContent(sourceFileName);
@@ -111,16 +93,11 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        // REMOVED for RELEASE
-        // const { hasPassingTests, passedTests, failedTests }: FixManyErrorsResult = await tester.fixManyErrors(tempTestPaths, sourceFileDiff, sourceFileName, sourceFileContent);
+        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
 
-        const { failedTests, passedTests, failedTestErrors } = tester.getTestResults(tempTestPaths);
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
 
-        //We will need to recombine all the tests into one file here after they are fixed and remove any failing tests
-        const prettierConfig: Object | undefined = Files.getPrettierConfig();
-        let testsToKeep: string[] = CONFIG.includeFailingTests ? tempTestPaths : passedTests;
-        await tester.recombineTests(testsToKeep, testFileName, testFileContent, passedTests.length > 0, prettierConfig);
+        await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
         //then we will need to delete all the temp test files.
         Files.deleteTempFiles(tempTestPaths);
@@ -144,4 +121,6 @@ export async function main() {
   process.exit(100);
 }
 
-main();
+if (require.main === module) {
+  main();
+}

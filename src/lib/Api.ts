@@ -1,16 +1,9 @@
 import axios, { AxiosError } from 'axios';
-import { AUTH, CONFIG } from '../main';
-import { TestingFrameworks, mockedGenerationConst } from '../main.consts';
+import { AUTH } from '../main';
+import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { FixErrorsData, GenerateTestData, RecombineTestData, SendResultData } from './ApiTypes';
-
-type ApiBaseData = {
-  frontendFramework: string;
-  testingFramework: TestingFrameworks;
-  scriptTarget: string;
-  version: string;
-  email: string | null;
-};
+import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendResultData } from './ApiTypes';
+import { CONFIG } from './Config';
 
 enum ApiPaths {
   generate = '/generate-test/new',
@@ -35,8 +28,7 @@ export class Api {
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
       testingFramework: CONFIG.testingFramework,
-      scriptTarget: CONFIG.scriptTarget,
-      version: CONFIG.version,
+      version: CONFIG.getVersion(),
       email: AUTH.getEmail(),
       ...customData,
     };
@@ -90,10 +82,20 @@ export class Api {
     return await this.post(ApiPaths.fixErrors, data);
   }
 
-  public static async recombineTests(testContents: string[], testFileContent: string, prettierConfig: Object | undefined) {
+  public static async recombineTests(
+    tempTests: { [key: string]: string },
+    testFileContent: string,
+    failedItBlocks: { [key: string]: string[] },
+    failedTests: string[],
+    prettierConfig: Object | undefined,
+  ) {
     let data: RecombineTestData = {
-      testFiles: testContents,
+      testFiles: tempTests,
       testFileContent: testFileContent,
+      failedItBlocks,
+      failedTests,
+      includeFailingTests: CONFIG.includeFailingTests,
+      scriptTarget: CONFIG.scriptTarget,
     };
 
     if (prettierConfig) {
@@ -109,6 +111,7 @@ export class Api {
       passedTests,
       tests,
       failedTestErrors,
+      scriptTarget: CONFIG.scriptTarget,
     };
     this.post(ApiPaths.sendResults, data);
   }

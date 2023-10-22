@@ -24,7 +24,6 @@ export class Config {
   scriptTarget: string = '';
   doProd: boolean;
   apiHost: string = '';
-  version: string;
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
@@ -33,6 +32,8 @@ export class Config {
   prodTesting: boolean = false;
   testingLanguageOverride: string = '';
   isGitRepository: boolean = false;
+  private readonly undefinedVersion = '-1';
+  private versionCache: string = this.undefinedVersion;
 
   constructor() {
     this.detectProjectType();
@@ -44,9 +45,8 @@ export class Config {
       this.testingFramework = testingFrameworkOverride as TestingFrameworks;
     }
 
-    this.scriptTarget = this.getsConfigTarget() ?? 'ESNext';
+    this.scriptTarget = this.getsConfigTarget() ?? 'unknown';
     this.prodTesting = Config.getBoolFromConfig('prodTesting');
-    this.version = this.getVersion();
     this.doProd = Config.getBoolFromConfig('doProd', true);
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
@@ -65,14 +65,18 @@ export class Config {
     return typeof configVal === 'boolean' ? configVal : defaultVal;
   }
 
-  private getVersion(): string {
+  public getVersion(): string {
+    if (this.versionCache !== this.undefinedVersion) {
+      return this.versionCache;
+    }
     const packageJson = require('../../package.json');
     const version = packageJson?.version;
     if (version) {
-      return version;
+      this.versionCache = version;
+      return this.versionCache;
     } else {
       exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
-      return ''; //Typescrip wants a return even tho we are going to process.exit()
+      return ''; //Typescript wants a return even tho we are going to process.exit()
     }
   }
 
@@ -113,8 +117,6 @@ export class Config {
         return;
       }
     }
-    // Unable to find the framework
-    console.log('WARNING: Unable to detect frontend framework, typescript extension');
     this.frontendFramework = '';
   }
 
@@ -297,3 +299,5 @@ export class Config {
     return null;
   }
 }
+
+export const CONFIG = new Config();
