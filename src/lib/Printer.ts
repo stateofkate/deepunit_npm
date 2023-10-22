@@ -2,12 +2,12 @@ import { execSync } from 'child_process';
 import { CONFIG } from './Config';
 
 export class Printer {
-  static LINE_DIVIDER = '#################################################';
-
   public static printIntro() {
-    console.log(Printer.LINE_DIVIDER);
+    const LINE_DIVIDER = '##################################################';
+
+    console.log(LINE_DIVIDER);
     console.log('##### Generating unit tests with DeepUnit.AI #####');
-    console.log(Printer.LINE_DIVIDER);
+    console.log(LINE_DIVIDER);
   }
 
   public static printIndented(fileNames: (string | null)[], summaryDescription: string) {
@@ -26,9 +26,11 @@ export class Printer {
     alreadyTestedFiles: (string | null)[],
     unsupportedFiles: (string | null)[],
   ): void {
-    console.log(Printer.LINE_DIVIDER);
+    const LINE_DIVIDER = '#################################################';
+
+    console.log(LINE_DIVIDER);
     console.log('########## Summary of DeepUnit.AI Run ###########');
-    console.log(Printer.LINE_DIVIDER);
+    console.log(LINE_DIVIDER);
 
     this.printIndented(unsupportedFiles, '\nThe following files are not currently supported. Contact support@deepunit.ai so we can add support:');
     this.printIndented(
