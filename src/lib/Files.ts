@@ -322,13 +322,11 @@ export class Files {
       // Read package.json
       const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
-      packageJson.scripts = packageJson.scripts || {};
-
       // only add the script if it doesn't exist
-      if (packageJson.scripts.deepunit) {
+      if (packageJson.scripts?.deepunit) {
         return;
       }
-
+      packageJson.scripts = packageJson.scripts || {};
       packageJson.scripts.deepunit = 'deepunit';
 
       // Write package.json

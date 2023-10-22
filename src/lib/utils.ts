@@ -46,7 +46,7 @@ export function expectNot(falsyVal: any): any {
  * @param input
  */
 export function debugMsg(...input: any) {
-  if (!CONFIG.doProd) {
+  if (!CONFIG.doProd && !CONFIG.prodTesting) {
     console.log(input);
   }
 }
@@ -76,9 +76,9 @@ export async function validateVersionIsUpToDate(): Promise<void> {
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
-  if (versionRegex.test(latestVersion.trim()) && versionRegex.test(CONFIG.version.trim())) {
+  if (versionRegex.test(latestVersion.trim()) && versionRegex.test(CONFIG.getVersion().trim())) {
     const latestVersionNumbers = latestVersion.split('.');
-    const versionNumbers = CONFIG.version.split('.');
+    const versionNumbers = CONFIG.getVersion().split('.');
 
     if (versionNumbers.length < 2 || latestVersionNumbers.length < 2 || versionNumbers[0] < latestVersionNumbers[0] || versionNumbers[1] < latestVersionNumbers[1]) {
       needsUpdating = true;
