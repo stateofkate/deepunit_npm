@@ -38,8 +38,8 @@ export class Config {
   constructor() {
     this.detectProjectType();
     this.determineDevBuild();
-
     this.detectTestFramework();
+    this.detectTestSuffix();
     const testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
     if (testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(testingFrameworkOverride)) {
       this.testingFramework = testingFrameworkOverride as TestingFrameworks;
@@ -76,7 +76,7 @@ export class Config {
       return this.versionCache;
     } else {
       exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
-      return ''; //Typescript wants a return even tho we are going to process.exit()
+      return '';
     }
   }
 
@@ -135,24 +135,27 @@ export class Config {
 
     if (fs.existsSync(jestConfigPath)) {
       this.testingFramework = TestingFrameworks.jest;
-      this.testSuffix = 'test';
     } else if (fs.existsSync(karmaConfigPath)) {
       this.testingFramework = TestingFrameworks.jasmine;
-      this.testSuffix = 'spec';
     } else if (fs.existsSync(packageJsonPath)) {
       let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
       if (fileContent.includes('jest')) {
         this.testingFramework = TestingFrameworks.jest;
-        this.testSuffix = 'test';
       } else if (fileContent.includes('jasmine-core')) {
         this.testingFramework = TestingFrameworks.jasmine;
-        this.testSuffix = 'spec';
       }
     }
 
     if (!this.testSuffix) {
-      this.testSuffix = 'test';
     }
+  }
+
+  private detectTestSuffix(): void {
+    let testSuffix = Config.getStringFromConfig('testSuffix');
+    if (!testSuffix) {
+      testSuffix = 'test';
+    }
+    this.testSuffix = testSuffix;
   }
 
   private getsConfigTarget(): string | undefined {

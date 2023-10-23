@@ -118,9 +118,14 @@ export async function main() {
   }
 
   Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
-  process.exit(100);
+  process.exit(0);
 }
 
 if (require.main === module) {
   main();
+
+  process.on('SIGINT', async function () {
+    await Api.sendAnalytics('Client Exited: User quit process');
+    process.exit();
+  });
 }
