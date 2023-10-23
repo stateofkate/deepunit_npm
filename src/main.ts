@@ -7,7 +7,7 @@ import { exitWithError, getFilesFlag, isEmpty, setupYargs, validateVersionIsUpTo
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
-import { Api, StateCode } from './lib/Api';
+import { Api, ClientCode, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
 
 // global classes
@@ -125,7 +125,7 @@ if (require.main === module) {
   main();
 
   process.on('SIGINT', async function () {
-    await Api.sendAnalytics('Client Exited: User quit process');
+    await Api.sendAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
     process.exit();
   });
 }

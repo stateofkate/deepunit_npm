@@ -1,5 +1,5 @@
 import { CONFIG } from './Config';
-import { Api } from './Api';
+import { Api, ClientCode } from './Api';
 import { createInterface } from 'readline';
 import { Color, Printer } from './Printer';
 import { execSync } from 'child_process';
@@ -69,7 +69,7 @@ export function isEmpty(obj: Object) {
 export function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
-  Api.sendAnalytics('Client Exited: ' + error);
+  Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
   process.exit(1);
 }
 
@@ -102,7 +102,7 @@ export async function validateVersionIsUpToDate(): Promise<void> {
         exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
       }
     } else {
-      Api.sendAnalytics('Client Exited: User decided to not update DeepUnit using the default command');
+      Api.sendAnalytics('Client Exited: User decided to not update DeepUnit using the default command', ClientCode.ClientExited);
       process.exit(100);
     }
   }

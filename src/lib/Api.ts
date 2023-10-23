@@ -18,12 +18,17 @@ export enum StateCode {
   'FileNotSupported' = 1,
   'FileFullyTested' = 2,
 }
-const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
+
+export enum ClientCode {
+  ClientExited = 'ClientExited',
+  ClientErrored = 'ClientErrored',
+}
+const apiPath = (path: ApiPaths | string) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths, customData?: T) {
+  public static async post<T>(path: ApiPaths | string, customData?: T) {
     const headers = { 'Content-Type': 'application/json' };
 
     let data: ApiBaseData = {
@@ -117,12 +122,12 @@ export class Api {
     await this.post(ApiPaths.sendResults, data);
   }
 
-  public static async sendAnalytics(message: string) {
+  public static async sendAnalytics(message: string, clientCode: ClientCode) {
     const data: SendAnalyticsData = {
       logMessage: message,
       scriptTarget: CONFIG.scriptTarget,
     };
-    await this.post(ApiPaths.sendAnalytics, data);
+    await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
   }
 
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
