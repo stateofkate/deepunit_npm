@@ -38,3 +38,7 @@ export type SendResultData = {
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
 };
+export type SendAnalyticsData = {
+  logMessage: string;
+  scriptTarget: string;
+};

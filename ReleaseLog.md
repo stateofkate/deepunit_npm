@@ -1,14 +1,20 @@
 # Release Log
 
+## 1.5.1
+Features
+
+- Improved error logging
+- Allow setting the test suffix of the file with the "testSuffix" config
+
 ## 1.5.0
 Features
 
- - Help command
- - Improved file selection
- - Improved test generation
- - 
+- Help command
+- Improved file selection
+- Improved test generation
+-
 Bugs:
- - Fix a fatal issue parsing JSON
+- Fix a fatal issue parsing JSON
 
 ## 1.4.0
 
