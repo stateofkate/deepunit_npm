@@ -24,7 +24,6 @@ export class Config {
   scriptTarget: string = '';
   doProd: boolean;
   apiHost: string = '';
-  version: string;
   ignoredDirectories: string[] = [];
   ignoredFiles: string[] = [];
   includeFailingTests: boolean = true;
@@ -33,12 +32,14 @@ export class Config {
   prodTesting: boolean = false;
   testingLanguageOverride: string = '';
   isGitRepository: boolean = false;
+  private readonly undefinedVersion = '-1';
+  private versionCache: string = this.undefinedVersion;
 
   constructor() {
     this.detectProjectType();
     this.determineDevBuild();
-
     this.detectTestFramework();
+    this.detectTestSuffix();
     const testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
     if (testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(testingFrameworkOverride)) {
       this.testingFramework = testingFrameworkOverride as TestingFrameworks;
@@ -46,7 +47,6 @@ export class Config {
 
     this.scriptTarget = this.getsConfigTarget() ?? 'unknown';
     this.prodTesting = Config.getBoolFromConfig('prodTesting');
-    this.version = this.getVersion();
     this.doProd = Config.getBoolFromConfig('doProd', true);
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
@@ -65,14 +65,18 @@ export class Config {
     return typeof configVal === 'boolean' ? configVal : defaultVal;
   }
 
-  private getVersion(): string {
+  public getVersion(): string {
+    if (this.versionCache !== this.undefinedVersion) {
+      return this.versionCache;
+    }
     const packageJson = require('../../package.json');
     const version = packageJson?.version;
     if (version) {
-      return version;
+      this.versionCache = version;
+      return this.versionCache;
     } else {
       exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
-      return ''; //Typescrip wants a return even tho we are going to process.exit()
+      return '';
     }
   }
 
@@ -113,8 +117,6 @@ export class Config {
         return;
       }
     }
-    // Unable to find the framework
-    console.log('WARNING: Unable to detect frontend framework, typescript extension');
     this.frontendFramework = '';
   }
 
@@ -133,24 +135,27 @@ export class Config {
 
     if (fs.existsSync(jestConfigPath)) {
       this.testingFramework = TestingFrameworks.jest;
-      this.testSuffix = 'test';
     } else if (fs.existsSync(karmaConfigPath)) {
       this.testingFramework = TestingFrameworks.jasmine;
-      this.testSuffix = 'spec';
     } else if (fs.existsSync(packageJsonPath)) {
       let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
       if (fileContent.includes('jest')) {
         this.testingFramework = TestingFrameworks.jest;
-        this.testSuffix = 'test';
       } else if (fileContent.includes('jasmine-core')) {
         this.testingFramework = TestingFrameworks.jasmine;
-        this.testSuffix = 'spec';
       }
     }
 
     if (!this.testSuffix) {
-      this.testSuffix = 'test';
     }
+  }
+
+  private detectTestSuffix(): void {
+    let testSuffix = Config.getStringFromConfig('testSuffix');
+    if (!testSuffix) {
+      testSuffix = 'test';
+    }
+    this.testSuffix = testSuffix;
   }
 
   private getsConfigTarget(): string | undefined {
@@ -297,3 +302,5 @@ export class Config {
     return null;
   }
 }
+
+export const CONFIG = new Config();

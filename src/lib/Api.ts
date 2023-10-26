@@ -1,14 +1,16 @@
 import axios, { AxiosError } from 'axios';
-import { AUTH, CONFIG } from '../main';
+import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendResultData, FeedbackData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData } from './ApiTypes';
+import { CONFIG } from './Config';
 
 enum ApiPaths {
   generate = '/generate-test/new',
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
   sendResults = '/generate-test/send-results',
+  sendAnalytics = '/generate-test/send-analytics',
   getLatestVersion = '/generate-test/get-latest-version',
   feedback = '/feedback/feedback'
 }
@@ -17,18 +19,23 @@ export enum StateCode {
   'FileNotSupported' = 1,
   'FileFullyTested' = 2,
 }
-const apiPath = (path: ApiPaths) => `${CONFIG.apiHost}${path}`;
+
+export enum ClientCode {
+  ClientExited = 'ClientExited',
+  ClientErrored = 'ClientErrored',
+}
+const apiPath = (path: ApiPaths | string) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths, customData?: T) {
+  public static async post<T>(path: ApiPaths | string, customData?: T) {
     const headers = { 'Content-Type': 'application/json' };
 
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
       testingFramework: CONFIG.testingFramework,
-      version: CONFIG.version,
+      version: CONFIG.getVersion(),
       email: AUTH.getEmail(),
       ...customData,
     };
@@ -105,7 +112,7 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
-  public static sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>, failedTestErrors: any) {
+  public static async sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>, failedTestErrors: any) {
     const data: SendResultData = {
       failedTests,
       passedTests,
@@ -113,11 +120,19 @@ export class Api {
       failedTestErrors,
       scriptTarget: CONFIG.scriptTarget,
     };
-    this.post(ApiPaths.sendResults, data);
+    await this.post(ApiPaths.sendResults, data);
+  }
+
+  public static async sendAnalytics(message: string, clientCode: ClientCode) {
+    const data: SendAnalyticsData = {
+      logMessage: message,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
   }
 
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
-    return this.post(ApiPaths.getLatestVersion);
+    return await this.post(ApiPaths.getLatestVersion);
   }
 
   public static async Feedback(userFeedback: string): Promise<void>{

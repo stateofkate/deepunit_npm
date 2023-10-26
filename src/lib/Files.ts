@@ -1,39 +1,79 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
-import { CONFIG } from '../main';
+import { CONFIG } from './Config';
+import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, setupYargs } from './utils';
+import * as glob from 'glob';
+import { Color } from './Printer';
 
 export class Files {
+  public static getFilesToTest(): string[] {
+    let filesToWriteTestsFor: string[] = [];
+    // get files to filter with --f arg, returns things like src/* and **/*
+    const filesToFilter: string[] | undefined = getFilesFlag();
+    // check whether we have an --a flag, marking all
+    const shouldGenerateAllFiles = getGenerateAllFilesFlag();
+
+    const src = 'src';
+    const workingDir = Files.existsSync(src) ? src + '/' : '';
+    // if we want to find specific files or just generate all files
+    if (filesToFilter) {
+      console.log('Finding files within --file flag');
+      filesToWriteTestsFor = glob.sync(filesToFilter, {});
+    } else if (shouldGenerateAllFiles) {
+      console.log('Finding all eligible files in working directory');
+      filesToWriteTestsFor = glob.sync(`${workingDir}**`);
+    } else {
+      console.log('Finding all changed files in your repository');
+      if (!CONFIG.isGitRepository) {
+        exitWithError(`You are not in a git repository.`);
+      } else {
+        filesToWriteTestsFor = Files.getChangedFiles();
+      }
+    }
+
+    const filteredFiles = Files.filterFiles(filesToWriteTestsFor);
+
+    // if we didn't get any files, return error
+    if (filteredFiles.length <= 0) {
+      exitWithError(
+        Color.yellow('Run deepunit with flag -h for more information.') +
+          '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
+      );
+    }
+
+    return filteredFiles;
+  }
+
   public static getChangedFiles(): string[] {
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
     const currentDir = process.cwd();
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
-    const changedFilesCmd = `git -C ${gitRoot} diff --name-only HEAD~1 HEAD -- ${relativePath ? relativePath + '/' : ''}`;
-    const output = execSync(changedFilesCmd).toString();
-    const files = output.split('\n').filter(Boolean); // filter out empty strings
 
-    const filteredFiles = this.filterExtensions(files);
-    const filesWithCorrectedPaths = this.findPathFromCurrentDirectory(filteredFiles);
-    return filesWithCorrectedPaths;
-  }
-  public static findPathFromCurrentDirectory(files: string[]): string[] {
-    const currentDir = process.cwd();
-    const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
-    const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
+    let changedFiles: string[] = [];
+    let getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`];
+
+    while (getChangedFileCmds.length > 0) {
+      const currentCommand = getChangedFileCmds.pop() + ` -- ${relativePath ? relativePath + '/' : ''}`;
+      const output = execSync(currentCommand).toString();
+      changedFiles = output.split('\n').filter(Boolean); // filter out empty strings
+      if (changedFiles.length > 0) {
+        break;
+      }
+    }
 
     if (relativePath) {
-      return files.map((file) => {
+      return changedFiles.map((file) => {
         return file.replace(`${relativePath}/`, '');
       });
     } else {
-      return files;
+      return changedFiles;
     }
   }
 
   public static filterExtensions(files: string[]): string[] {
     let filteredFiles: string[] = [];
     for (const file of files) {
-      // TODO: make this a custom regex they can choose from
       const excludedSuffixes = [
         '.test.ts',
         '.test.tsx',
@@ -114,40 +154,6 @@ export class Files {
         console.error(`Error running git add: `);
       }
     }
-  }
-
-  public static findFiles(): string[] {
-    /**
-      Find all files in all nested directories with the given extensions and ignore files with the given ignoreExtensions.
-  
-          Parameters:
-      extensions (list): List of extensions to match.
-      ignoreExtensions (list): List of extensions to ignore.
-  
-          Returns:
-      list: List of full paths to files that match the given extensions and do not match the ignoreExtensions.
-      */
-    const matches: string[] = [];
-    const src = 'src';
-    const walkDir = fs.existsSync(src) ? src : '';
-
-    function walk(directory: string) {
-      const files = fs.readdirSync(directory);
-
-      for (const file of files) {
-        const fullPath = path.join(directory, file);
-        const stat = fs.statSync(fullPath);
-
-        if (stat.isDirectory()) {
-          walk(fullPath);
-        } else if (Files.filterExtensions([file])) {
-          matches.push(fullPath);
-        }
-      }
-    }
-
-    walk(walkDir);
-    return this.filterFiles(matches);
   }
 
   /**
@@ -262,14 +268,7 @@ export class Files {
     //Prettier is available in so many places... this is close enough until someone complains we dont support their config: https://prettier.io/docs/en/configuration.html
     const prettierConfigFiles = [
       // 'package.json', // You'll need to manually check if package.json contains a "prettier" field
-      '.prettierrc',
       '.prettierrc.json',
-      '.prettierrc.yml',
-      '.prettierrc.yaml',
-      '.prettierrc.js',
-      '.prettierrc.ts',
-      'prettier.config.js',
-      'prettier.config.ts',
     ];
 
     let directoriesToCheck = [process.cwd()];
@@ -307,7 +306,34 @@ export class Files {
         }
       }
     }
-    console.error(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
+    console.log(`We could not find your prettier config file, if you have one please email support@deepunit.ai so we can add support for your configuration`);
     return undefined;
+  }
+
+  public static setup() {
+    const configPath = 'deepunit.config.json';
+    if (!fs.existsSync(configPath)) {
+      const configFileContent =
+        '{\n' + '  "ignoredDirectories": ["node_modules"],\n' + '  "ignoredFiles": [],\n' + '  "includeFailingTests": false,\n' + '  "testSuffix": "test"\n' + '}\n';
+      fs.writeFileSync(configPath, configFileContent);
+    }
+    const packagePath = 'package.json';
+    if (fs.existsSync(packagePath)) {
+      // Read package.json
+      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+      // only add the script if it doesn't exist
+      if (packageJson.scripts?.deepunit) {
+        return;
+      }
+      packageJson.scripts = packageJson.scripts || {};
+      packageJson.scripts.deepunit = 'deepunit';
+
+      // Write package.json
+      fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
+    } else {
+      console.log("No package.json found! That's gonna be a problem. DeepUnit probably will not be successful at running.");
+      console.log(`Current working directory is ${process.cwd()}`);
+    }
   }
 }

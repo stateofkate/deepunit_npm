@@ -1,6 +1,5 @@
-import { CONFIG } from '../../main';
+import { CONFIG } from '../Config';
 import { Api } from '../Api';
-import { maxFixFailingTestAttempts } from '../Config';
 import { Files } from '../Files';
 
 export type TestResults = {
@@ -12,6 +11,12 @@ export type TestResults = {
    * Value: List of failing it blocks
    */
   failedItBlocks: { [key: string]: string[] };
+};
+
+export type TestResult = {
+  file: string;
+  testFailedWithError: undefined | string;
+  jestResult: undefined | any;
 };
 
 export abstract class Tester {
@@ -44,5 +49,5 @@ export abstract class Tester {
    * Check if the test works in the framework
    * @param files
    */
-  public abstract getTestResults(files: string[]): TestResults;
+  public abstract getTestResults(files: string[]): Promise<TestResults>;
 }
