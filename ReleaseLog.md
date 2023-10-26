@@ -1,13 +1,18 @@
 # Release Log
 
 ## 1.5.1
-Features
+Bugs:
+
+- Fix an error with accessing undefined properties
+
+## 1.5.1
+Features:
 
 - Improved error logging
 - Allow setting the test suffix of the file with the "testSuffix" config
 
 ## 1.5.0
-Features
+Features:
 
 - Help command
 - Improved file selection
