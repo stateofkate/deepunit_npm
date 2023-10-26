@@ -60,7 +60,7 @@ export class JestTester extends Tester {
         failedTests.push(testPath);
         failedTestErrors[testPath] = testResult.testFailedWithError;
       } else {
-        if (testResult.jestResult.testResults[0].status == 'passed') {
+        if (testResult.jestResult?.testResults[0]?.status == 'passed') {
           passedTests.push(testPath);
         } else {
           // the test was a valid script, but failed
