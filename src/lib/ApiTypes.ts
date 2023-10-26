@@ -14,6 +14,10 @@ export type GenerateTestData = {
   testingLanguageOverride?: string;
 };
 
+export type FeedbackData = {
+  feedback: string;
+}
+
 export type FixErrorsData = {
   errorMessage: string;
   testFileName: string;

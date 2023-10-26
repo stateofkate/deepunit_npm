@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { Config } from './lib/Config';
 import { Files } from './lib/Files';
-import { exitWithError, getFilesFlag, isEmpty, validateVersionIsUpToDate } from './lib/utils';
+import {exitWithError, promptUserInput, getFeedbackFlag, getFilesFlag, isEmpty, validateVersionIsUpToDate} from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -25,6 +25,13 @@ export async function main() {
   await CONFIG.confirmAllPackagesNeeded();
 
   // check to confirm we still support this version
+  getFeedbackFlag();
+  if(getFeedbackFlag()){
+    const feedback = await promptUserInput('We love feedback. Let us know of suggestions, bugs, issues, or problems so we can make DeepUnit better: ','Thank you for your feedback!');
+    const subject:string = 'userfeedback';
+    await Api.Feedback(feedback);
+    process.exit(0);
+  }
   await validateVersionIsUpToDate();
 
   // Get files that need to be tested
@@ -138,6 +145,7 @@ export async function main() {
   }
 
   Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+  Printer.printOutro();
   process.exit(100);
 }
 

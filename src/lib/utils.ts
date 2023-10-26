@@ -80,6 +80,38 @@ export function getFilesFlag(): string[] {
   return files;
 }
 
+export function getFeedbackFlag(): boolean {
+  let result : boolean = false;
+  //check what argv contains
+  const arg:string = process.argv[2];
+  console.log(process.argv);
+  // will change this so that
+  // conditions for feedback: strlen(arg) > 10;
+  if ((arg === '--feedback')){
+    result = true;
+    return result;
+  }
+  return result;
+}
+
+export async function promptUserInput(prompt:string,backToUser:string): Promise<string>{
+  return new Promise((resolve) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(prompt,
+      (answer) => {
+        console.log(backToUser);
+        rl.close();
+        resolve(answer);
+      }
+    );
+  });
+}
+
+
 /**
  * Get whether we are doing all files or only changed files
  */

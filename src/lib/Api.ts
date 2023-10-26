@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH, CONFIG } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendResultData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendResultData, FeedbackData } from './ApiTypes';
 
 enum ApiPaths {
   generate = '/generate-test/new',
@@ -10,6 +10,7 @@ enum ApiPaths {
   recombineTests = '/generate-test/recombine-tests',
   sendResults = '/generate-test/send-results',
   getLatestVersion = '/generate-test/get-latest-version',
+  feedback = '/feedback/feedback'
 }
 export enum StateCode {
   'Success' = 0,
@@ -118,4 +119,13 @@ export class Api {
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
     return this.post(ApiPaths.getLatestVersion);
   }
+
+  public static async Feedback(userFeedback: string): Promise<void>{
+    const data: FeedbackData ={
+      feedback:userFeedback
+    }
+    return await this.post(ApiPaths.feedback, data);
+
+  }
 }
+
