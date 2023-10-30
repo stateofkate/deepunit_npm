@@ -271,9 +271,9 @@ export class Config {
       console.warn('React is a missing dependency, yet we assume you are using react. There is an issue, please check your config that you are not forcing it to be react.');
     } else {
       const versionNumbers = reactVersion.match(versionRegex);
-      if (versionNumbers && versionNumbers[0].split('.') && versionNumbers[0].split('.').length == 3 && !isNaN(+versionNumbers[0].split('.')[0])) {
-        const number = versionNumbers[0].split('.')[0];
-        if (+number >= 18) {
+      if (versionNumbers && versionNumbers[0] && versionNumbers[0].split('.') && !isNaN(+versionNumbers[0].split('.')[0])) {
+        const number = +versionNumbers[0].split('.')[0];
+        if (number >= 18) {
           console.warn(Color.yellow('We currently do not support react version 18 and above. You may continue although imports might not work right.'));
           return true;
         }
