@@ -71,18 +71,14 @@ export function isEmpty(obj: Object) {
  * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
  */
 
-export function getFeedbackFlag(): boolean {
+export function checkFeedbackFlag(): boolean {
   let result : boolean = false;
   //check what argv contains
   const arg:string = process.argv[2];
-  console.log(process.argv);
   // will change this so that
   // conditions for feedback: strlen(arg) > 10;
-  if ((arg === '--feedback')){
-    result = true;
-    return result;
-  }
-  return result;
+
+  return arg === '--feedback';
 }
 
 export async function promptUserInput(prompt:string,backToUser:string): Promise<string>{

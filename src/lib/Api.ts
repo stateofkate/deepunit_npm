@@ -135,9 +135,10 @@ export class Api {
     return await this.post(ApiPaths.getLatestVersion);
   }
 
-  public static async Feedback(userFeedback: string): Promise<void>{
+  public static async Feedback(userFeedback: string, subject: string): Promise<void>{
     const data: FeedbackData ={
-      feedback:userFeedback
+      feedback:userFeedback,
+      subject
     }
     return await this.post(ApiPaths.feedback, data);
 

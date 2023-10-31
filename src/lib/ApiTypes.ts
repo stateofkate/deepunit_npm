@@ -16,6 +16,7 @@ export type GenerateTestData = {
 
 export type FeedbackData = {
   feedback: string;
+  subject: string;
 }
 
 export type FixErrorsData = {
