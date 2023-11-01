@@ -1,6 +1,14 @@
 # Release Log
 
 ## 1.5.1
+Features:
+
+- Improved React support
+- Updated Readme
+- Added --pattern flag
+- Fixed a TypeScript bug
+- Improved --file flag parsing and added more clear error handling when a file does not exist
+## 1.5.1
 Bugs:
 
 - Fix an error with accessing undefined properties

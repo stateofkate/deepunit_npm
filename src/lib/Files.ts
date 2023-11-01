@@ -325,7 +325,7 @@ export class Files {
     const configPath = 'deepunit.config.json';
     if (!fs.existsSync(configPath)) {
       const configFileContent =
-        '{\n' + '  "ignoredDirectories": ["node_modules"],\n' + '  "ignoredFiles": [],\n' + '  "includeFailingTests": false,\n' + '  "testSuffix": "test"\n' + '}\n';
+        '{\n' + '  "ignoredDirectories": ["node_modules"],\n' + '  "ignoredFiles": [],\n' + '  "includeFailingTests": true,\n' + '  "testSuffix": "test"\n' + '}\n';
       fs.writeFileSync(configPath, configFileContent);
     }
     const packagePath = 'package.json';
