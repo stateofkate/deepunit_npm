@@ -43,6 +43,7 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 To choose what to test, you have a few options
 
 - Use the `--file` flag to choose what files you would like to test (the files should be separated by a "`,`")
+- Use the `--pattern` flag to choose what patterns you would like to filter files for. We use `glob` under the hood (Example: `src/**` or `{lib,src}/*{.ts,.js}`), for more information about pattern matching visit: [VSCode Glob Matching](https://code.visualstudio.com/docs/editor/glob-patterns)
 - Use the `--all` flag to do generate tests for all eligible files in the workspace.
 - Without any file flag, it will automatically try to find all files that it can write tests for in your workspace.
 - Use the `ignoredDirectories` or `ignoredFiles` to ignore files, other than ones you want to test

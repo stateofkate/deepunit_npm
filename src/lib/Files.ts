@@ -2,15 +2,18 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, setupYargs } from './utils';
+import { exitWithError, getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs } from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
 
 export class Files {
   public static getFilesToTest(): string[] {
     let filesToWriteTestsFor: string[] = [];
-    // get files to filter with --f arg, returns things like src/* and **/*
+    // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
+
+    // get file patterns, returns things like src/* and **/*
+    const patternToFilter: string[] | undefined = getPatternFlag();
     // check whether we have an --a flag, marking all
     const shouldGenerateAllFiles = getGenerateAllFilesFlag();
 
@@ -19,7 +22,15 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
-      filesToWriteTestsFor = glob.sync(filesToFilter, {});
+      filesToFilter.forEach((filePath) => {
+        if (!Files.existsSync(filePath)) {
+          exitWithError(`${filePath} could not be found.`);
+        }
+      });
+      filesToWriteTestsFor = filesToFilter;
+    } else if (patternToFilter) {
+      console.log('Finding files that match the --pattern flag');
+      filesToWriteTestsFor = glob.sync(patternToFilter, {});
     } else if (shouldGenerateAllFiles) {
       console.log('Finding all eligible files in working directory');
       filesToWriteTestsFor = glob.sync(`${workingDir}**`);
