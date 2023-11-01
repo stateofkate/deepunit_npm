@@ -1,6 +1,6 @@
 # DeepUnit.AI
 
-AI-Powered Unit Test Generation: Ensured Reliability through Post-Creation Testing.
+AI-Powered Unit Test Generation, provided by https://deepunit.ai.
 
 ## Release State
 
