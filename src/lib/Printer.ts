@@ -8,7 +8,7 @@ export class Printer {
     const LINE_DIVIDER = '##################################################';
     console.log(LINE_DIVIDER);
     console.log('\n We love feedback. Let us know of any suggestions, bugs, issues, or problems so we can make DeepUnit better.');
-    console.log('\n To provide feedback, please run "npm run deepunit -- --feedback"')
+    console.log('\n To provide feedback, please run "npm run deepunit -- --feedback"');
   }
 
   public static printIntro() {

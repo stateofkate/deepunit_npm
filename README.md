@@ -1,11 +1,37 @@
 # DeepUnit.AI
 
-AI-Powered Unit Test Generation: Ensured Reliability through Post-Creation Testing.
+AI-Powered Unit Test Generation, provided by https://deepunit.ai. DeepUnitAi will generate your tests for you, guaranteeing valid code everytime.
+
+## Table of Contents
+
+- [Release State](#release-state)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Authentication](#authentication)
+- [Config](#config)
+- [Flags](#flags)
+- [Ignoring Files](#ignoring-files)
+- [Contact](#contact)
 
 ## Release State
 
 Currently in **Alpha** release.
+
 The application generates working tests fairly consistently, but does require a lot of supervision from user currently.
+
+Users are expected to always review tests that are generated for correctness before committing them.
+
+## Installation
+
+You can install and use DeepUnit in 3 steps 
+1. `npm i -D deepunit` installs the package
+2. `npx deepunit` to add the script to your package.json for easy calling
+3. `npm run deepunit -- --f path/to/your/file.ts` to run the tool specifying a specific file path
+
+## Usage
+
+You can use DeepUnit without installing it by running the command 
+```npx deepunit --f path/to/file.ts```
 
 ## Authentication
 
@@ -13,17 +39,20 @@ For a seamless experience with DeepUnit.Ai, we ask users to provide a valid emai
 
 ## Config
 
-Here is an example of the `deepunit.config.json` with comments explaining each purpose.
+DeepUnits config is stored in a file called deepunit.config.json which is automatically created for you. We support the following configs.
 
 ```javascript
 {
-  // force what the frontendframework is (react, node)
+  // Force what the frontendframework is (react, node) in case we detect it wrong
   "frontendFramework": "react"
+  
+  // Forces DeepUnit to assume the testing framework. This is helpful if we are unable to detect your framework or you use a Jest compatible framework like Vitest
+  "testingFrameworkOverride": "jest"
 
-  // which directories you want to ignore, path is from the current working directory
+  // Which directories you want to ignore, path is from the root of the project. In case of a monorepo it is the root of the package.json deepunit is installed in.
   "ignoredDirectories": [],
 
-  // which files you want to ignore, path is from the current working directory
+  // Which files you want to ignore
   "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts"],
 
   // when all tests for a file fail, this option allows DeepUnit.AI to save the failing tests to a file so that you fix them manually
@@ -38,15 +67,29 @@ Here is an example of the `deepunit.config.json` with comments explaining each p
 }
 ```
 
-## Choosing what to test
+## Flags
 
 To choose what to test, you have a few options
 
 - Use the `--file` flag to choose what files you would like to test (the files should be separated by a "`,`")
+
+`npm run deepunit -- --f path/to/file.ts,path/to/second.ts` or `npx deepunit --f path/to/file.ts,path/to/second.ts`
+- Use the `--pattern` flag to choose what patterns you would like to filter files for. We use `glob` under the hood (Example: `src/**` or `{lib,src}/*{.ts,.js}`), for more information about pattern matching visit: [VSCode Glob Matching](https://code.visualstudio.com/docs/editor/glob-patterns)
+
+`npm run deepunit -- --p lib/**` or `npx deepunit --p {lib,src}/*{.ts,.js}`
 - Use the `--all` flag to do generate tests for all eligible files in the workspace.
-- Without any file flag, it will automatically try to find all files that it can write tests for in your workspace.
-- Use the `ignoredDirectories` or `ignoredFiles` to ignore files, other than ones you want to test
-- If you have a function, method, or entire class you would like DeepUnit.AI not to test, add `// @deep-unit-ignore-next-line` in front of the function or class, like so:
+
+`npm run deepunit -- --a` or `npx deepunit --a`
+
+- Without any flag, it will look at the last diff and attempt to write tests for the files in the diff.
+
+`npm run deepunit` or `npx deepunit`
+
+## Ignoring files
+There will be certain directoires, files or functions in your project which you won't want to test. You can configure DeepUnit to ignore these files or entire directories using the following configs in deepunit.config.json
+- `ignoredDirectories` will ignore an entire directory
+- `ignoredFiles` will ignore specific files
+- `// @deep-unit-ignore-next-line` will ignore a function, method, or entire class. Add this inside your code just like you would `@ts-ignore`
 
 ```typescript
 // @deep-unit-ignore-next-line

@@ -2,7 +2,6 @@
  * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
  * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
  */
-
 export function getFilesFlag(): string[] {
   const args = process.argv.slice(2);
   let files: string[] = [];

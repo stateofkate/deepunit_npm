@@ -12,7 +12,7 @@ enum ApiPaths {
   sendResults = '/generate-test/send-results',
   sendAnalytics = '/generate-test/send-analytics',
   getLatestVersion = '/generate-test/get-latest-version',
-  feedback = '/feedback/feedback'
+  feedback = '/feedback/feedback',
 }
 export enum StateCode {
   'Success' = 0,
@@ -135,13 +135,11 @@ export class Api {
     return await this.post(ApiPaths.getLatestVersion);
   }
 
-  public static async Feedback(userFeedback: string, subject: string): Promise<void>{
-    const data: FeedbackData ={
-      feedback:userFeedback,
-      subject
-    }
+  public static async Feedback(userFeedback: string, subject: string): Promise<void> {
+    const data: FeedbackData = {
+      feedback: userFeedback,
+      subject,
+    };
     return await this.post(ApiPaths.feedback, data);
-
   }
 }
-

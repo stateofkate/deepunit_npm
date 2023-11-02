@@ -11,7 +11,16 @@
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["run", "start"],
-            "args": ["--","--file", "src/**/basic.ts"]
+            "args": ["--","--file", "src/examples/basic.ts"]
+          },
+          {
+            "name": "Launch pattern",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start"],
+            "args": ["--","--pattern", "src/examples/**"]
           },
           {
             "name": "Launch all",

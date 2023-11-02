@@ -1,13 +1,26 @@
 # Release Log
 
 ## 1.5.1
-Features
+Features:
+
+- Improved React support
+- Updated Readme
+- Added --pattern flag
+- Fixed a TypeScript bug
+- Improved --file flag parsing and added more clear error handling when a file does not exist
+## 1.5.1
+Bugs:
+
+- Fix an error with accessing undefined properties
+
+## 1.5.1
+Features:
 
 - Improved error logging
 - Allow setting the test suffix of the file with the "testSuffix" config
 
 ## 1.5.0
-Features
+Features:
 
 - Help command
 - Improved file selection
