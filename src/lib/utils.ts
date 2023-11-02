@@ -192,3 +192,23 @@ export function getGenerateAllFilesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.a || argv.all);
 }
+
+export class LoadingIndicator {
+  private chars: string[] = ['|', '/', '-', '\\'];
+  private x: number = 0;
+  private interval?: NodeJS.Timeout;
+
+  start(): void {
+    this.interval = setInterval(() => {
+      process.stdout.write(`\rGenerating: ${Color.lightBlue(this.chars[this.x++])}`);
+      this.x &= 3; // Keep x within the bounds of chars array
+    }, 250); // The speed of rotation, 250 milliseconds
+  }
+
+  stop(): void {
+    if (this.interval) {
+      clearInterval(this.interval);
+      process.stdout.write('\r \r'); // Clear the line
+    }
+  }
+}

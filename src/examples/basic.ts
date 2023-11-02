@@ -2,16 +2,7 @@ import fs from 'fs';
 import { multiply } from './testUtils';
 import { checkIfFileExists } from './subfolder/file';
 import { SMALL_NUMBER } from './subfolder/consts/tests.consts';
-
-// base logic
-export function testFunction(arg: number): number {
-  let test1 = SMALL_NUMBER;
-  if (arg > 5) {
-    return test1 - arg;
-  } else {
-    return test1 + arg;
-  }
-}
+import * as path from 'path';
 
 // @deep-unit-ignore-next-line
 export function checkFileIsNotEmpty(filePath: string): boolean {
@@ -23,9 +14,19 @@ export function checkFileIsNotEmpty(filePath: string): boolean {
   }
 }
 
-// confirm that file exists
-export function confirmFileExists(filePath: string): boolean {
-  return checkIfFileExists(filePath);
+export function confirmFileIsWithinFolder(filePath: string, folderPath: string): boolean {
+  // Check if the file exists
+  const doesExist = fs.existsSync(filePath);
+  if (!doesExist) {
+    return false;
+  }
+
+  // Resolve the absolute path of the file and the folder
+  const absoluteFilePath = path.resolve(filePath);
+  const absoluteFolderPath = path.resolve(folderPath);
+
+  // Check if the file is within the folder
+  return absoluteFilePath.startsWith(absoluteFolderPath);
 }
 
 // math utility to square a number
@@ -59,6 +60,7 @@ export function gcd(a: number, b: number): number {
 }
 
 export function fibonacci(n: number): number {
+  if (n < 0) throw Error('Not a valid number');
   if (n <= 1) return n;
   let a = 0,
     b = 1,

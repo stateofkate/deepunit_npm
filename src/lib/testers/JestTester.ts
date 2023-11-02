@@ -51,6 +51,7 @@ export class JestTester extends Tester {
     let failedTests: string[] = [];
     let failedTestErrors: any = {};
     let failedItBlocks: { [key: string]: string[] } = {};
+    let itBlocksCount: { [key: string]: number } = {};
     for (const testResult of result) {
       const testPathFound: string | undefined = files.find((substring) => testResult.file.endsWith(substring));
       const testPath = testPathFound ? testPathFound : (testResult.file as string);
@@ -68,6 +69,7 @@ export class JestTester extends Tester {
           failedTestErrors[testPath] = testResult.jestResult.message;
           // handle what "it" blocks failed
           const failedItStatements = testResult.jestResult.assertionResults.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
+          itBlocksCount[testPath] = testResult.jestResult.assertionResults.length;
           // if there is any failed statements set it
           if (failedItStatements.length > 0) {
             failedItBlocks[testPath] = failedItStatements;
@@ -75,7 +77,7 @@ export class JestTester extends Tester {
         }
       }
     }
-    return { passedTests, failedTestErrors, failedTests, failedItBlocks };
+    return { passedTests, failedTestErrors, failedTests, failedItBlocks, itBlocksCount };
   }
 
   public static extractJSONs(text: string) {

@@ -32,6 +32,7 @@ export class Config {
   prodTesting: boolean = false;
   testingLanguageOverride: string = '';
   isGitRepository: boolean = false;
+  retryTestGenerationOnFailure: boolean = true;
   private readonly undefinedVersion = '-1';
   private versionCache: string = this.undefinedVersion;
 
@@ -52,6 +53,7 @@ export class Config {
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
+    this.retryTestGenerationOnFailure = Config.getBoolFromConfig('retryTestGenerationOnFailure', true);
     this.generateAllFiles = getGenerateAllFilesFlag();
     this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
     this.isGitRepository = this.isInGitRepo();

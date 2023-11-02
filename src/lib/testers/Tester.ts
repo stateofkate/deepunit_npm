@@ -1,6 +1,7 @@
 import { CONFIG } from '../Config';
 import { Api } from '../Api';
 import { Files } from '../Files';
+import { LoadingIndicator } from '../utils';
 
 export type TestResults = {
   failedTests: string[];
@@ -11,6 +12,7 @@ export type TestResults = {
    * Value: List of failing it blocks
    */
   failedItBlocks: { [key: string]: string[] };
+  itBlocksCount: { [key: string]: number };
 };
 
 export type TestResult = {
@@ -41,8 +43,15 @@ export abstract class Tester {
     }
   }
 
-  public async generateTest(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string): Promise<any> {
-    return await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent);
+  public async generateTest(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string, retryFunctions?: string[]): Promise<any> {
+    const loadingIndicator = new LoadingIndicator();
+    console.log(`Generating test for ${tsFile}`);
+    console.log('This can take 0-2 minutes...');
+    // TODO: we need to add a timeout, somethings it hangs
+    loadingIndicator.start();
+    const response = await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
+    loadingIndicator.stop();
+    return response;
   }
 
   /**

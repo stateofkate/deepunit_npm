@@ -12,6 +12,7 @@ export type GenerateTestData = {
   sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
+  functionsToTest?: string[];
 };
 
 export type FixErrorsData = {

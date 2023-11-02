@@ -56,7 +56,14 @@ export class Api {
     }
   }
 
-  public static async generateTest(diffs: string, sourceFileName: string | null, sourceFileContent: string | null, testFileName: string, testFileContent: string): Promise<any> {
+  public static async generateTest(
+    diffs: string,
+    sourceFileName: string | null,
+    sourceFileContent: string | null,
+    testFileName: string,
+    testFileContent: string,
+    functionsToTest?: string[],
+  ): Promise<any> {
     if (!sourceFileName || !sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
@@ -71,6 +78,9 @@ export class Api {
     if (testFileName || testFileContent) {
       // test file is optional
       data.testFile = { [testFileName]: testFileContent };
+    }
+    if (functionsToTest) {
+      data.functionsToTest = functionsToTest;
     }
 
     return await this.post(ApiPaths.generate, data);
