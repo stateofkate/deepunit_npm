@@ -1,6 +1,14 @@
 # Release Log
 
-## 1.5.1
+## 1.6.0
+Features
+- Added retryTestGenerationOnFailure option to retry when we fail to generate a passing test
+- Added spinner when waiting for API calls to complete
+
+Bugs
+- Fixed a fatal issue with logging incorrectly
+
+## 1.5.4
 Features:
 
 - Improved React support
