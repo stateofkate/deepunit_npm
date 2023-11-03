@@ -97,34 +97,24 @@ export async function main() {
 
         let transformedErrors: { [key: string]: any } = {};
 
-
         for (const [key, value] of Object.entries(failedTestErrors)) {
           const error = value.testFailedWithError;
 
           if (error instanceof Error) {
-
             transformedErrors[key as string] = {
-              file: value.file,
-              failedTests: failedTests,
               message: error.message,
-              name: error. name
-              //stack: error.stack
+              stack: error.stack,
             };
-          }
-          else {
+          } else {
             // If not an instance of Error, keep the original format or adjust as needed
             transformedErrors[key as string] = {
               ...value,
-              testFailedWithError: error
+              testFailedWithError: error,
             };
           }
         }
 
-
-
-
-        Api.sendResults(failedTests, passedTests, tests, transformedErrors);
-        //console.log({failedTestErrors});
+        Api.sendResults(failedTests, passedTests, tests, transformedErrors, sourceFileName, sourceFileContent);
 
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 

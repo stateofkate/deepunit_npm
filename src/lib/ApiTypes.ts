@@ -37,6 +37,8 @@ export type SendResultData = {
   tests: Record<string, string>;
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
+  sourceFileName: string;
+  sourceFileContent: string;
 };
 export type SendAnalyticsData = {
   logMessage: string;
