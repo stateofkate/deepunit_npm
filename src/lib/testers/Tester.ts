@@ -3,30 +3,21 @@ import { Api } from '../Api';
 import { Files } from '../Files';
 import { LoadingIndicator } from '../utils';
 
-export interface ErrorDetail {
-  file: string;
-  testFailedWithError: {
-    message: string;
-    stack: string;
-    name: string;
-  }
-}
-
 export interface TestResults {
   failedTests: string[];
   passedTests: string[];
-  failedTestErrors: { [key: string]: ErrorDetail };
+  failedTestErrors: { [key: string]: string };
   /**
    * Key: FileName
    * Value: List of failing it blocks
    */
   failedItBlocks: { [key: string]: string[] };
   itBlocksCount: { [key: string]: number };
-};
+}
 
 export type TestResult = {
   file: string;
-  testFailedWithError: undefined | string;
+  testFailedWithError: any;
   jestResult: undefined | any;
 };
 

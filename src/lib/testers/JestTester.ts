@@ -59,14 +59,14 @@ export class JestTester extends Tester {
       if (testResult.testFailedWithError || !testResult.jestResult || !testResult.jestResult.success) {
         // an error happened when running the test
         failedTests.push(testPath);
-        failedTestErrors[testPath] = testResult;
+        failedTestErrors[testPath] = testResult.testFailedWithError.stack;
       } else {
         if (testResult.jestResult?.testResults[0]?.status == 'passed') {
           passedTests.push(testPath);
         } else {
           // the test was a valid script, but failed
           failedTests.push(testPath);
-          failedTestErrors[testPath] = testResult;
+          failedTestErrors[testPath] = testResult.jestResult.stack;
           // handle what "it" blocks failed
           const failedItStatements = testResult.jestResult.assertionResults.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
           itBlocksCount[testPath] = testResult.jestResult.assertionResults.length;

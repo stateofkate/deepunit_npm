@@ -5,7 +5,7 @@ import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { checkFeedbackFlag, exitWithError, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
-import { Tester } from './lib/testers/Tester';
+import { Tester, TestResults } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, ClientCode, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
@@ -104,29 +104,9 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
+        const { failedTests, passedTests, failedTestErrors, failedItBlocks }: TestResults = await tester.getTestResults(tempTestPaths);
 
-        let transformedErrors: { [key: string]: any } = {};
-
-        for (const [key, value] of Object.entries(failedTestErrors)) {
-          const error = value.testFailedWithError;
-
-          if (error instanceof Error) {
-            //todo: when we add jasmine support we will need to refactor the code as suggested in my comments here: https://gitlab.com/justin337/captain-hook/-/merge_requests/70/diffs
-            transformedErrors[key as string] = {
-              message: error.message,
-              stack: error.stack,
-            };
-          } else {
-            // If not an instance of Error, keep the original format or adjust as needed
-            transformedErrors[key as string] = {
-              ...value,
-              testFailedWithError: error,
-            };
-          }
-        }
-
-        Api.sendResults(failedTests, passedTests, tests, transformedErrors, sourceFileName, sourceFileContent);
+        Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
 
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
@@ -190,8 +170,7 @@ export async function main() {
       // retest everything, that way we have a better knowledge of what succeeded.
       ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
 
-      Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
-
+      Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
       await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
       //then we will need to delete all the temp test files.
