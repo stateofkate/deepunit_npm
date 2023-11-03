@@ -2,13 +2,11 @@ import { execSync } from 'child_process';
 import { CONFIG } from './Config';
 
 export class Printer {
-  static LINE_DIVIDER = '#################################################';
-
   public static printOutro(): void {
     const LINE_DIVIDER = '##################################################';
     console.log(LINE_DIVIDER);
-    console.log('\n We love feedback. Let us know of any suggestions, bugs, issues, or problems so we can make DeepUnit better.');
-    console.log('\n To provide feedback, please run "npm run deepunit -- --feedback"');
+    console.log('\nWe love feedback. Let us know of any suggestions, bugs, issues, or problems so we can make DeepUnit better.');
+    console.log('\nTo provide feedback, please run "npm run deepunit -- --feedback"');
   }
 
   public static printIntro() {
