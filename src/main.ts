@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
-import { LoadingIndicator, exitWithError, getFilesFlag, isEmpty, setupYargs, validateVersionIsUpToDate } from './lib/utils';
+import { checkFeedbackFlag, exitWithError, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Printer } from './lib/Printer';
 import { Tester } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -27,6 +27,17 @@ export async function main() {
 
   // confirm we have all packages for type of project
   await CONFIG.confirmAllPackagesNeeded();
+
+  // check to confirm we still support this version
+  if (checkFeedbackFlag()) {
+    const feedback = await promptUserInput(
+      'We love feedback. Let us know of suggestions, bugs, issues, or problems so we can make DeepUnit better: ',
+      'Thank you for your feedback!',
+    );
+    const subject: string = '--feedback';
+    await Api.Feedback(feedback, subject);
+    process.exit(0);
+  }
 
   const prettierConfig: Object | undefined = Files.getPrettierConfig();
 
@@ -89,6 +100,48 @@ export async function main() {
           continue;
         }
         // if we are then we are good to go, keep processing test
+        let tests: Record<string, string> = response.tests;
+        // Write the temporary test files, so we can test the generated tests
+        let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
+
+        const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
+
+        let transformedErrors: { [key: string]: any } = {};
+
+        for (const [key, value] of Object.entries(failedTestErrors)) {
+          const error = value.testFailedWithError;
+
+          if (error instanceof Error) {
+            //todo: when we add jasmine support we will need to refactor the code as suggested in my comments here: https://gitlab.com/justin337/captain-hook/-/merge_requests/70/diffs
+            transformedErrors[key as string] = {
+              message: error.message,
+              stack: error.stack,
+            };
+          } else {
+            // If not an instance of Error, keep the original format or adjust as needed
+            transformedErrors[key as string] = {
+              ...value,
+              testFailedWithError: error,
+            };
+          }
+        }
+
+        Api.sendResults(failedTests, passedTests, tests, transformedErrors, sourceFileName, sourceFileContent);
+
+        await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
+
+        //then we will need to delete all the temp test files.
+        Files.deleteTempFiles(tempTestPaths);
+
+        if (passedTests.length > 0) {
+          if (CONFIG.includeFailingTests && failedTests.length > 0) {
+            testsWithErrors.push(testFileName);
+          } else {
+            passingTests.push(testFileName);
+          }
+        } else {
+          testsWithErrors.push(testFileName);
+        }
       } else {
         console.log(CONFIG.isDevBuild ? 'Invalid stateCode received from the backend' : 'DeepUnit is out of date, please run "npm install deepunit@latest --save-dev"');
         continue;
@@ -157,6 +210,7 @@ export async function main() {
   }
 
   Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+  Printer.printOutro();
   process.exit(0);
 }
 

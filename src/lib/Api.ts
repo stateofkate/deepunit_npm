@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData } from './ApiTypes';
 import { CONFIG } from './Config';
 
 enum ApiPaths {
@@ -12,6 +12,7 @@ enum ApiPaths {
   sendResults = '/generate-test/send-results',
   sendAnalytics = '/generate-test/send-analytics',
   getLatestVersion = '/generate-test/get-latest-version',
+  feedback = '/feedback/feedback',
 }
 export enum StateCode {
   'Success' = 0,
@@ -121,12 +122,21 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
-  public static async sendResults(failedTests: string[], passedTests: string[], tests: Record<string, string>, failedTestErrors: any) {
+  public static async sendResults(
+    failedTests: string[],
+    passedTests: string[],
+    tests: Record<string, string>,
+    failedTestErrors: any,
+    sourceFileName: string,
+    sourceFileContent: string,
+  ) {
     const data: SendResultData = {
       failedTests,
       passedTests,
       tests,
       failedTestErrors,
+      sourceFileName,
+      sourceFileContent,
       scriptTarget: CONFIG.scriptTarget,
     };
     await this.post(ApiPaths.sendResults, data);
@@ -142,5 +152,13 @@ export class Api {
 
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
     return await this.post(ApiPaths.getLatestVersion);
+  }
+
+  public static async Feedback(userFeedback: string, subject: string): Promise<void> {
+    const data: FeedbackData = {
+      feedback: userFeedback,
+      subject,
+    };
+    return await this.post(ApiPaths.feedback, data);
   }
 }

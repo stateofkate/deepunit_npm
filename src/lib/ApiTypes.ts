@@ -15,6 +15,11 @@ export type GenerateTestData = {
   functionsToTest?: string[];
 };
 
+export type FeedbackData = {
+  feedback: string;
+  subject: string;
+};
+
 export type FixErrorsData = {
   errorMessage: string;
   testFileName: string;
@@ -38,6 +43,8 @@ export type SendResultData = {
   tests: Record<string, string>;
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
+  sourceFileName: string;
+  sourceFileContent: string;
 };
 export type SendAnalyticsData = {
   logMessage: string;
