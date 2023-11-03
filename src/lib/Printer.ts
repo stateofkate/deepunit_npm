@@ -14,6 +14,7 @@ export class Printer {
     console.log(LINE_DIVIDER);
     console.log('##### Generating unit tests with DeepUnit.AI #####');
     console.log(LINE_DIVIDER);
+    console.log('For documentation visit https://deepunit.ai/docs');
   }
 
   public static printIndented(fileNames: (string | null)[], summaryDescription: string) {

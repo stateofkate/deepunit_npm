@@ -190,6 +190,9 @@ export async function main() {
 
   Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
   Printer.printOutro();
+  if (filesToTest.length === 0) {
+    console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
+  }
   process.exit(0);
 }
 
