@@ -177,7 +177,9 @@ interface ParsedArgs extends Arguments {
 
 export function setupYargs() {
   return yargs(hideBin(process.argv))
-    .usage('Usage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.')
+    .usage(
+      'For complete documentation visit https://deepunit.ai/docs\nUsage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.',
+    )
     .option('f', {
       alias: ['file', 'files'],
       type: 'string',

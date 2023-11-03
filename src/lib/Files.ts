@@ -37,7 +37,7 @@ export class Files {
     } else {
       console.log('Finding all changed files in your repository');
       if (!CONFIG.isGitRepository) {
-        exitWithError(`You are not in a git repository.`);
+        exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
       } else {
         filesToWriteTestsFor = Files.getChangedFiles();
       }
