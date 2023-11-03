@@ -66,6 +66,36 @@ export function isEmpty(obj: Object) {
   return true;
 }
 
+/**
+ * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
+ * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
+ */
+
+export function checkFeedbackFlag(): boolean {
+  let result: boolean = false;
+  //check what argv contains
+  const arg: string = process.argv[2];
+  // will change this so that
+  // conditions for feedback: strlen(arg) > 10;
+
+  return arg === '--feedback';
+}
+
+export async function promptUserInput(prompt: string, backToUser: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(prompt, (answer) => {
+      console.log(backToUser);
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
 export function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
@@ -139,6 +169,8 @@ interface ParsedArgs extends Arguments {
   f?: string;
   file?: string;
   files?: string;
+  p?: string;
+  pattern?: string;
   a?: boolean;
   all?: boolean;
 }
@@ -149,7 +181,12 @@ export function setupYargs() {
     .option('f', {
       alias: ['file', 'files'],
       type: 'string',
-      description: 'Test only files that match pattern. Example: --f */main.ts,subfolder/number.ts,src/**',
+      description: 'Test only files with the given path, separated by commas. Example: --f src/main.ts,lib/MathUtils.ts',
+    })
+    .option('p', {
+      alias: ['pattern'],
+      type: 'string',
+      description: 'Test only files that match pattern. Example: --p *{lib,src}/*{.ts,.js}',
     })
     .option('a', {
       alias: ['all'],
@@ -166,6 +203,16 @@ export function getFilesFlag(): string[] | undefined {
   if (argv.f || argv.file || argv.files) {
     const files = argv.f || argv.file || argv.files;
     return typeof files === 'string' ? files.split(',') : undefined;
+  }
+
+  return undefined;
+}
+
+export function getPatternFlag(): string[] | undefined {
+  const argv = setupYargs().argv as ParsedArgs;
+  const pattern = argv.p || argv.pattern;
+  if (pattern) {
+    return [pattern];
   }
 
   return undefined;
