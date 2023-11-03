@@ -12,6 +12,17 @@ export type GenerateTestData = {
   sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
+  functionsToTest?: string[];
+};
+
+export type FeedbackData = {
+  feedback: string;
+  subject: string;
+};
+
+export type FeedbackData = {
+  feedback: string;
+  subject: string;
 };
 
 export type FixErrorsData = {
@@ -37,6 +48,8 @@ export type SendResultData = {
   tests: Record<string, string>;
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
+  sourceFileName: string;
+  sourceFileContent: string;
 };
 export type SendAnalyticsData = {
   logMessage: string;

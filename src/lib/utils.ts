@@ -66,6 +66,36 @@ export function isEmpty(obj: Object) {
   return true;
 }
 
+/**
+ * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
+ * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
+ */
+
+export function checkFeedbackFlag(): boolean {
+  let result: boolean = false;
+  //check what argv contains
+  const arg: string = process.argv[2];
+  // will change this so that
+  // conditions for feedback: strlen(arg) > 10;
+
+  return arg === '--feedback';
+}
+
+export async function promptUserInput(prompt: string, backToUser: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question(prompt, (answer) => {
+      console.log(backToUser);
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
 export function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
@@ -191,4 +221,24 @@ export function getPatternFlag(): string[] | undefined {
 export function getGenerateAllFilesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.a || argv.all);
+}
+
+export class LoadingIndicator {
+  private chars: string[] = ['|', '/', '-', '\\'];
+  private x: number = 0;
+  private interval?: NodeJS.Timeout;
+
+  start(): void {
+    this.interval = setInterval(() => {
+      process.stdout.write(`\rGenerating: ${Color.lightBlue(this.chars[this.x++])}`);
+      this.x &= 3; // Keep x within the bounds of chars array
+    }, 250); // The speed of rotation, 250 milliseconds
+  }
+
+  stop(): void {
+    if (this.interval) {
+      clearInterval(this.interval);
+      process.stdout.write('\r \r'); // Clear the line
+    }
+  }
 }

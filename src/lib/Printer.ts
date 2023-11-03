@@ -2,9 +2,15 @@ import { execSync } from 'child_process';
 import { CONFIG } from './Config';
 
 export class Printer {
+  public static printOutro(): void {
+    const LINE_DIVIDER = '##################################################';
+    console.log(LINE_DIVIDER);
+    console.log('\nWe love feedback. Let us know of any suggestions, bugs, issues, or problems so we can make DeepUnit better.');
+    console.log('\nTo provide feedback, please run "npm run deepunit -- --feedback"');
+  }
+
   public static printIntro() {
     const LINE_DIVIDER = '##################################################';
-
     console.log(LINE_DIVIDER);
     console.log('##### Generating unit tests with DeepUnit.AI #####');
     console.log(LINE_DIVIDER);
@@ -60,6 +66,7 @@ enum COLORS {
   red = '\x1b[31m',
   yellow = '\x1b[33m',
   blue = '\x1b[34m',
+  lightBlue = '\x1b[96m',
   green = '\x1b[32m',
   white = '\x1b[37m',
 }
@@ -79,6 +86,10 @@ export class Color {
 
   static blue(text: string) {
     return Color.colorize(text, COLORS.blue);
+  }
+
+  static lightBlue(text: string) {
+    return Color.colorize(text, COLORS.lightBlue);
   }
 
   static green(text: string) {
