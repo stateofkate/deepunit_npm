@@ -106,7 +106,27 @@ export async function main() {
 
         const { failedTests, passedTests, failedTestErrors, failedItBlocks } = await tester.getTestResults(tempTestPaths);
 
-        Api.sendResults(failedTests, passedTests, tests, failedTestErrors);
+        let transformedErrors: { [key: string]: any } = {};
+
+        for (const [key, value] of Object.entries(failedTestErrors)) {
+          const error = value.testFailedWithError;
+
+          if (error instanceof Error) {
+            //todo: when we add jasmine support we will need to refactor the code as suggested in my comments here: https://gitlab.com/justin337/captain-hook/-/merge_requests/70/diffs
+            transformedErrors[key as string] = {
+              message: error.message,
+              stack: error.stack,
+            };
+          } else {
+            // If not an instance of Error, keep the original format or adjust as needed
+            transformedErrors[key as string] = {
+              ...value,
+              testFailedWithError: error,
+            };
+          }
+        }
+
+        Api.sendResults(failedTests, passedTests, tests, transformedErrors, sourceFileName, sourceFileContent);
 
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 

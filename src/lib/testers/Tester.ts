@@ -2,10 +2,19 @@ import { CONFIG } from '../Config';
 import { Api } from '../Api';
 import { Files } from '../Files';
 
-export type TestResults = {
+export interface ErrorDetail {
+  file: string;
+  testFailedWithError: {
+    message: string;
+    stack: string;
+    name: string;
+  }
+}
+
+export interface TestResults {
   failedTests: string[];
   passedTests: string[];
-  failedTestErrors: { [key: string]: string };
+  failedTestErrors: { [key: string]: ErrorDetail };
   /**
    * Key: FileName
    * Value: List of failing it blocks
