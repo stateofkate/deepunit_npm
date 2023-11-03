@@ -46,7 +46,7 @@ export abstract class Tester {
   public async generateTest(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string, retryFunctions?: string[]): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
     console.log(`Generating test for ${tsFile}`);
-    console.log('This can take 0-2 minutes...');
+    console.log('If your functions are long this will take awhile...');
     // TODO: we need to add a timeout, somethings it hangs
     loadingIndicator.start();
     const response = await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
