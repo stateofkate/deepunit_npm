@@ -112,6 +112,7 @@ export async function main() {
           const error = value.testFailedWithError;
 
           if (error instanceof Error) {
+            //todo: when we add jasmine support we will need to refactor the code as suggested in my comments here: https://gitlab.com/justin337/captain-hook/-/merge_requests/70/diffs
             transformedErrors[key as string] = {
               message: error.message,
               stack: error.stack,
