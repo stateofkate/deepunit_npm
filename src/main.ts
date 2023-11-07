@@ -19,7 +19,11 @@ export async function main() {
   Printer.printIntro();
 
   if (process.platform === 'win32') {
-    return exitWithError(Color.red('We do not support windows yet, although we do support WSL. If you would like support please email us.'));
+    return exitWithError(
+      Color.red(
+        'We do not support windows yet, although we do support using deepunit through WSL on windows(https://learn.microsoft.com/en-us/windows/wsl/install). If you would like us to support windows please email us.',
+      ),
+    );
   }
 
   // setup the auth channel and see if they are logged in or not
