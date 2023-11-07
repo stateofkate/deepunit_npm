@@ -5,6 +5,7 @@ export type ApiBaseData = {
   testingFramework: TestingFrameworks;
   version: string;
   email: string | null;
+  platform: string | null;
 };
 
 export type GenerateTestData = {
@@ -18,6 +19,10 @@ export type GenerateTestData = {
 export type FeedbackData = {
   feedback: string;
   subject: string;
+};
+
+export type LogsData = {
+  logs: string;
 };
 
 export type FixErrorsData = {

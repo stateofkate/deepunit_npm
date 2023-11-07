@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
 
 enum ApiPaths {
@@ -13,6 +13,7 @@ enum ApiPaths {
   sendAnalytics = '/generate-test/send-analytics',
   getLatestVersion = '/generate-test/get-latest-version',
   feedback = '/feedback/feedback',
+  logs = '/feedback/logs',
 }
 export enum StateCode {
   'Success' = 0,
@@ -37,6 +38,7 @@ export class Api {
       testingFramework: CONFIG.testingFramework,
       version: CONFIG.getVersion(),
       email: AUTH.getEmail(),
+      platform: CONFIG.platform,
       ...customData,
     };
 
@@ -160,5 +162,12 @@ export class Api {
       subject,
     };
     return await this.post(ApiPaths.feedback, data);
+  }
+
+  public static async SendLogs(logs: string): Promise<void> {
+    const data: LogsData = {
+      logs: logs,
+    };
+    return await this.post(ApiPaths.logs, data);
   }
 }
