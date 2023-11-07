@@ -5,6 +5,7 @@ import { TestingFrameworks } from '../main.consts';
 import { exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage } from './utils';
 import { execSync } from 'child_process';
 import { Color } from './Printer';
+
 const devConfig: string = 'deepunit.dev.config.json';
 
 // HARDCODED CONFIG VALUES
@@ -35,6 +36,7 @@ export class Config {
   retryTestGenerationOnFailure: boolean = true;
   private readonly undefinedVersion = '-1';
   private versionCache: string = this.undefinedVersion;
+  platform: string = '';
 
   constructor() {
     this.detectProjectType();
@@ -57,6 +59,7 @@ export class Config {
     this.generateAllFiles = getGenerateAllFilesFlag();
     this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
     this.isGitRepository = this.isInGitRepo();
+    this.platform = process.platform;
   }
 
   /**

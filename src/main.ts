@@ -9,6 +9,7 @@ import { Tester, TestResults } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, ClientCode, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
+import { Log } from './lib/Log';
 
 // global classes
 export let AUTH: Auth;
@@ -201,6 +202,7 @@ export async function main() {
   if (filesToTest.length === 0) {
     console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
   }
+  await Log.getInstance().sendLogs();
   process.exit(0);
 }
 
@@ -209,6 +211,7 @@ if (require.main === module) {
 
   process.on('SIGINT', async function () {
     await Api.sendAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
+    await Log.getInstance().sendLogs();
     process.exit();
   });
 }

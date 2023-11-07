@@ -6,6 +6,7 @@ import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Arguments } from 'yargs';
+import { Log } from './Log';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
@@ -42,7 +43,7 @@ export function expectNot(falsyVal: any): any {
 }
 
 /**
- * Console.log only when we are not in production
+ * console.log only when we are not in production
  * @param input
  */
 export function debugMsg(...input: any) {
@@ -100,6 +101,7 @@ export function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
   Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
+  Log.getInstance().sendLogs();
   process.exit(1);
 }
 
