@@ -17,21 +17,24 @@ AI-Powered Unit Test Generation, provided by https://deepunit.ai. DeepUnitAi wil
 
 Currently in **Alpha** release.
 
+Currently only supported on `Linux`, `MacOS`, and `Windows through **WSL**`
+
 The application generates working tests fairly consistently, but does require a lot of supervision from user currently.
 
 Users are expected to always review tests that are generated for correctness before committing them.
 
 ## Installation
 
-You can install and use DeepUnit in 3 steps 
+You can install and use DeepUnit in 3 steps
+
 1. `npm i -D deepunit` installs the package
 2. `npx deepunit` to add the script to your package.json for easy calling
 3. `npm run deepunit -- --f path/to/your/file.ts` to run the tool specifying a specific file path
 
 ## Usage
 
-You can use DeepUnit without installing it by running the command 
-```npx deepunit --f path/to/file.ts```
+You can use DeepUnit without installing it by running the command
+`npx deepunit --f path/to/file.ts`
 
 ## Authentication
 
@@ -45,7 +48,7 @@ DeepUnits config is stored in a file called deepunit.config.json which is automa
 {
   // Force what the frontendframework is (react, node) in case we detect it wrong
   "frontendFramework": "react"
-  
+
   // Forces DeepUnit to assume the testing framework. This is helpful if we are unable to detect your framework or you use a Jest compatible framework like Vitest
   "testingFrameworkOverride": "jest"
 
@@ -74,9 +77,11 @@ To choose what to test, you have a few options
 - Use the `--file` flag to choose what files you would like to test (the files should be separated by a "`,`")
 
 `npm run deepunit -- --f path/to/file.ts,path/to/second.ts` or `npx deepunit --f path/to/file.ts,path/to/second.ts`
+
 - Use the `--pattern` flag to choose what patterns you would like to filter files for. We use `glob` under the hood (Example: `src/**` or `{lib,src}/*{.ts,.js}`), for more information about pattern matching visit: [VSCode Glob Matching](https://code.visualstudio.com/docs/editor/glob-patterns)
 
 `npm run deepunit -- --p lib/**` or `npx deepunit --p {lib,src}/*{.ts,.js}`
+
 - Use the `--all` flag to do generate tests for all eligible files in the workspace.
 
 `npm run deepunit -- --a` or `npx deepunit --a`
@@ -86,7 +91,9 @@ To choose what to test, you have a few options
 `npm run deepunit` or `npx deepunit`
 
 ## Ignoring files
+
 There will be certain directoires, files or functions in your project which you won't want to test. You can configure DeepUnit to ignore these files or entire directories using the following configs in deepunit.config.json
+
 - `ignoredDirectories` will ignore an entire directory
 - `ignoredFiles` will ignore specific files
 - `// @deep-unit-ignore-next-line` will ignore a function, method, or entire class. Add this inside your code just like you would `@ts-ignore`

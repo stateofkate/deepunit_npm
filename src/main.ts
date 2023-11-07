@@ -4,11 +4,12 @@ import { TestingFrameworks } from './main.consts';
 import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { checkFeedbackFlag, exitWithError, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
-import { Printer } from './lib/Printer';
+import { Color, Printer } from './lib/Printer';
 import { Tester, TestResults } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, ClientCode, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
+import { Log } from './lib/Log';
 
 // global classes
 export let AUTH: Auth;
@@ -17,6 +18,14 @@ export async function main() {
   setupYargs();
 
   Printer.printIntro();
+
+  if (process.platform === 'win32') {
+    return exitWithError(
+      Color.red(
+        'We do not support windows yet, although we do support using deepunit through WSL on windows(https://learn.microsoft.com/en-us/windows/wsl/install). If you would like us to support windows please email us.',
+      ),
+    );
+  }
 
   // setup the auth channel and see if they are logged in or not
   AUTH = await Auth.init();
@@ -193,6 +202,7 @@ export async function main() {
   if (filesToTest.length === 0) {
     console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
   }
+  await Log.getInstance().sendLogs();
   process.exit(0);
 }
 
@@ -201,6 +211,7 @@ if (require.main === module) {
 
   process.on('SIGINT', async function () {
     await Api.sendAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
+    await Log.getInstance().sendLogs();
     process.exit();
   });
 }

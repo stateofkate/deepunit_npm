@@ -2,6 +2,7 @@ import { CONFIG } from '../Config';
 import { Api } from '../Api';
 import { Files } from '../Files';
 import { LoadingIndicator } from '../utils';
+import console from '../Log';
 
 export interface TestResults {
   failedTests: string[];

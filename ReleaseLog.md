@@ -1,6 +1,12 @@
 # Release Log
 
-## 1.6.0
+## 1.6.2
+Features
+- Clarified supported platforms in the documentation
+- Clarified error messages when we do not support platforms
+- Added better debugging capabilities
+
+## 1.6.1
 Features
 - Added links to documentation
 
