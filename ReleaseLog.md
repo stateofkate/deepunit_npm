@@ -3,6 +3,7 @@
 ## 1.6.3
 Features
 - Added support for our new Visual Studio Code extension
+- Improved test generation quality
 
 Bugs
 - Removed a confusing warning when the prettier file is not found
