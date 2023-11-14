@@ -20,7 +20,7 @@ export async function main() {
   Printer.printIntro();
 
   if (process.platform === 'win32') {
-    return exitWithError(
+    return await exitWithError(
       Color.red(
         'We do not support windows yet, although we do support using deepunit through WSL on windows(https://learn.microsoft.com/en-us/windows/wsl/install). If you would like us to support windows please email us.',
       ),
@@ -51,7 +51,7 @@ export async function main() {
   const prettierConfig: Object | undefined = Files.getPrettierConfig();
 
   // Get files that need to be tested
-  const filesToTest = Files.getFilesToTest();
+  const filesToTest = await Files.getFilesToTest();
 
   Printer.printFilesToTest(filesToTest);
 
@@ -76,7 +76,7 @@ export async function main() {
       if (CONFIG.testingFramework === TestingFrameworks.jest) {
         tester = new JestTester();
       } else {
-        return exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
+        return await exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
       }
 
       let testFileContent: string = '';

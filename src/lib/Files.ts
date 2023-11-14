@@ -7,7 +7,7 @@ import * as glob from 'glob';
 import { Color } from './Printer';
 
 export class Files {
-  public static getFilesToTest(): string[] {
+  public static async getFilesToTest(): Promise<string[]> {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
@@ -22,9 +22,9 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
-      filesToFilter.forEach((filePath) => {
+      filesToFilter.forEach(async (filePath) => {
         if (!Files.existsSync(filePath)) {
-          exitWithError(`${filePath} could not be found.`);
+          await exitWithError(`${filePath} could not be found.`);
         }
       });
       filesToWriteTestsFor = filesToFilter;
@@ -37,23 +37,35 @@ export class Files {
     } else {
       console.log('Finding all changed files in your repository');
       if (!CONFIG.isGitRepository) {
-        exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
+        await exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
       } else {
         filesToWriteTestsFor = Files.getChangedFiles();
       }
     }
 
-    const filteredFiles = Files.filterFiles(filesToWriteTestsFor);
+    const { filteredFiles, ignoredFiles } = Files.filterFiles(filesToWriteTestsFor);
+
+    let readyFilesToTest: string[] = [];
+    // we don't want to filter files if they have specified the exact files they want.
+    if (filesToFilter) {
+      readyFilesToTest = filesToWriteTestsFor;
+    } else {
+      // we have filtered out some files, lets notify the user what we removed
+      readyFilesToTest = filteredFiles;
+      if (ignoredFiles.length > 0) {
+        console.log(`Ignoring ${ignoredFiles.length} files: ${ignoredFiles.join(', ')}`);
+      }
+    }
 
     // if we didn't get any files, return error
-    if (filteredFiles.length <= 0) {
-      exitWithError(
+    if (readyFilesToTest.length <= 0) {
+      await exitWithError(
         Color.yellow('Run deepunit with flag -h for more information.') +
           '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
       );
     }
 
-    return filteredFiles;
+    return readyFilesToTest;
   }
 
   public static getChangedFiles(): string[] {
@@ -176,16 +188,19 @@ export class Files {
    *   Returns:
    *   list: List of file paths that are not within the ignoreDirectories and do not match filenames in ignoredFiles.
    */
-  public static filterFiles(files: string[]): string[] {
+  public static filterFiles(files: string[]): { filteredFiles: string[]; ignoredFiles: string[] } {
     const filesWithValidExtensions = this.filterExtensions(files);
     const filteredFiles: string[] = [];
+    const ignoredFiles: string[] = [];
 
     for (const file of filesWithValidExtensions) {
       if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
+      } else {
+        ignoredFiles;
       }
     }
-    return filteredFiles;
+    return { filteredFiles, ignoredFiles };
   }
 
   public static isParentAncestorOfChild(parent: string, child: string) {

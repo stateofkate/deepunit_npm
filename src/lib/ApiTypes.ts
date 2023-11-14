@@ -23,6 +23,7 @@ export type FeedbackData = {
 
 export type LogsData = {
   logs: string;
+  vscode?: boolean;
 };
 
 export type FixErrorsData = {
@@ -54,4 +55,5 @@ export type SendResultData = {
 export type SendAnalyticsData = {
   logMessage: string;
   scriptTarget: string;
+  vscode?: boolean;
 };
