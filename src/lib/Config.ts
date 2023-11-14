@@ -70,7 +70,7 @@ export class Config {
     return typeof configVal === 'boolean' ? configVal : defaultVal;
   }
 
-  public getVersion(): string {
+  public async getVersion(): Promise<string> {
     if (this.versionCache !== this.undefinedVersion) {
       return this.versionCache;
     }
@@ -80,7 +80,7 @@ export class Config {
       this.versionCache = version;
       return this.versionCache;
     } else {
-      exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
+      await exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
       return '';
     }
   }
@@ -181,6 +181,7 @@ export class Config {
           }
         } catch (error) {
           console.error(error);
+          // TODO: we need to make this async but can't because it is within the constructor
           exitWithError('Unable to read the tsconfig');
         }
       } else {

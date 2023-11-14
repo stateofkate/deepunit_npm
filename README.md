@@ -17,7 +17,7 @@ AI-Powered Unit Test Generation, provided by https://deepunit.ai. DeepUnitAi wil
 
 Currently in **Alpha** release.
 
-Currently only supported on `Linux`, `MacOS`, and `Windows through **WSL**`
+Currently only supported on `Linux`, `MacOS`, and `Windows through `[WSL](https://learn.microsoft.com/en-us/windows/wsl/install) _(native Windows is unsupported currently)_
 
 The application generates working tests fairly consistently, but does require a lot of supervision from user currently.
 
@@ -42,7 +42,7 @@ For a seamless experience with DeepUnit.Ai, we ask users to provide a valid emai
 
 ## Config
 
-DeepUnits config is stored in a file called deepunit.config.json which is automatically created for you. We support the following configs.
+DeepUnits config is stored in a file called `deepunit.config.json` which is automatically created for you. We support the following configs.
 
 ```javascript
 {
@@ -50,7 +50,7 @@ DeepUnits config is stored in a file called deepunit.config.json which is automa
   "frontendFramework": "react"
 
   // Forces DeepUnit to assume the testing framework. This is helpful if we are unable to detect your framework or you use a Jest compatible framework like Vitest
-  "testingFrameworkOverride": "jest"
+  "testingFramework": "jest"
 
   // Which directories you want to ignore, path is from the root of the project. In case of a monorepo it is the root of the package.json deepunit is installed in.
   "ignoredDirectories": [],

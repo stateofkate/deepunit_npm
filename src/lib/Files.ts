@@ -7,7 +7,7 @@ import * as glob from 'glob';
 import { Color } from './Printer';
 
 export class Files {
-  public static getFilesToTest(): string[] {
+  public static async getFilesToTest(): Promise<string[]> {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
@@ -22,9 +22,9 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
-      filesToFilter.forEach((filePath) => {
+      filesToFilter.forEach(async (filePath) => {
         if (!Files.existsSync(filePath)) {
-          exitWithError(`${filePath} could not be found.`);
+          await exitWithError(`${filePath} could not be found.`);
         }
       });
       filesToWriteTestsFor = filesToFilter;
@@ -37,7 +37,7 @@ export class Files {
     } else {
       console.log('Finding all changed files in your repository');
       if (!CONFIG.isGitRepository) {
-        exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
+        await exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
       } else {
         filesToWriteTestsFor = Files.getChangedFiles();
       }
@@ -47,7 +47,7 @@ export class Files {
 
     // if we didn't get any files, return error
     if (filteredFiles.length <= 0) {
-      exitWithError(
+      await exitWithError(
         Color.yellow('Run deepunit with flag -h for more information.') +
           '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
       );
