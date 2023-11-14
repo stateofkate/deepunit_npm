@@ -66,7 +66,10 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
 
   // What language you want the tests to generate in (forcing it to be a specific language)
   // Options are "javascript" or "typescript" right now
-  "testingLanguageOverride": "javascript"
+  "testingLanguageOverride": "javascript",
+
+  // if tests fail on the first generation, try again a second time to generate tests. Almost doubles the time of execution.
+  "retryTestGenerationOnFailure": true
 }
 ```
 

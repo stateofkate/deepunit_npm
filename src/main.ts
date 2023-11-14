@@ -108,39 +108,29 @@ export async function main() {
           console.error(`We did not receive a response from the server to generate a test for ${sourceFileName}. This should never happen`);
           continue;
         }
-        // if we are then we are good to go, keep processing test
-        let tests: Record<string, string> = response.tests;
-        // Write the temporary test files, so we can test the generated tests
-        let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
-
-        const { failedTests, passedTests, failedTestErrors, failedItBlocks }: TestResults = await tester.getTestResults(tempTestPaths);
-
-        Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-
-        await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
-
-        //then we will need to delete all the temp test files.
-        Files.deleteTempFiles(tempTestPaths);
-
-        if (passedTests.length > 0) {
-          if (CONFIG.includeFailingTests && failedTests.length > 0) {
-            testsWithErrors.push(testFileName);
-          } else {
-            passingTests.push(testFileName);
-          }
-        } else {
-          testsWithErrors.push(testFileName);
-        }
+        // else we successfully got a test back from the server, now we should test them
       } else {
         console.log(CONFIG.isDevBuild ? 'Invalid stateCode received from the backend' : 'DeepUnit is out of date, please run "npm install deepunit@latest --save-dev"');
         continue;
       }
 
+      // if we are then we are good to go, keep processing test
       let tests: Record<string, string> = response.tests;
       // Write the temporary test files, so we can test the generated tests
       let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-      let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths);
+      let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount }: TestResults = await tester.getTestResults(tempTestPaths);
+
+      if (passedTests.length > 0) {
+        if (CONFIG.includeFailingTests && failedTests.length > 0) {
+          testsWithErrors.push(testFileName);
+        } else {
+          passingTests.push(testFileName);
+        }
+      } else {
+        testsWithErrors.push(testFileName);
+      }
+
       const retryFunctions: string[] = [];
 
       // determine which tests have a successRatio below 0.5
@@ -173,6 +163,7 @@ export async function main() {
         if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
           //Re-Write these files
           Files.writeTestsToFiles(retryFunctionsResponse.tests);
+          tests = { ...tests, ...retryFunctionsResponse.tests };
         }
       }
 

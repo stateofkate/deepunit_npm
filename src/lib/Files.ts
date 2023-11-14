@@ -22,11 +22,16 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
-      filesToFilter.forEach(async (filePath) => {
+      const missingFiles = filesToFilter.filter((filePath) => {
         if (!Files.existsSync(filePath)) {
-          await exitWithError(`${filePath} could not be found.`);
+          return true;
         }
+        return false;
       });
+
+      if (missingFiles.length > 0) {
+        await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.`);
+      }
       filesToWriteTestsFor = filesToFilter;
     } else if (patternToFilter) {
       console.log('Finding files that match the --pattern flag');
