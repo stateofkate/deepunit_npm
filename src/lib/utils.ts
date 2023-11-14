@@ -67,19 +67,12 @@ export function isEmpty(obj: Object) {
   return true;
 }
 
-/**
- * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
- * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
- */
-
 export function checkFeedbackFlag(): boolean {
-  let result: boolean = false;
-  //check what argv contains
-  const arg: string = process.argv[2];
-  // will change this so that
-  // conditions for feedback: strlen(arg) > 10;
+  return process.argv.includes('--feedback');
+}
 
-  return arg === '--feedback';
+export function checkVSCodeFlag(): boolean {
+  return process.argv.includes('--vscode');
 }
 
 export async function promptUserInput(prompt: string, backToUser: string): Promise<string> {

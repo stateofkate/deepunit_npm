@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
-import { debugMsg, exitWithError } from './utils';
+import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
 
@@ -148,6 +148,7 @@ export class Api {
     const data: SendAnalyticsData = {
       logMessage: message,
       scriptTarget: CONFIG.scriptTarget,
+      vscode: checkVSCodeFlag(),
     };
     await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
   }
@@ -167,6 +168,7 @@ export class Api {
   public static async SendLogs(logs: string): Promise<void> {
     const data: LogsData = {
       logs: logs,
+      vscode: checkVSCodeFlag(),
     };
     return await this.post(ApiPaths.logs, data);
   }
