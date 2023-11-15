@@ -121,16 +121,6 @@ export async function main() {
 
       let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount }: TestResults = await tester.getTestResults(tempTestPaths);
 
-      if (passedTests.length > 0) {
-        if (CONFIG.includeFailingTests && failedTests.length > 0) {
-          testsWithErrors.push(testFileName);
-        } else {
-          passingTests.push(testFileName);
-        }
-      } else {
-        testsWithErrors.push(testFileName);
-      }
-
       const retryFunctions: string[] = [];
 
       // determine which tests have a successRatio below 0.5
