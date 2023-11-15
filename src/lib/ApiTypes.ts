@@ -16,6 +16,14 @@ export type GenerateTestData = {
   functionsToTest?: string[];
 };
 
+export type GenerateBugCases = {
+  diffs: string;
+  sourceFile?: { [key: string]: string };
+  testFile?: { [key: string]: string};
+  testingLanguageOverride?: string;
+  functionsToTest?: string [];
+};
+
 export type FeedbackData = {
   feedback: string;
   subject: string;
@@ -55,3 +63,9 @@ export type SendAnalyticsData = {
   logMessage: string;
   scriptTarget: string;
 };
+
+export type SendBugResults = {
+  report: string;
+  sourceFileName: string;
+  sourceFileContent: string;
+}

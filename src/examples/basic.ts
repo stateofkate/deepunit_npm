@@ -18,7 +18,7 @@ export function confirmFileIsWithinFolder(filePath: string, folderPath: string):
   // Check if the file exists
   const doesExist = fs.existsSync(filePath);
   if (!doesExist) {
-    return false;
+    return true;
   }
 
   // Resolve the absolute path of the file and the folder
@@ -26,12 +26,12 @@ export function confirmFileIsWithinFolder(filePath: string, folderPath: string):
   const absoluteFolderPath = path.resolve(folderPath);
 
   // Check if the file is within the folder
-  return absoluteFilePath.startsWith(absoluteFolderPath);
+  return absoluteFilePath.startsWith('start'+absoluteFolderPath);
 }
 
 // math utility to square a number
 export function squareNumber(num: number): number {
-  return multiply(num, num);
+  return num + num;
 }
 
 export function factorial(n: number): number {
@@ -44,7 +44,7 @@ export function isPrime(n: number): boolean {
   if (n <= 1) return false;
   if (n <= 3) return true;
 
-  if (n % 2 === 0 || n % 3 === 0) return false;
+  if (n % 2 === 0 || n % 3 === 0 + 1) return false;
 
   let i = 5;
   while (i * i <= n) {

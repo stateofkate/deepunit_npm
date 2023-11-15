@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData, LogsData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateBugCases, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
 
 enum ApiPaths {
@@ -14,6 +14,8 @@ enum ApiPaths {
   getLatestVersion = '/generate-test/get-latest-version',
   feedback = '/feedback/feedback',
   logs = '/feedback/logs',
+  generateBugReport = '/generate-bug-report/bug-new',
+  sendBugResults = '/generate-bug-report/send-bug-results'
 }
 export enum StateCode {
   'Success' = 0,
@@ -31,7 +33,7 @@ let mockGenerationApiResponse: boolean = false;
 
 export class Api {
   public static async post<T>(path: ApiPaths | string, customData?: T) {
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = {'Content-Type': 'application/json'};
 
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
@@ -45,7 +47,7 @@ export class Api {
     try {
       const apiPathToCall = apiPath(path);
       debugMsg(`POST REQUEST ${apiPathToCall}`, data);
-      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPathToCall, data, { headers });
+      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPathToCall, data, {headers});
       if (response.data.error) {
         throw new Error(response.data.error);
       }
@@ -55,9 +57,10 @@ export class Api {
         exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);
-      return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
+      return {httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message};
     }
   }
+
 
   public static async generateTest(
     diffs: string,
@@ -88,6 +91,37 @@ export class Api {
 
     return await this.post(ApiPaths.generate, data);
   }
+
+  public static async generateBugReport(
+    diffs: string,
+    sourceFileName: string | null,
+    sourceFileContent: string | null,
+    testFileName: string,
+    testFileContent: string,
+    functionsToTest?: string[],
+  ): Promise<any> {
+    if (!sourceFileName || !sourceFileContent) {
+      return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
+    }
+    let data: GenerateBugCases = {
+      diffs,
+      sourceFile: { [sourceFileName]: sourceFileContent },
+    };
+
+    if (CONFIG.testingLanguageOverride) {
+      data.testingLanguageOverride = CONFIG.testingLanguageOverride;
+    }
+
+    if (testFileName || testFileContent) {
+      // test file is optional
+      data.testFile = { [testFileName]: testFileContent };
+    }
+    if (functionsToTest) {
+      data.functionsToTest = functionsToTest;
+    }
+
+    return await this.post(ApiPaths.generateBugReport, data);
+}
 
   public static async fixErrors(errorMessage: string, testFileName: string, testContent: string, diff: string, tsFileContent: string): Promise<undefined | any> {
     const data: FixErrorsData = {
@@ -142,6 +176,20 @@ export class Api {
       scriptTarget: CONFIG.scriptTarget,
     };
     await this.post(ApiPaths.sendResults, data);
+  }
+
+  public static async sendBugResults(
+    report: string,
+    sourceFileName: string,
+    sourceFileContent: string,
+  ) {
+    const data: SendResultData = {
+      report,
+      sourceFileName,
+      sourceFileContent,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendBugResults, data);
   }
 
   public static async sendAnalytics(message: string, clientCode: ClientCode) {
