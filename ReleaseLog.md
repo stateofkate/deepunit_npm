@@ -1,5 +1,14 @@
 # Release Log
 
+## 1.7.0
+
+Features
+- Improved support for constructors and mocks
+
+Bugs
+- Fixed a bug which sometimes jumbled code
+- Fixed a bug that sometimes cause a file to be listed twice in the summary
+
 ## 1.6.3
 Features
 - Added support for our new Visual Studio Code extension
