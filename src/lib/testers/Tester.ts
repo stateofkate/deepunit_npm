@@ -55,9 +55,21 @@ export abstract class Tester {
     return response;
   }
 
+
+  public async generateBugReport(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string, retryFunctions?: string[]): Promise<any> {
+    const loadingIndicator = new LoadingIndicator();
+    console.log(`Generating bug report for ${tsFile}`);
+    console.log('    If your functions are long this could take several minutes...');
+    loadingIndicator.start();
+    const response = await Api.generateBugReport(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
+    loadingIndicator.stop();
+    return response;
+  }
+
   /**
    * Check if the test works in the framework
    * @param files
    */
   public abstract getTestResults(files: string[]): Promise<TestResults>;
 }
+

@@ -68,4 +68,5 @@ export type SendBugResults = {
   report: string;
   sourceFileName: string;
   sourceFileContent: string;
+  scriptTarget: string;
 }

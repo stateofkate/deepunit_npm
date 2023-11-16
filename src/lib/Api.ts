@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateBugCases, GenerateTestData, RecombineTestData, SendAnalyticsData, SendResultData, FeedbackData, LogsData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateBugCases, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
 
 enum ApiPaths {
@@ -39,7 +39,8 @@ export class Api {
       frontendFramework: CONFIG.frontendFramework,
       testingFramework: CONFIG.testingFramework,
       version: CONFIG.getVersion(),
-      email: AUTH.getEmail(),
+      email: 'kate@deepunit.ai',
+      //email: AUTH.getEmail(),
       platform: CONFIG.platform,
       ...customData,
     };
@@ -183,7 +184,7 @@ export class Api {
     sourceFileName: string,
     sourceFileContent: string,
   ) {
-    const data: SendResultData = {
+    const data: SendBugResults = {
       report,
       sourceFileName,
       sourceFileContent,
