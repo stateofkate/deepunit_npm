@@ -66,7 +66,7 @@ export async function main() {
         continue;
       }
 
-      const testFileName = Tester.getTestName(sourceFileName);
+      const testFileName = Tester.getBugReportName(sourceFileName);
 
       let tester: Tester;
 
@@ -85,7 +85,7 @@ export async function main() {
       let sourceFileDiff = '';
       const files = getFilesFlag() ?? [];
       const sourceFileContent = Files.getFileContent(sourceFileName);
-      const response = await tester.generateBugReport(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testBugFileContent);
+      const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, testFileName, testBugFileContent);
 
       console.log(response);
 
