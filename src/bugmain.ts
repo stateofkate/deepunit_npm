@@ -85,9 +85,9 @@ export async function main() {
       let sourceFileDiff = '';
       const files = getFilesFlag() ?? [];
       const sourceFileContent = Files.getFileContent(sourceFileName);
-      const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, testFileName, testBugFileContent);
+      const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, SourceFileName, testBugFileContent);
 
-      console.log(response);
+      Api.sendBugResults(response, sourceFileName, sourceFileConten)
 
 
       //Write the temporary test files, so we can test the generated tests

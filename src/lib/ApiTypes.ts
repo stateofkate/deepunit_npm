@@ -17,7 +17,7 @@ export type GenerateTestData = {
 
 };
 
-export type GenerateBugCases = {
+export type GenerateBugReport = {
   diffs: string;
   sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string};

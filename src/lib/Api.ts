@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { debugMsg, exitWithError } from './utils';
-import { ApiBaseData, FixErrorsData, GenerateBugCases, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultData, FeedbackData, LogsData } from './ApiTypes';
+import { ApiBaseData, FixErrorsData, GenerateBugReport, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
 
 enum ApiPaths {
@@ -39,8 +39,7 @@ export class Api {
       frontendFramework: CONFIG.frontendFramework,
       testingFramework: CONFIG.testingFramework,
       version: CONFIG.getVersion(),
-      email: 'kate@deepunit.ai',
-      //email: AUTH.getEmail(),
+      email: AUTH.getEmail(),
       platform: CONFIG.platform,
       ...customData,
     };
@@ -104,7 +103,7 @@ export class Api {
     if (!sourceFileName || !sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
-    let data: GenerateBugCases = {
+    let data: GenerateBugReport = {
       diffs,
       sourceFile: { [sourceFileName]: sourceFileContent },
     };
