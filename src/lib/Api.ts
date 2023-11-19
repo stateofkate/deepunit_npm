@@ -179,18 +179,19 @@ export class Api {
     await this.post(ApiPaths.sendResults, data);
   }
 
-  // public static async sendBugResults(
-  //   report: string,
-  //   sourceFileName: string,
-  //   sourceFileContent: string,
-  // ) {
-  //   const data: SendBugResults = {
-  //     sourceFileName,
-  //     sourceFileContent,
-  //     scriptTarget: CONFIG.scriptTarget,
-  //   };
-  //   await this.post(ApiPaths.sendBugResults, data);
-  // }
+  public static async sendBugResults(
+    bugReport: string,
+    sourceFileName: string,
+    sourceFileContent: string,
+  ) {
+    const data: SendBugResults = {
+      bugReport,
+      sourceFileName,
+      sourceFileContent,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendBugResults, data);
+  }
 
   public static async sendAnalytics(message: string, clientCode: ClientCode) {
     const data: SendAnalyticsData = {
