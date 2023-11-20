@@ -7,6 +7,7 @@
     "watch": "tsc --watch",
     "build": "rm -rf dist/* ; tsc",
     "start": "ts-node src/main.ts",
+    "start_test": "ts-node src/TESTINGmain.ts",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
     "test": "jest",
     "test:cov": "npx jest --coverage --verbose --runInBand --passWithNoTests",
