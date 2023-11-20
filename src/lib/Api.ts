@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
-import { debugMsg, exitWithError } from './utils';
+import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import { SendBugAnalyticsData, ApiBaseData, FixErrorsData, GenerateBugReport, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
 
@@ -40,7 +40,7 @@ export class Api {
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
       testingFramework: CONFIG.testingFramework,
-      version: CONFIG.getVersion(),
+      version: await CONFIG.getVersion(),
       email: AUTH.getEmail(),
       platform: CONFIG.platform,
       ...customData,
@@ -56,7 +56,7 @@ export class Api {
       return response.data;
     } catch (error: any) {
       if ((error as AxiosError).code == 'ECONNREFUSED') {
-        exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
+        return await exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);
       return {httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message};
@@ -73,7 +73,7 @@ export class Api {
     functionsToTest?: string[],
   ): Promise<any> {
     if (!sourceFileName || !sourceFileContent) {
-      return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
+      return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateTestData = {
       diffs,
@@ -198,6 +198,7 @@ export class Api {
     const data: SendAnalyticsData = {
       logMessage: message,
       scriptTarget: CONFIG.scriptTarget,
+      vscode: checkVSCodeFlag(),
     };
     await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
   }
@@ -229,6 +230,7 @@ export class Api {
   public static async SendLogs(logs: string): Promise<void> {
     const data: LogsData = {
       logs: logs,
+      vscode: checkVSCodeFlag(),
     };
     return await this.post(ApiPaths.logs, data);
   }

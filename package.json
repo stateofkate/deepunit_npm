@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "dtt": "find . -type f -name \"*.deepunittemptest.test.ts\" -exec rm -f {} \\;\n",
     "push": "npm run build && npm publish",
     "tar": "npm run build && npm pack",
-    "summary": "npx jest --testMatch \"**/*deepunitai.(test|spec).ts\" --colors 2>&1 | awk '/FAIL/ {print \"\\033[31m\" $0 \"\\033[0m\"} /PASS/ {print \"\\033[32m\" $0 \"\\033[0m\"}'",
+    "summary": "npx jest --testMatch \"**/src/**/*deepunitai.(test|spec).ts\" --colors 2>&1 | awk '/FAIL/ {print \"\\033[31m\" $0 \"\\033[0m\"} /PASS/ {print \"\\033[32m\" $0 \"\\033[0m\"}'",
     "deepunit": "deepunit"
   },
   "keywords": [],

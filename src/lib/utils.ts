@@ -67,19 +67,12 @@ export function isEmpty(obj: Object) {
   return true;
 }
 
-/**
- * If DeepUnit is run with the --f, --file or --files flag it will looks for a list of files and return it as an array
- * Example npm run deepunit -- --f main.ts,subfolder/number.ts will return ['main.ts', 'subfolder/number.ts']
- */
-
 export function checkFeedbackFlag(): boolean {
-  let result: boolean = false;
-  //check what argv contains
-  const arg: string = process.argv[2];
-  // will change this so that
-  // conditions for feedback: strlen(arg) > 10;
+  return process.argv.includes('--feedback');
+}
 
-  return arg === '--feedback';
+export function checkVSCodeFlag(): boolean {
+  return process.argv.includes('--vscode');
 }
 
 export async function promptUserInput(prompt: string, backToUser: string): Promise<string> {
@@ -97,11 +90,11 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
   });
 }
 
-export function exitWithError(error: string) {
+export async function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
-  Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
-  Log.getInstance().sendLogs();
+  await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
+  await Log.getInstance().sendLogs();
   process.exit(1);
 }
 
@@ -116,15 +109,15 @@ export async function validateVersionIsUpToDate(controller_type: string): Promis
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
-  if (versionRegex.test(latestVersion.trim()) && versionRegex.test(CONFIG.getVersion().trim())) {
+  if (versionRegex.test(latestVersion.trim()) && versionRegex.test((await CONFIG.getVersion()).trim())) {
     const latestVersionNumbers = latestVersion.split('.');
-    const versionNumbers = CONFIG.getVersion().split('.');
+    const versionNumbers = (await CONFIG.getVersion()).split('.');
 
     if (versionNumbers.length < 2 || latestVersionNumbers.length < 2 || versionNumbers[0] < latestVersionNumbers[0] || versionNumbers[1] < latestVersionNumbers[1]) {
       needsUpdating = true;
     }
   } else {
-    exitWithError('Unable to process version.');
+    await exitWithError('Unable to process version.');
   }
 
   if (needsUpdating) {
@@ -138,7 +131,7 @@ export async function validateVersionIsUpToDate(controller_type: string): Promis
         console.log('Updating deepunit...');
         installPackage('deepunit@latest', true);
       } catch (error) {
-        exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
+        await exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
       }
     } else {
       Api.sendAnalytics('Client Exited: User decided to not update DeepUnit using the default command', ClientCode.ClientExited);
