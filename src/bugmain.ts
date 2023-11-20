@@ -32,7 +32,7 @@ export async function main() {
   AUTH = await Auth.init();
 
   // check to confirm we still support this version
-  await validateVersionIsUpToDate();
+  await validateVersionIsUpToDate('bug');
   Files.setup();
 
   // confirm we have all packages for type of project
@@ -85,9 +85,9 @@ export async function main() {
       let sourceFileDiff = '';
       const files = getFilesFlag() ?? [];
       const sourceFileContent = Files.getFileContent(sourceFileName);
-      const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, SourceFileName, testBugFileContent);
+      const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, sourceFileName, testBugFileContent);
 
-      Api.sendBugResults(response, sourceFileName, sourceFileConten)
+      Api.sendBugResults(response, sourceFileName, sourceFileContent)
 
 
       //Write the temporary test files, so we can test the generated tests
@@ -101,5 +101,11 @@ export async function main() {
 
 if (require.main === module) {
   main();
+
+  process.on('SIGINT', async function (){
+    await Api.sendBugAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
+    await Log.getInstance().sendLogs();
+    process.exit();
+  });
 }
 
