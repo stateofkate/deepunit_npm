@@ -5,12 +5,13 @@ import { CONFIG } from './Config';
 import {exitWithError, getBugFlag, getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
+import { string } from 'yargs';
 
 
 export class Files {
 
 
-public static async getFilesToTest(): Promise<{FilesFlagReturn: { filesReadyToTest: string[]; fileFlag: string} }> {
+public static async getFilesToTest(): Promise<{filesFlagReturn: { readyFilesToTest: string[]; flagType: string} }> {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
@@ -22,6 +23,8 @@ public static async getFilesToTest(): Promise<{FilesFlagReturn: { filesReadyToTe
     // check whether we have an --a flag, marking all
     const shouldGenerateAllFiles = getGenerateAllFilesFlag();
 
+    let flagType = '';
+
     const src = 'src';
     const workingDir = Files.existsSync(src) ? src + '/' : '';
     // if we want to find specific files or just generate all files
@@ -29,6 +32,7 @@ public static async getFilesToTest(): Promise<{FilesFlagReturn: { filesReadyToTe
       console.log('Finding files within --file flag');
       const missingFiles = filesToFilter.filter((filePath) => {
         if (!Files.existsSync(filePath)) {
+          fileFlag = 'fileFlag';
           return true;
         }
         return false;
@@ -79,10 +83,15 @@ public static async getFilesToTest(): Promise<{FilesFlagReturn: { filesReadyToTe
       );
     }
 
+  //return readyFilesToTest;
+
     return {
-      readyFilesToTest
-    };
-  }
+      filesFlagReturn {
+        readyFilesToTest: ;
+        flagType;
+      };
+    }
+
 
   public static getChangedFiles(): string[] {
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
