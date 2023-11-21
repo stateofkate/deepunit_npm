@@ -202,14 +202,6 @@ export class Api {
     await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
   }
 
-  public static async sendBugAnalytics(message: string, clientCode: ClientCode) {
-    const data: SendBugAnalyticsData = {
-      logMessage: message,
-      scriptTarget: CONFIG.scriptTarget,
-    };
-    await this.post(ApiPaths.sendBugAnalytics + '/?code=' + clientCode, data);
-  }
-
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
     return await this.post(ApiPaths.getLatestVersion);
   }
