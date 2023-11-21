@@ -35,6 +35,7 @@ export class Files {
           flagType = 'fileFlag';
           return true;
         }
+        flagType = 'fileFlag';
         return false;
       });
 

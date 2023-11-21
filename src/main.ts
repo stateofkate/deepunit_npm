@@ -226,6 +226,7 @@ export async function main() {
       }
     }
   }
+  }
   if (require.main === module) {
 
     main();
@@ -235,5 +236,5 @@ export async function main() {
       await Log.getInstance().sendLogs();
       process.exit();
     });
-  }
+
 }
