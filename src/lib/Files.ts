@@ -64,9 +64,8 @@ export class Files {
       }
     }
 
-    console.log(filesToWriteTestsFor);
     const {filteredFiles, ignoredFiles} = Files.filterFiles(filesToWriteTestsFor);
-    console.log(filteredFiles);
+
 
     let readyFilesToTest: string[] = [];
     // we don't want to filter files if they have specified the exact files they want.
