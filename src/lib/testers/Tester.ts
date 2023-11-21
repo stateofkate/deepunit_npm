@@ -30,6 +30,13 @@ export abstract class Tester {
     return testFileName;
   }
 
+  public static getBugReportName(file: string): string {
+    const fileParts = file.split('.');
+    const fileExt = 'md'
+    const testFileName = fileParts.slice(0, -1).join('.') + '.deepunit_bugreport.' + CONFIG.testSuffix + '.' + fileExt;
+    return testFileName;
+  }
+
   public async recombineTests(
     tempTestPaths: { [key: string]: string },
     finalizedTestPath: string,
@@ -55,9 +62,30 @@ export abstract class Tester {
     return response;
   }
 
+
+  public async generateBugReport(
+      diffs: string,
+      tsFile: string,
+      tsFileContent: string | null,
+      testFile: string,
+      testContent: string,
+      retryFunctions?: string[]): Promise<any> {
+    const loadingIndicator = new LoadingIndicator();
+    console.log(`Generating bug report for ${tsFile}`);
+    console.log('    If your functions are long this could take several minutes...');
+    loadingIndicator.start();
+    const response = await Api.generateBugReport(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
+    if (response) {
+      Files.writeFileSync(tsFile, response.bugReport);
+    }
+    loadingIndicator.stop();
+    return response;
+  }
+
   /**
    * Check if the test works in the framework
    * @param files
    */
   public abstract getTestResults(files: string[]): Promise<TestResults>;
 }
+

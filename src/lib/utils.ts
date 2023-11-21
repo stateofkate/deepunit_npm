@@ -99,6 +99,7 @@ export async function exitWithError(error: string) {
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
+
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
@@ -202,6 +203,16 @@ export function getFilesFlag(): string[] | undefined {
     return typeof files === 'string' ? files.split(',') : undefined;
   }
 
+  return undefined;
+}
+
+export function getBugFlag(): string[] | undefined {
+  const argv = setupYargs().argv as ParsedArgs;
+
+  if (argv.b || argv.bug ) {
+    const files = argv.b || argv.bug;
+    return typeof files === 'string' ? files.split(','): undefined;
+  }
   return undefined;
 }
 

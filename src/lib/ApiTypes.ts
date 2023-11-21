@@ -14,6 +14,15 @@ export type GenerateTestData = {
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
   functionsToTest?: string[];
+
+};
+
+export type GenerateBugReport = {
+  diffs: string;
+  sourceFile?: { [key: string]: string };
+  testFile?: { [key: string]: string};
+  testingLanguageOverride?: string;
+  functionsToTest?: string [];
 };
 
 export type FeedbackData = {
@@ -57,3 +66,15 @@ export type SendAnalyticsData = {
   scriptTarget: string;
   vscode?: boolean;
 };
+
+export type SendBugAnalyticsData = {
+  logMessage: string;
+  scriptTarget: string;
+};
+
+export type SendBugResults = {
+  bugReport: string;
+  sourceFileName: string;
+  sourceFileContent: string;
+  scriptTarget: string;
+}
