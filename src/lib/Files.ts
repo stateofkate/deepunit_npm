@@ -6,8 +6,11 @@ import {exitWithError, getBugFlag, getFilesFlag, getGenerateAllFilesFlag, getPat
 import * as glob from 'glob';
 import { Color } from './Printer';
 
+
 export class Files {
-  public static async getFilesToTest(): Promise<string[]> {
+
+
+public static async getFilesToTest(): Promise<{FilesFlagReturn: { filesReadyToTest: string[]; fileFlag: string} }> {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
@@ -76,7 +79,9 @@ export class Files {
       );
     }
 
-    return readyFilesToTest;
+    return {
+      readyFilesToTest
+    };
   }
 
   public static getChangedFiles(): string[] {
