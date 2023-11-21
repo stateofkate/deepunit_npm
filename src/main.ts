@@ -59,11 +59,15 @@ export async function main() {
   const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
   const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
 
+  console.log(flagType);
+
   Printer.printFilesToTest(filesToTest);
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
 
-  if (flagType == 'patternFlag' || 'fileFlag' || 'allFlag') {
+  if (flagType != 'bugFlag') {
+    console.log(flagType);
+    console.log('notbugflag');
     let testsWithErrors: string[] = [];
     let passingTests: string[] = [];
     let unsupportedFiles: (string | null)[] = [];
@@ -192,7 +196,11 @@ export async function main() {
     }
     await Log.getInstance().sendLogs();
     process.exit(0);
-  } else if (flagType == 'bugflag') {
+  }
+
+
+  else if (flagType == 'bugFlag') {
+    console.log('realbugflag');
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
@@ -226,6 +234,8 @@ export async function main() {
       }
     }
   }
+
+
   }
   if (require.main === module) {
 
