@@ -35,7 +35,6 @@ export async function main() {
   // check to confirm we still support this version
   await validateVersionIsUpToDate();
 
-  console.log('testing1');
   Files.setup();
 
   // confirm we have all packages for type of project
@@ -59,15 +58,11 @@ export async function main() {
   const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
   const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
 
-  console.log(flagType);
-
   Printer.printFilesToTest(filesToTest);
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
 
   if (flagType != 'bugFlag') {
-    console.log(flagType);
-    console.log('notbugflag');
     let testsWithErrors: string[] = [];
     let passingTests: string[] = [];
     let unsupportedFiles: (string | null)[] = [];
@@ -130,7 +125,7 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        let {failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount}: TestResults = await tester.getTestResults(tempTestPaths);
+        let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount }: TestResults = await tester.getTestResults(tempTestPaths);
 
         const retryFunctions: string[] = [];
 
@@ -164,12 +159,12 @@ export async function main() {
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
             //Re-Write these files
             Files.writeTestsToFiles(retryFunctionsResponse.tests);
-            tests = {...tests, ...retryFunctionsResponse.tests};
+            tests = { ...tests, ...retryFunctionsResponse.tests };
           }
         }
 
         // retest everything, that way we have a better knowledge of what succeeded.
-        ({failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount} = await tester.getTestResults(tempTestPaths));
+        ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
@@ -196,11 +191,7 @@ export async function main() {
     }
     await Log.getInstance().sendLogs();
     process.exit(0);
-  }
-
-
-  else if (flagType == 'bugFlag') {
-    console.log('realbugflag');
+  } else if (flagType == 'bugFlag') {
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
@@ -230,21 +221,17 @@ export async function main() {
         const sourceFileContent = Files.getFileContent(sourceFileName);
         const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, sourceFileName, testBugFileContent);
 
-        Api.sendBugResults(response, sourceFileName, sourceFileContent)
+        Api.sendBugResults(response, sourceFileName, sourceFileContent);
       }
     }
   }
+}
+if (require.main === module) {
+  main();
 
-
-  }
-  if (require.main === module) {
-
-    main();
-
-    process.on('SIGINT', async function () {
-      await Api.sendAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
-      await Log.getInstance().sendLogs();
-      process.exit();
-    });
-
+  process.on('SIGINT', async function () {
+    await Api.sendAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
+    await Log.getInstance().sendLogs();
+    process.exit();
+  });
 }
