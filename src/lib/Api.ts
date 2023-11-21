@@ -17,7 +17,6 @@ enum ApiPaths {
   generateBugReport = '/generate-bug-report/bug-new',
   sendBugResults = '/generate-bug-report/send-bug-results',
   sendBugAnalytics = '/generate-bug-report/send-bug-analytics',
-  getBugLatestVersion = '/generate-bug-report/get-bug-latest-version',
 }
 export enum StateCode {
   'Success' = 0,
@@ -213,10 +212,6 @@ export class Api {
 
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
     return await this.post(ApiPaths.getLatestVersion);
-  }
-
-  public static async getBugLatestVersion(): Promise<{ latestVersion: string }> {
-    return await this.post(ApiPaths.getBugLatestVersion);
   }
 
   public static async Feedback(userFeedback: string, subject: string): Promise<void> {

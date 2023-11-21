@@ -98,13 +98,7 @@ export async function exitWithError(error: string) {
   process.exit(1);
 }
 
-export async function validateVersionIsUpToDate(controller_type: string): Promise<void> {
-  if (controller_type == 'bug') {
-    const { latestVersion } = await Api.getBugLatestVersion();
-  }
-  else if (controller_type == 'codegen_test') {
-    const { latestVersion } = await Api.getLatestVersion();
-  }
+export async function validateVersionIsUpToDate(): Promise<void> {
 
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);

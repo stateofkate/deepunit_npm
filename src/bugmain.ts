@@ -32,7 +32,7 @@ export async function main() {
   AUTH = await Auth.init();
 
   // check to confirm we still support this version
-  await validateVersionIsUpToDate('bug');
+  await validateVersionIsUpToDate();
   Files.setup();
 
   // confirm we have all packages for type of project
