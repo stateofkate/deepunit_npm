@@ -12,6 +12,8 @@ import { Auth } from './lib/Auth';
 import { Log } from './lib/Log';
 
 // global classes
+
+console.log('testing');
 export let AUTH: Auth;
 
 export async function main() {
@@ -32,6 +34,8 @@ export async function main() {
 
   // check to confirm we still support this version
   await validateVersionIsUpToDate();
+
+  console.log('testing1');
   Files.setup();
 
   // confirm we have all packages for type of project
@@ -223,6 +227,7 @@ export async function main() {
     }
   }
   if (require.main === module) {
+
     main();
 
     process.on('SIGINT', async function () {
