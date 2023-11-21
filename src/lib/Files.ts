@@ -11,7 +11,7 @@ import { string } from 'yargs';
 export class Files {
 
 
-public static async getFilesToTest(): Promise<{filesFlagReturn: { readyFilesToTest: string[]; flagType: string} }> {
+  public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
@@ -32,7 +32,7 @@ public static async getFilesToTest(): Promise<{filesFlagReturn: { readyFilesToTe
       console.log('Finding files within --file flag');
       const missingFiles = filesToFilter.filter((filePath) => {
         if (!Files.existsSync(filePath)) {
-          fileFlag = 'fileFlag';
+          flagType = 'fileFlag';
           return true;
         }
         return false;
@@ -44,15 +44,17 @@ public static async getFilesToTest(): Promise<{filesFlagReturn: { readyFilesToTe
       filesToWriteTestsFor = filesToFilter;
     } else if (patternToFilter) {
       console.log('Finding files that match the --pattern flag');
+      flagType = 'patternFlag';
       filesToWriteTestsFor = glob.sync(patternToFilter, {});
     } else if (shouldGenerateAllFiles) {
       console.log('Finding all eligible files in working directory');
+      flagType = 'allFlag';
       filesToWriteTestsFor = glob.sync(`${workingDir}**`);
     } else if (filesToDebug) {
       console.log('Finding files to test for bugs');
+      flagType = 'bugFlag';
       filesToWriteTestsFor = glob.sync(filesToDebug, {});
-    }
-    else {
+    } else {
       console.log('Finding all changed files in your repository');
       if (!CONFIG.isGitRepository) {
         await exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
@@ -61,7 +63,7 @@ public static async getFilesToTest(): Promise<{filesFlagReturn: { readyFilesToTe
       }
     }
 
-    const { filteredFiles, ignoredFiles } = Files.filterFiles(filesToWriteTestsFor);
+    const {filteredFiles, ignoredFiles} = Files.filterFiles(filesToWriteTestsFor);
 
     let readyFilesToTest: string[] = [];
     // we don't want to filter files if they have specified the exact files they want.
@@ -78,19 +80,21 @@ public static async getFilesToTest(): Promise<{filesFlagReturn: { readyFilesToTe
     // if we didn't get any files, return error
     if (readyFilesToTest.length <= 0) {
       await exitWithError(
-        Color.yellow('Run deepunit with flag -h for more information.') +
+          Color.yellow('Run deepunit with flag -h for more information.') +
           '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
       );
     }
 
-  //return readyFilesToTest;
-
     return {
-      filesFlagReturn {
-        readyFilesToTest: ;
-        flagType;
-      };
-    }
+      filesFlagReturn: {
+        readyFilesToTest,
+        flagType,
+      }
+    };
+
+
+  }
+
 
 
   public static getChangedFiles(): string[] {

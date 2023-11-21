@@ -51,7 +51,9 @@ export async function main() {
   const prettierConfig: Object | undefined = Files.getPrettierConfig();
 
   // Get files that need to be tested
-  const filesToTest = await Files.getFilesToTest();
+  const filesToTestResult = await Files.getFilesToTest();
+  const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
+  const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
 
   Printer.printFilesToTest(filesToTest);
 
