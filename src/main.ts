@@ -76,7 +76,7 @@ export async function main() {
       if (CONFIG.testingFramework === TestingFrameworks.jest) {
         tester = new JestTester();
       } else {
-        return await exitWithError(`Unable to run DeepUnit.AI, ${CONFIG.testingFramework} is not a supported testing framework. Please read the documentation for more details.`);
+        return await exitWithError(`Unable failed to detect Jest config. If this repo has Jest installed set "testingFramework": "jest" in deepunit.config.json`);
       }
 
       let testFileContent: string = '';

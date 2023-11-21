@@ -23,14 +23,6 @@ The application generates working tests fairly consistently, but does require a 
 
 Users are expected to always review tests that are generated for correctness before committing them.
 
-## Installation
-
-You can install and use DeepUnit in 3 steps
-
-1. `npm i -D deepunit` installs the package
-2. `npx deepunit` to add the script to your package.json for easy calling
-3. `npm run deepunit -- --f path/to/your/file.ts` to run the tool specifying a specific file path
-
 ## Usage
 
 You can use DeepUnit without installing it by running the command
@@ -73,29 +65,34 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
 }
 ```
 
-## Flags
+## Flags for identifying bugs
+You can identify bugs with the --b flag. The --b flag will take in a file path and identify if there are potential bugs in it and return to you a bug report including a unit tests that identifies the bug
+`npx deepunit --b path/to/file.ts`
+
+
+## Flags for writing unit tests
 
 To choose what to test, you have a few options
 
 - Use the `--file` flag to choose what files you would like to test (the files should be separated by a "`,`")
 
-`npm run deepunit -- --f path/to/file.ts,path/to/second.ts` or `npx deepunit --f path/to/file.ts,path/to/second.ts`
+`npx deepunit --f path/to/file.ts,path/to/second.ts`
 
 - Use the `--pattern` flag to choose what patterns you would like to filter files for. We use `glob` under the hood (Example: `src/**` or `{lib,src}/*{.ts,.js}`), for more information about pattern matching visit: [VSCode Glob Matching](https://code.visualstudio.com/docs/editor/glob-patterns)
 
-`npm run deepunit -- --p lib/**` or `npx deepunit --p {lib,src}/*{.ts,.js}`
+`npx deepunit --p {lib,src}/*{.ts,.js}`
 
 - Use the `--all` flag to do generate tests for all eligible files in the workspace.
 
-`npm run deepunit -- --a` or `npx deepunit --a`
+`npx deepunit --a`
 
 - Without any flag, it will look at the last diff and attempt to write tests for the files in the diff.
 
-`npm run deepunit` or `npx deepunit`
+`npx deepunit`
 
 ## Ignoring files
 
-There will be certain directoires, files or functions in your project which you won't want to test. You can configure DeepUnit to ignore these files or entire directories using the following configs in deepunit.config.json
+There will be certain directories, files or functions in your project which you won't want to test. You can configure DeepUnit to ignore these files or entire directories using the following configs in deepunit.config.json
 
 - `ignoredDirectories` will ignore an entire directory
 - `ignoredFiles` will ignore specific files

@@ -1,5 +1,10 @@
 # Release Log
 
+## 1.7.1
+Features
+- Added a new bug finding feature which will generate a bug report for a given file using the -b flag to pass a file path
+
+Features
 ## 1.7.0
 
 Features
