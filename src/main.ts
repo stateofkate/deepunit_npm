@@ -13,7 +13,6 @@ import { Log } from './lib/Log';
 
 // global classes
 
-console.log('testing');
 export let AUTH: Auth;
 
 export async function main() {
