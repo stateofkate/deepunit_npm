@@ -12,7 +12,6 @@ import { Auth } from './lib/Auth';
 import { Log } from './lib/Log';
 
 // global classes
-
 export let AUTH: Auth;
 
 export async function main() {
