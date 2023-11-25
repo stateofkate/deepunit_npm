@@ -66,7 +66,7 @@ export abstract class Tester {
   public async generateBugReport(
       diffs: string,
       tsFile: string,
-      tsFileContent: string | null,
+      tsFileContent: string,
       testFile: string,
       testContent: string,
       retryFunctions?: string[]): Promise<any> {

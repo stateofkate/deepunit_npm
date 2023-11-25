@@ -95,10 +95,10 @@ export class Api {
 
   public static async generateBugReport(
     diffs: string,
-    sourceFileName: string | null,
-    sourceFileContent: string | null,
     testFileName: string,
     testFileContent: string,
+    sourceFileContent: string | null,
+    sourceFileName: string | null,
     functionsToTest?: string[],
   ): Promise<any> {
     if (!sourceFileName || !sourceFileContent) {
@@ -106,7 +106,7 @@ export class Api {
     }
     let data: GenerateBugReport = {
       diffs,
-      sourceFile: { [sourceFileName]: sourceFileContent },
+      sourceFile: { [sourceFileName]: sourceFileContent},
     };
 
     if (CONFIG.testingLanguageOverride) {
@@ -181,11 +181,13 @@ export class Api {
 
   public static async sendBugResults(
     bugReport: string,
+    bugReportName: string,
     sourceFileName: string,
     sourceFileContent: string,
   ) {
     const data: SendBugResults = {
       bugReport,
+      bugReportName,
       sourceFileName,
       sourceFileContent,
       scriptTarget: CONFIG.scriptTarget,
