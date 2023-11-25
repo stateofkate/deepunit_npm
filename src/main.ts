@@ -165,7 +165,9 @@ export async function main() {
         // retest everything, that way we have a better knowledge of what succeeded.
         ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
 
+        console.log('API here');
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
+        console.log(Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent));
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
         //then we will need to delete all the temp test files.
