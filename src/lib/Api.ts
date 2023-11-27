@@ -166,6 +166,8 @@ export class Api {
     failedTestErrors: any,
     sourceFileName: string,
     sourceFileContent: string,
+    promptInputRecord: Record<string, string>,
+    modelTextResponseRecord: Record<string, string>,
   ) {
     const data: SendResultData = {
       failedTests,
@@ -174,6 +176,8 @@ export class Api {
       failedTestErrors,
       sourceFileName,
       sourceFileContent,
+      promptInputRecord,
+      modelTextResponseRecord,
       scriptTarget: CONFIG.scriptTarget,
     };
     await this.post(ApiPaths.sendResults, data);

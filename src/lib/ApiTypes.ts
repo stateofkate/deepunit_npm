@@ -60,6 +60,8 @@ export type SendResultData = {
   scriptTarget: string;
   sourceFileName: string;
   sourceFileContent: string;
+  promptInputRecord: Record<string, string>;
+  modelTextResponseRecord: Record<string, string>;
 };
 export type SendAnalyticsData = {
   logMessage: string;

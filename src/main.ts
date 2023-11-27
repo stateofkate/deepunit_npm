@@ -119,10 +119,16 @@ export async function main() {
           continue;
         }
 
+
+        let promptInputRecord: Record<string, string> = response.promptInputRecord;
+        let modelTextResponseRecord: Record<string, string> = response.modelTextResponseRecord;
+
         // if we are then we are good to go, keep processing test
         let tests: Record<string, string> = response.tests;
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
+
+        //Write the model text response
 
         let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount }: TestResults = await tester.getTestResults(tempTestPaths);
 
@@ -165,9 +171,8 @@ export async function main() {
         // retest everything, that way we have a better knowledge of what succeeded.
         ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
 
-        console.log('API here');
-        Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-        console.log(Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent));
+        Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent,promptInputRecord,
+        modelTextResponseRecord);
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
         //then we will need to delete all the temp test files.
