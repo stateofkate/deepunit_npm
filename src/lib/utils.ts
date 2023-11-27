@@ -99,7 +99,6 @@ export async function exitWithError(error: string) {
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
-
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
@@ -154,7 +153,6 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
 
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
   const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
-  console.log(stdout.buffer.toString());
 }
 
 /**
@@ -209,9 +207,9 @@ export function getFilesFlag(): string[] | undefined {
 export function getBugFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
 
-  if (argv.b || argv.bug ) {
+  if (argv.b || argv.bug) {
     const files = argv.b || argv.bug;
-    return typeof files === 'string' ? files.split(','): undefined;
+    return typeof files === 'string' ? files.split(',') : undefined;
   }
   return undefined;
 }
