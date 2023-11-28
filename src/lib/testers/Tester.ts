@@ -16,14 +16,13 @@ export interface TestResults {
   itBlocksCount: { [key: string]: number };
 }
 
-
 export interface TestInput {
   sourceFileDiff: string;
   sourceFileName: string | null;
   sourceFileContent: string | null;
   testFileName: string;
   testFileContent: string;
-  retryFunctions?: string[];
+  functionsToTest?: string[];
 }
 
 export type TestResult = {
@@ -88,11 +87,11 @@ export abstract class Tester {
 
   public async generateTest(testInput: TestInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
-    console.log(`Generating test for ${tsFile}`);
+    console.log(`Generating test for ${testInput.sourceFileName}`);
     console.log('    If your functions are long this could take several minutes...');
     // TODO: we need to add a timeout, somethings it hangs
     loadingIndicator.start();
-    const response = await Api.generateTest(testInput: testInput);
+    const response = await Api.generateTest(testInput);
     loadingIndicator.stop();
     return response;
   }

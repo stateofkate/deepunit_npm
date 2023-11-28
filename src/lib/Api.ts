@@ -4,6 +4,7 @@ import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import { SendBugAnalyticsData, ApiBaseData, FixErrorsData, GenerateBugReport, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultData, FeedbackData, LogsData } from './ApiTypes';
 import { CONFIG } from './Config';
+import { TestInput } from './testers/Tester';
 
 enum ApiPaths {
   generate = '/generate-test/new',
@@ -32,14 +33,6 @@ const apiPath = (path: ApiPaths | string) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;
 
-export interface TestInput {
-  sourceFileDiff: string;
-  sourceFileName: string | null;
-  sourceFileContent: string | null;
-  testFileName: string;
-  testFileContent: string;
-  retryFunctions?: string[];
-}
 
 export class Api {
   public static async post<T>(path: ApiPaths | string, customData?: T) {
@@ -88,8 +81,8 @@ export class Api {
       // test file is optional
       data.testFile = { [testInput.testFileName]: testInput.testFileContent };
     }
-    if (functionsToTest) {
-      data.functionsToTest = functionsToTest;
+    if (testInput.functionsToTest) {
+      data.functionsToTest = testInput.functionsToTest;
     }
 
     return await this.post(ApiPaths.generate, data);

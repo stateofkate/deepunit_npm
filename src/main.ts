@@ -153,14 +153,13 @@ export async function main() {
         // get failed functions to retry
         const retryFunctions: string[] = Tester.getRetryFunctions(testResults, tempTestPaths);
 
-        // retry functions that failed
-        //const {}
-
+        //modify testInput object to retry only for functions that failed
+        testInput.functionsToTest = retryFunctions;
 
         // retry functions that failed
         if (retryFunctions && CONFIG.retryTestGenerationOnFailure) {
           console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
-          const retryFunctionsResponse = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent, retryFunctions);
+          const retryFunctionsResponse = await tester.generateTest(testInput);
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
             //Re-Write these files
             Files.writeTestsToFiles(retryFunctionsResponse.tests);
