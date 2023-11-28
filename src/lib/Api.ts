@@ -32,6 +32,15 @@ const apiPath = (path: ApiPaths | string) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;
 
+export interface TestInput {
+  sourceFileDiff: string;
+  sourceFileName: string | null;
+  sourceFileContent: string | null;
+  testFileName: string;
+  testFileContent: string;
+  retryFunctions?: string[];
+}
+
 export class Api {
   public static async post<T>(path: ApiPaths | string, customData?: T) {
     const headers = {'Content-Type': 'application/json'};
@@ -63,28 +72,21 @@ export class Api {
   }
 
 
-  public static async generateTest(
-    diffs: string,
-    sourceFileName: string | null,
-    sourceFileContent: string | null,
-    testFileName: string,
-    testFileContent: string,
-    functionsToTest?: string[],
-  ): Promise<any> {
-    if (!sourceFileName || !sourceFileContent) {
+  public static async generateTest(testInput: TestInput): Promise<any> {
+    if (!testInput.sourceFileName || !testInput.sourceFileContent) {
       return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateTestData = {
-      diffs,
-      sourceFile: { [sourceFileName]: sourceFileContent },
+      diffs: testInput.sourceFileDiff,
+      sourceFile: { [testInput.sourceFileName]: testInput.sourceFileContent },
     };
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
-    if (testFileName || testFileContent) {
+    if (testInput.testFileName || testInput.testFileContent) {
       // test file is optional
-      data.testFile = { [testFileName]: testFileContent };
+      data.testFile = { [testInput.testFileName]: testInput.testFileContent };
     }
     if (functionsToTest) {
       data.functionsToTest = functionsToTest;

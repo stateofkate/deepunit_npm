@@ -5,7 +5,7 @@ import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Color, Printer } from './lib/Printer';
-import { Tester, TestResults } from './lib/testers/Tester';
+import { Tester, TestResults, TestInput } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, ClientCode, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
@@ -61,12 +61,20 @@ export async function main() {
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
 
+
+
   if (flagType != 'bugFlag') {
+
+
+
+
     let testsWithErrors: string[] = [];
     let passingTests: string[] = [];
     let unsupportedFiles: (string | null)[] = [];
     let alreadyTestedFiles: (string | null)[] = [];
     let serverDidNotSendTests: (string | null)[] = [];
+
+
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
@@ -78,6 +86,8 @@ export async function main() {
         const testFileName = Tester.getTestName(sourceFileName);
 
         let tester: Tester;
+
+        //check jest config
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
         } else {
@@ -100,7 +110,15 @@ export async function main() {
           sourceFileDiff = Files.getDiff([sourceFileName]);
         }
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent);
+
+
+        // Create object based on testInput interface to pass into GenerateTest
+        let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent};
+
+
+
+        //Calls openAI to generate model response
+        const response = await tester.generateTest(testInput);
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);
           continue;
@@ -119,7 +137,7 @@ export async function main() {
           continue;
         }
 
-
+        // get data to pass to backend
         let promptInputRecord: Record<string, string> = response.promptInputRecord;
         let modelTextResponseRecord: Record<string, string> = response.modelTextResponseRecord;
 
@@ -128,34 +146,16 @@ export async function main() {
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        //Write the model text response
+        //Get the testresults
+        let testResults: TestResults = await tester.getTestResults(tempTestPaths);
+        let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = testResults;
 
-        let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount }: TestResults = await tester.getTestResults(tempTestPaths);
+        // get failed functions to retry
+        const retryFunctions: string[] = Tester.getRetryFunctions(testResults, tempTestPaths);
 
-        const retryFunctions: string[] = [];
+        // retry functions that failed
+        //const {}
 
-        // determine which tests have a successRatio below 0.5
-        for (const testPath of tempTestPaths) {
-          let successRatio = 1;
-          if (failedItBlocks[testPath]) {
-            successRatio = failedItBlocks[testPath].length / itBlocksCount[testPath];
-          }
-          if (failedTests.includes(testPath)) {
-            successRatio = 0;
-          }
-
-          if (successRatio <= 0.5) {
-            // get the function name so we can pass it to the backend.
-            const testPathChunks = testPath.split('.');
-            const funcName = testPathChunks.length >= 4 ? testPathChunks[testPathChunks.length - 4] : undefined;
-            // if we don't have a funcName then something is really wrong, just move on.
-            if (!funcName) {
-              continue;
-            }
-
-            retryFunctions.push(funcName);
-          }
-        }
 
         // retry functions that failed
         if (retryFunctions && CONFIG.retryTestGenerationOnFailure) {
@@ -197,7 +197,8 @@ export async function main() {
     }
     await Log.getInstance().sendLogs();
     process.exit(0);
-  } else if (flagType == 'bugFlag') {
+  }
+  else if (flagType == 'bugFlag') {
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
