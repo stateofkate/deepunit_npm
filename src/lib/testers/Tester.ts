@@ -51,7 +51,13 @@ export abstract class Tester {
     }
   }
 
-  public async generateTest(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string, retryFunctions?: string[]): Promise<any> {
+  public async generateTest(
+    diffs: string,
+    tsFile: string | null,
+    tsFileContent: string | null,
+    testFile: string,
+    testContent: string,
+    retryFunctions?: string[]): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
     console.log(`Generating test for ${tsFile}`);
     console.log('    If your functions are long this could take several minutes...');
