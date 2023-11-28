@@ -97,20 +97,14 @@ export abstract class Tester {
   }
 
 
-  public async generateBugReport(
-      diffs: string,
-      tsFile: string,
-      tsFileContent: string,
-      testFile: string,
-      testContent: string,
-      retryFunctions?: string[]): Promise<any> {
+  public async generateBugReport(testInput: TestInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
-    console.log(`Generating bug report for ${tsFile}`);
+    console.log(`Generating bug report for ${testInput.sourceFileName}`);
     console.log('    If your functions are long this could take several minutes...');
     loadingIndicator.start();
-    const response = await Api.generateBugReport(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
+    const response = await Api.generateBugReport(testInput);
     if (response) {
-      Files.writeFileSync(tsFile, response.bugReport);
+      Files.writeFileSync(testInput.testFileContent, response.bugReport);
     }
     loadingIndicator.stop();
     return response;

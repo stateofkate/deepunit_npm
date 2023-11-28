@@ -70,7 +70,7 @@ export class Api {
       return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateTestData = {
-      diffs: testInput.sourceFileDiff,
+      sourceFileDiffs: testInput.sourceFileDiff,
       sourceFile: { [testInput.sourceFileName]: testInput.sourceFileContent },
     };
 
@@ -89,31 +89,26 @@ export class Api {
   }
 
   public static async generateBugReport(
-    diffs: string,
-    testFileName: string,
-    testFileContent: string,
-    sourceFileContent: string | null,
-    sourceFileName: string | null,
-    functionsToTest?: string[],
+    testInput: TestInput
   ): Promise<any> {
-    if (!sourceFileName || !sourceFileContent) {
+    if (!testInput.sourceFileName || !testInput.sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateBugReport = {
-      diffs,
-      sourceFile: { [sourceFileName]: sourceFileContent},
+      sourceFileDiffs: testInput.sourceFileDiff,
+      sourceFile: { [testInput.sourceFileName]: testInput.sourceFileContent},
     };
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
 
-    if (testFileName || testFileContent) {
+    if (testInput.testFileName || testInput.testFileContent) {
       // test file is optional
-      data.testFile = { [testFileName]: testFileContent };
+      data.testFile = { [testInput.testFileName]: testInput.testFileContent };
     }
-    if (functionsToTest) {
-      data.functionsToTest = functionsToTest;
+    if (testInput.functionsToTest) {
+      data.functionsToTest = testInput.functionsToTest;
     }
 
     return await this.post(ApiPaths.generateBugReport, data);

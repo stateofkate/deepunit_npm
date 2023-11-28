@@ -167,7 +167,7 @@ export async function main() {
           }
         }
 
-        // retest everything, that way we have a better knowledge of what succeeded.
+        // run the regenerated test code (try to compile it for user) to get results whether pass/file
         ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent,promptInputRecord,
