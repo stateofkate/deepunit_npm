@@ -162,6 +162,8 @@ export function installPackage(newPackage: string, isDevDep?: boolean): void {
  */
 
 interface ParsedArgs extends Arguments {
+  b?: string;
+  bug?: string;
   f?: string;
   file?: string;
   files?: string;
@@ -191,15 +193,26 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Generate all files in the project that can be tested.',
     })
+    .option('b', {
+      alias: ['bug'],
+      type: 'string',
+      description: 'Generate bug report'
+    })
     .help()
     .alias('h', 'help');
 }
 
+
+
 export function getFilesFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
+  console.log(argv);
+  console.log(argv.f);
+
 
   if (argv.f || argv.file || argv.files) {
     const files = argv.f || argv.file || argv.files;
+    console.log('console.log: file flag');
     return typeof files === 'string' ? files.split(',') : undefined;
   }
 
@@ -208,9 +221,13 @@ export function getFilesFlag(): string[] | undefined {
 
 export function getBugFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
+  console.log(`console.log: ${argv}`);
+  console.log(argv);
+  console.log(argv.b);
 
   if (argv.b || argv.bug ) {
     const files = argv.b || argv.bug;
+    console.log('console.log: bug flag');
     return typeof files === 'string' ? files.split(','): undefined;
   }
   return undefined;
