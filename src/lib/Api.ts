@@ -181,11 +181,13 @@ export class Api {
 
   public static async sendBugResults(
     bugReport: string,
+    bugReportName: string,
     sourceFileName: string,
     sourceFileContent: string,
   ) {
     const data: SendBugResults = {
       bugReport,
+      bugReportName,
       sourceFileName,
       sourceFileContent,
       scriptTarget: CONFIG.scriptTarget,

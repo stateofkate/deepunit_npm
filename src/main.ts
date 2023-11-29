@@ -222,9 +222,9 @@ export async function main() {
         let sourceFileDiff = '';
         const files = getBugFlag() ?? [];
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, sourceFileName, testBugFileContent);
+        const response = await tester.generateBugReport(sourceFileDiff, testFileName, testBugFileContent, sourceFileContent, sourceFileName);
 
-        Api.sendBugResults(response, sourceFileName, sourceFileContent);
+        Api.sendBugResults(response, testFileName, sourceFileName, sourceFileContent);
       }
     }
   }

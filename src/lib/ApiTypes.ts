@@ -74,6 +74,7 @@ export type SendBugAnalyticsData = {
 
 export type SendBugResults = {
   bugReport: string;
+  bugReportName: string;
   sourceFileName: string;
   sourceFileContent: string;
   scriptTarget: string;
