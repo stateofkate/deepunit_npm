@@ -14,7 +14,6 @@ import {
   SendResultDataPost,
   FeedbackData,
   LogsData,
-  SendResultData
 } from './ApiTypes';
 import { CONFIG } from './Config';
 import { TestInput } from './testers/Tester';
