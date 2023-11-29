@@ -189,6 +189,11 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Generate all files in the project that can be tested.',
     })
+    .option('j', {
+      alias: ['json'],
+      type: 'boolean',
+      description: 'Return JSON object instead of writing files to disk.',
+    })
     .help()
     .alias('h', 'help');
 }
@@ -222,6 +227,11 @@ export function getPatternFlag(): string[] | undefined {
   }
 
   return undefined;
+}
+
+export function getJsonFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.json;
 }
 
 export function getGenerateAllFilesFlag(): boolean {
