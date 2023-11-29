@@ -2,7 +2,20 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
-import { SendBugAnalyticsData, ApiBaseData, FixErrorsData, GenerateBugReport, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultDataPost, FeedbackData, LogsData} from './ApiTypes';
+import {
+  SendBugAnalyticsData,
+  ApiBaseData,
+  FixErrorsData,
+  GenerateBugReport,
+  GenerateTestData,
+  RecombineTestData,
+  SendAnalyticsData,
+  SendBugResults,
+  SendResultDataPost,
+  FeedbackData,
+  LogsData,
+  SendResultData
+} from './ApiTypes';
 import { CONFIG } from './Config';
 import { TestInput } from './testers/Tester';
 
@@ -150,11 +163,28 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
-  public static async sendResults(sendResultData: SendResultDataPost) {
-
-    sendResultData.scriptTarget = CONFIG.scriptTarget;
-
-    await this.post(ApiPaths.sendResults, sendResultData);
+  public static async sendResults(
+      failedTests: string[],
+      passedTests: string[],
+      tests: Record<string, string>,
+      failedTestErrors: any,
+      sourceFileName: string,
+      sourceFileContent: string,
+      promptInputRecord: Record<string, string>,
+      modelTextResponseRecord: Record<string, string>,
+  ) {
+    const data: SendResultDataPost = {
+      failedTests,
+      passedTests,
+      tests,
+      failedTestErrors,
+      sourceFileName,
+      sourceFileContent,
+      promptInputRecord,
+      modelTextResponseRecord,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendResults, data);
   }
 
   public static async sendBugResults(

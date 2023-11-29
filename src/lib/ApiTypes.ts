@@ -54,7 +54,7 @@ export type RecombineTestData = {
 };
 
 
-export type SendResultDataPost = {
+export type SendResultrdDataPost = {
   failedTests: string[];
   passedTests: string[];
   tests: Record<string, string>;
