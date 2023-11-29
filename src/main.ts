@@ -157,13 +157,19 @@ export async function main() {
           const retryFunctionsResponse = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent, retryFunctions);
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
             //Re-Write these files
-            Files.writeTestsToFiles(retryFunctionsResponse.tests);
             tests = { ...tests, ...retryFunctionsResponse.tests };
+            tempTestPaths = [ ...tempTestPaths, ...Files.writeTestsToFiles(retryFunctionsResponse.tests) ];
           }
         }
 
         // retest everything, that way we have a better knowledge of what succeeded.
-        ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
+        const newTestResults = await tester.getTestResults(tempTestPaths);
+
+        failedTests = newTestResults.failedTests;
+        passedTests = newTestResults.passedTests;
+        failedTestErrors = newTestResults.failedTestErrors;
+        failedItBlocks = newTestResults.failedItBlocks;
+        itBlocksCount = newTestResults.itBlocksCount;
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
