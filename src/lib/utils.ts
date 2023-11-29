@@ -198,8 +198,14 @@ export function setupYargs() {
       type: 'string',
       description: 'Generate bug report'
     })
+    .option('bf', {
+      alias: ['bugfile'],
+      type: 'string',
+      description: 'Generate unit tests for bugs'
+    })
     .help()
     .alias('h', 'help');
+
 }
 
 
