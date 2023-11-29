@@ -20,7 +20,7 @@ export type GenerateTestData = {
 export type GenerateBugReport = {
   diffs: string;
   sourceFile?: { [key: string]: string };
-  testFile?: { [key: string]: string};
+  bugReport?: { [key: string]: string};
   testingLanguageOverride?: string;
   functionsToTest?: string [];
 };

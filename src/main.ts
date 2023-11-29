@@ -203,28 +203,26 @@ export async function main() {
           continue;
         }
 
-        const testFileName = Tester.getBugReportName(sourceFileName);
+        const bugFileName = Tester.getBugReportName(sourceFileName);
 
         let tester: Tester;
 
         tester = new JestTester();
 
-        let testBugFileContent: string = '';
-        if (Files.existsSync(testFileName)) {
-          const result: string | null = Files.getExistingTestContent(testFileName);
-          if (testBugFileContent === null) {
+        let bugFileContent: string = '';
+        if (Files.existsSync(bugFileName)) {
+          const result: string | null = Files.getExistingTestContent(bugFileName);
+          if (!bugFileContent) {
             continue;
           } else {
-            testBugFileContent = result as string;
+            bugFileContent = result as string;
           }
         }
 
         let sourceFileDiff = '';
         const files = getBugFlag() ?? [];
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateBugReport(sourceFileDiff, testFileName, testBugFileContent, sourceFileContent, sourceFileName);
-
-        Api.sendBugResults(response, testFileName, sourceFileName, sourceFileContent);
+        await tester.generateBugReport(sourceFileDiff, sourceFileContent, sourceFileName, bugFileName, bugFileContent);
       }
     }
   }
