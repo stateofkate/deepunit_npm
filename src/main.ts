@@ -155,7 +155,7 @@ export async function main() {
           console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
           const retryFunctionsResponse = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent, retryFunctions);
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
-            //Re-Write these files
+            //Re-write these files
             tests = { ...tests, ...retryFunctionsResponse.tests };
             tempTestPaths = [ ...tempTestPaths, ...Files.writeTestsToFiles(retryFunctionsResponse.tests) ];
           }
@@ -163,7 +163,6 @@ export async function main() {
 
         // retest everything, that way we have a better knowledge of what succeeded.
         const newTestResults = await tester.getTestResults(tempTestPaths);
-
         failedTests = newTestResults.failedTests;
         passedTests = newTestResults.passedTests;
         failedTestErrors = newTestResults.failedTestErrors;
