@@ -161,7 +161,7 @@ export async function main() {
           }
         }
 
-        // retest everything, that way we have a better knowledge of what succeeded.
+        // retest everything, that way we have a better knowledge of what succeeded
         const newTestResults = await tester.getTestResults(tempTestPaths);
         failedTests = newTestResults.failedTests;
         passedTests = newTestResults.passedTests;
