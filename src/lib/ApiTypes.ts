@@ -52,7 +52,9 @@ export type RecombineTestData = {
   includeFailingTests: boolean;
   scriptTarget: string;
 };
-export type SendResultData = {
+
+
+export type SendResultDataPost = {
   failedTests: string[];
   passedTests: string[];
   tests: Record<string, string>;

@@ -16,6 +16,7 @@ export interface TestResults {
   itBlocksCount: { [key: string]: number };
 }
 
+
 export interface TestInput {
   sourceFileDiff: string;
   sourceFileName: string | null;
@@ -25,11 +26,12 @@ export interface TestInput {
   functionsToTest?: string[];
 }
 
-export type TestResult = {
+export type TestOutput = {
   file: string;
   testFailedWithError: any;
   jestResult: undefined | any;
 };
+
 
 export abstract class Tester {
 
