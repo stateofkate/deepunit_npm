@@ -74,7 +74,7 @@ export function fibonacci(n: number): number {
 }
 
 export function circleArea(radius: number): number {
-  if (radius < 0) throw new Error('Radius cannot be negative');
+  if (radius < 0) throw new Error('Radius can not be negative');
   return Math.PI * Math.pow(radius, 2);
 }
 
