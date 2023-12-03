@@ -1,60 +1,53 @@
-## Bug Report
+<details>
+<summary>
+ Bug 1 (:red_square:): The method `getFilesToTest()` does not return the correct output when the `filesToFilter` array is empty.
+</summary>
 
-### Bug Description
-The `filteredFiles` array is not populated correctly in the `filterFiles` method of the `Files` class. As a result, some files that should be filtered out are not being ignored.
+  - **Bug:** The `getFilesToTest()` method does not handle the case when the `filesToFilter` array is empty. As a result, the method does not set the `flagType` correctly and does not return the expected output.
 
-### Bug Reason
-The `ignoredFiles` array is not being populated correctly in the `filterFiles` method. Instead of adding ignored files to the array, the array itself is being returned without any files.
+  - **Issue:** The condition `if (filesToFilter) { ... }` should be changed to `if (filesToFilter && filesToFilter.length > 0) { ... }` to correctly handle the case when the `filesToFilter` array is empty.
 
-### Test Case
-To reproduce this bug, follow these steps:
-1. Create a test file with the name `test.ts` in the `src` directory.
-2. Run the `Files.getFilesToTest()` method.
+  - **Solution:** Change the condition `if (filesToFilter) { ... }` to `if (filesToFilter && filesToFilter.length > 0) { ... }` in the `getFilesToTest()` method.
 
-Expected behavior: The `filteredFiles` array should not contain the `src/test.ts` file.
-Actual behavior: The `filteredFiles` array contains the `src/test.ts` file.
+  - **Test Cases:** 
 
-### Code
-```typescript
-// File: src/lib/Files.ts
+    - Input: `filesToFilter = []`
+      Expected Output: `{ filesFlagReturn: { readyFilesToTest: [], flagType: '' } }`
 
-...
+</details>
 
-  public static filterFiles(files: string[]): { filteredFiles: string[]; ignoredFiles: string[] } {
-    const filesWithValidExtensions = this.filterExtensions(files);
-    const filteredFiles: string[] = [];
-    const ignoredFiles: string[] = [];
+<details>
+<summary>
+ Bug 2 (:yellow_square:): The method `getChangedFiles()` does not handle the case when the `gitRoot` variable is undefined.
+</summary>
 
-    for (const file of filesWithValidExtensions) {
-      if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
-        filteredFiles.push(file);
-      } else {
-        ignoredFiles; // This line should be ignoredFiles.push(file)
-      }
-    }
-    return { filteredFiles, ignoredFiles };
-  }
+  - **Bug:** The `getChangedFiles()` method assumes that the `gitRoot` variable is always defined. However, if the `git rev-parse --show-toplevel` command fails or returns an empty string, the `gitRoot` variable will be undefined and cause an error.
 
-...
-```
+  - **Issue:** The `getChangedFiles()` method does not handle the case when the `gitRoot` variable is undefined.
 
-### Proposed Fix
-To fix this bug, replace the line `ignoredFiles;` with `ignoredFiles.push(file);` in the `filterFiles` method of the `Files` class.
+  - **Solution:** Add a check for the undefined value of the `gitRoot` variable and handle it appropriately in the `getChangedFiles()` method.
 
-```diff
-  public static filterFiles(files: string[]): { filteredFiles: string[]; ignoredFiles: string[] } {
-    const filesWithValidExtensions = this.filterExtensions(files);
-    const filteredFiles: string[] = [];
-    const ignoredFiles: string[] = [];
+  - **Test Cases:** 
 
-    for (const file of filesWithValidExtensions) {
-      if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
-        filteredFiles.push(file);
-      } else {
--        ignoredFiles;
-+        ignoredFiles.push(file);
-      }
-    }
-    return { filteredFiles, ignoredFiles };
-  }
-```
+    - Input: `gitRoot = undefined, currentDir = 'path/to/current/dir'`
+      Expected Output: `[]`
+
+</details>
+
+<details>
+<summary>
+ Bug 3 (:green_square:): The method `filterFiles()` does not correctly filter out ignored files.
+</summary>
+
+  - **Bug:** The `filterFiles()` method does not correctly filter out ignored files. If a file matches an ignored file name exactly, it is not filtered out as expected.
+
+  - **Issue:** The `filterFiles()` method uses the `==` operator to compare the file path with ignored file names. This operator does not perform a strict comparison and does not match the file path exactly.
+
+  - **Solution:** Change the `==` operator to the `===` operator in the condition `file == ignoreFile` in the `filterFiles()` method to perform a strict comparison.
+
+  - **Test Cases:** 
+
+    - Input: `files = ['file1.ts', 'file2.ts'], ignoredFiles = ['file2.ts']`
+      Expected Output: `{ filteredFiles: ['file1.ts'], ignoredFiles: ['file2.ts'] }`
+
+</details>

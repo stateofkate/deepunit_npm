@@ -2,11 +2,11 @@
 <summary>
  Bug 1 (:red_square:): Incorrect handling of multiple file flags
 </summary>
-  
+
 
   - **Bug:** If you pass multiple `--file` flags, only the last one will be considered. The current implementation will overwrite the `files` array every time it encounters a `--file` flag.
 
-  - **Issue:** 
+  - **Issue:**
 
   ```javascript
   args.forEach((arg, index) => {
@@ -16,7 +16,7 @@
   });
   ```
 
-  - **Solution:** 
+  - **Solution:**
 
   ```javascript
   args.forEach((arg, index) => {
@@ -26,7 +26,7 @@
   });
   ```
 
-  - **Test Cases:** 
+  - **Test Cases:**
 
   ```javascript
   const files = getFilesFlag(['--file', 'file1,file2', '--file', 'file3']);
@@ -39,11 +39,11 @@
 <summary>
  Bug 2 (:red_square:): No validation for file flag argument
 </summary>
-  
+
 
   - **Bug:** There is no validation to check if the argument given with the `--file` flag is actually a file or a valid input.
 
-  - **Issue:** 
+  - **Issue:**
 
   ```javascript
   args.forEach((arg, index) => {
@@ -53,7 +53,7 @@
   });
   ```
 
-  - **Solution:** 
+  - **Solution:**
 
   ```javascript
   const fs = require('fs');
@@ -69,7 +69,7 @@
   });
   ```
 
-  - **Test Cases:** 
+  - **Test Cases:**
 
   ```javascript
   const files = getFilesFlag(['--file', 'invalidFile']);
@@ -82,11 +82,11 @@
 <summary>
  Bug 3 (:yellow_square:): No support for `--file` flag without an argument
 </summary>
-  
+
 
   - **Bug:** If the `--file` flag is passed without an argument, the next flag (if any) is considered as its argument, which is incorrect.
 
-  - **Issue:** 
+  - **Issue:**
 
   ```javascript
   args.forEach((arg, index) => {
@@ -96,7 +96,7 @@
   });
   ```
 
-  - **Solution:** 
+  - **Solution:**
 
   ```javascript
   args.forEach((arg, index) => {
@@ -106,7 +106,7 @@
   });
   ```
 
-  - **Test Cases:** 
+  - **Test Cases:**
 
   ```javascript
   const files = getFilesFlag(['--file', '--anotherFlag']);

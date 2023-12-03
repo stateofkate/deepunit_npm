@@ -97,8 +97,8 @@ export class Api {
     diffs: string,
     sourceFileName: string | null,
     sourceFileContent: string | null,
-    testFileName: string,
-    testFileContent: string,
+    bugReportName: string,
+    bugReportContent: string,
     functionsToTest?: string[],
   ): Promise<any> {
     if (!sourceFileName || !sourceFileContent) {
@@ -107,15 +107,16 @@ export class Api {
     let data: GenerateBugReport = {
       diffs,
       sourceFile: { [sourceFileName]: sourceFileContent },
+      bugReport: { [bugReportName]: bugReportContent },
     };
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
 
-    if (testFileName || testFileContent) {
+    if (bugReportName || bugReportContent) {
       // test file is optional
-      data.testFile = { [testFileName]: testFileContent };
+      data.bugReport = { [bugReportName]: bugReportContent };
     }
     if (functionsToTest) {
       data.functionsToTest = functionsToTest;
