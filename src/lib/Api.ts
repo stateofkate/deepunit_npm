@@ -90,9 +90,9 @@ export class Api {
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
-    if (testInput.testFileName || testInput.testFileContent) {
+    if (testInput.generatedFileName || testInput.generatedFileContent) {
       // test file is optional
-      data.testFile = { [testInput.testFileName]: testInput.testFileContent };
+      data.testFile = { [testInput.generatedFileName]: testInput.generatedFileContent };
     }
     if (testInput.functionsToTest) {
       data.functionsToTest = testInput.functionsToTest;
@@ -116,9 +116,9 @@ export class Api {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
 
-    if (testInput.testFileName || testInput.testFileContent) {
+    if (testInput.generatedFileName || testInput.generatedFileContent) {
       // test file is optional
-      data.testFile = { [testInput.testFileName]: testInput.testFileContent };
+      data.testFile = { [testInput.generatedFileName]: testInput.generatedFileContent };
     }
     if (testInput.functionsToTest) {
       data.functionsToTest = testInput.functionsToTest;

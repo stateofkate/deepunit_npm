@@ -113,7 +113,7 @@ export async function main() {
 
 
         // Create object based on testInput interface to pass into GenerateTest
-        let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent};
+        let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: testFileName, generatedFileContent: testFileContent};
 
 
 
@@ -206,28 +206,29 @@ export async function main() {
           continue;
         }
 
-        const testFileName = Tester.getBugReportName(sourceFileName);
+        const bugReportName = Tester.getBugReportName(sourceFileName);
 
         let tester: Tester;
 
         tester = new JestTester();
 
-        let testBugFileContent: string = '';
-        if (Files.existsSync(testFileName)) {
-          const result: string | null = Files.getExistingTestContent(testFileName);
-          if (testBugFileContent === null) {
+        let bugReportContent: string = '';
+        if (Files.existsSync(bugReportName)) {
+          const result: string | null = Files.getExistingTestContent(bugReportName);
+          if (bugReportContent === null) {
             continue;
           } else {
-            testBugFileContent = result as string;
+            bugReportContent = result as string;
           }
         }
 
         let sourceFileDiff = '';
         const files = getBugFlag() ?? [];
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateBugReport(sourceFileDiff, testFileName, testBugFileContent, sourceFileContent, sourceFileName);
+        let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: bugReportName, generatedFileContent: bugReportContent};
+        const response = await tester.generateBugReport(testInput);
 
-        Api.sendBugResults(response, testFileName, sourceFileName, sourceFileContent);
+        Api.sendBugResults(response, bugReportName, sourceFileName, sourceFileContent);
       }
     }
   }

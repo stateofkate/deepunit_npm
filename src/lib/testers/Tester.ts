@@ -21,8 +21,8 @@ export interface TestInput {
   sourceFileDiff: string;
   sourceFileName: string | null;
   sourceFileContent: string | null;
-  testFileName: string;
-  testFileContent: string;
+  generatedFileName: string;
+  generatedFileContent: string;
   functionsToTest?: string[];
 }
 
@@ -106,7 +106,7 @@ export abstract class Tester {
     loadingIndicator.start();
     const response = await Api.generateBugReport(testInput);
     if (response) {
-      Files.writeFileSync(testInput.testFileContent, response.bugReport);
+      Files.writeFileSync(testInput.generatedFileName, response.bugReport);
     }
     loadingIndicator.stop();
     return response;
