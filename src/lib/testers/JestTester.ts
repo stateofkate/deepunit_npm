@@ -1,8 +1,8 @@
 import { ExecException, exec, execSync } from 'child_process';
-import { TestResult, TestResults, Tester } from './Tester';
+import { TestOutput, TestResults, Tester } from './Tester';
 
 export class JestTester extends Tester {
-  public async runTests(relativePathArray: string[]): Promise<TestResult[]> {
+  public async runTests(relativePathArray: string[]): Promise<TestOutput[]> {
     const execPromisified = (command: string): Promise<string> => {
       return new Promise((resolve, reject) => {
         exec(command, (error: ExecException | null, stdout: string, stderr: string) => {
@@ -16,7 +16,7 @@ export class JestTester extends Tester {
     };
 
     const promises = relativePathArray.map(async (filePath) => {
-      const testResult: TestResult = {
+      const testResult: TestOutput = {
         file: filePath,
         testFailedWithError: undefined,
         jestResult: undefined,

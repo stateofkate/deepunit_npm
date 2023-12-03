@@ -5,7 +5,7 @@ import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
 import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Color, Printer } from './lib/Printer';
-import { Tester, TestResults } from './lib/testers/Tester';
+import { Tester, TestResults, TestInput } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
 import { Api, ClientCode, StateCode } from './lib/Api';
 import { Auth } from './lib/Auth';
@@ -61,12 +61,20 @@ export async function main() {
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
 
+
+
   if (flagType != 'bugFlag') {
+
+
+
+
     let testsWithErrors: string[] = [];
     let passingTests: string[] = [];
     let unsupportedFiles: (string | null)[] = [];
     let alreadyTestedFiles: (string | null)[] = [];
     let serverDidNotSendTests: (string | null)[] = [];
+
+
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
@@ -78,6 +86,8 @@ export async function main() {
         const testFileName = Tester.getTestName(sourceFileName);
 
         let tester: Tester;
+
+        //check jest config
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
         } else {
@@ -100,7 +110,15 @@ export async function main() {
           sourceFileDiff = Files.getDiff([sourceFileName]);
         }
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent);
+
+
+        // Create object based on testInput interface to pass into GenerateTest
+        let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: testFileName, generatedFileContent: testFileContent};
+
+
+
+        //Calls openAI to generate model response
+        const response = await tester.generateTest(testInput);
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);
           continue;
@@ -119,42 +137,29 @@ export async function main() {
           continue;
         }
 
+        // get data to pass to backend
+        let promptInputRecord: Record<string, string> = response.promptInputRecord;
+        let modelTextResponseRecord: Record<string, string> = response.modelTextResponseRecord;
+
         // if we are then we are good to go, keep processing test
         let tests: Record<string, string> = response.tests;
         // Write the temporary test files, so we can test the generated tests
         let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
-        let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount }: TestResults = await tester.getTestResults(tempTestPaths);
+        //Get the testresults
+        let testResults: TestResults = await tester.getTestResults(tempTestPaths);
+        let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = testResults;
 
-        const retryFunctions: string[] = [];
+        // get failed functions to retry
+        const retryFunctions: string[] = Tester.getRetryFunctions(testResults, tempTestPaths);
 
-        // determine which tests have a successRatio below 0.5
-        for (const testPath of tempTestPaths) {
-          let successRatio = 1;
-          if (failedItBlocks[testPath]) {
-            successRatio = failedItBlocks[testPath].length / itBlocksCount[testPath];
-          }
-          if (failedTests.includes(testPath)) {
-            successRatio = 0;
-          }
-
-          if (successRatio <= 0.5) {
-            // get the function name so we can pass it to the backend.
-            const testPathChunks = testPath.split('.');
-            const funcName = testPathChunks.length >= 4 ? testPathChunks[testPathChunks.length - 4] : undefined;
-            // if we don't have a funcName then something is really wrong, just move on.
-            if (!funcName) {
-              continue;
-            }
-
-            retryFunctions.push(funcName);
-          }
-        }
+        //modify testInput object to retry only for functions that failed
+        testInput.functionsToTest = retryFunctions;
 
         // retry functions that failed
         if (retryFunctions && CONFIG.retryTestGenerationOnFailure) {
           console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
-          const retryFunctionsResponse = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent, retryFunctions);
+          const retryFunctionsResponse = await tester.generateTest(testInput);
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
             //Re-Write these files
             Files.writeTestsToFiles(retryFunctionsResponse.tests);
@@ -162,12 +167,11 @@ export async function main() {
           }
         }
 
-        // retest everything, that way we have a better knowledge of what succeeded.
+        // run the regenerated test code (try to compile it for user) to get results whether pass/file
         ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
 
-        console.log('API here');
-        Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-        console.log(Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent));
+        Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent,promptInputRecord,
+        modelTextResponseRecord);
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
 
         //then we will need to delete all the temp test files.
@@ -192,7 +196,8 @@ export async function main() {
     }
     await Log.getInstance().sendLogs();
     process.exit(0);
-  } else if (flagType == 'bugFlag') {
+  }
+  else if (flagType == 'bugFlag') {
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
@@ -201,28 +206,29 @@ export async function main() {
           continue;
         }
 
-        const testFileName = Tester.getBugReportName(sourceFileName);
+        const bugReportName = Tester.getBugReportName(sourceFileName);
 
         let tester: Tester;
 
         tester = new JestTester();
 
-        let testBugFileContent: string = '';
-        if (Files.existsSync(testFileName)) {
-          const result: string | null = Files.getExistingTestContent(testFileName);
-          if (testBugFileContent === null) {
+        let bugReportContent: string = '';
+        if (Files.existsSync(bugReportName)) {
+          const result: string | null = Files.getExistingTestContent(bugReportName);
+          if (bugReportContent === null) {
             continue;
           } else {
-            testBugFileContent = result as string;
+            bugReportContent = result as string;
           }
         }
 
         let sourceFileDiff = '';
         const files = getBugFlag() ?? [];
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, sourceFileName, testBugFileContent);
+        let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: bugReportName, generatedFileContent: bugReportContent};
+        const response = await tester.generateBugReport(testInput);
 
-        Api.sendBugResults(response, sourceFileName, sourceFileContent);
+        Api.sendBugResults(response, bugReportName, sourceFileName, sourceFileContent);
       }
     }
   }

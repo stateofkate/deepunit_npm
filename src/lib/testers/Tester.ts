@@ -16,13 +16,49 @@ export interface TestResults {
   itBlocksCount: { [key: string]: number };
 }
 
-export type TestResult = {
+
+export interface TestInput {
+  sourceFileDiff: string;
+  sourceFileName: string | null;
+  sourceFileContent: string | null;
+  generatedFileName: string;
+  generatedFileContent: string;
+  functionsToTest?: string[];
+}
+
+export type TestOutput = {
   file: string;
   testFailedWithError: any;
   jestResult: undefined | any;
 };
 
+
 export abstract class Tester {
+
+  public static getRetryFunctions(TestResults: TestResults, tempTestPaths: string[]): string[] {
+    let retryFunctions: string[] = [];
+    for (const testPath of tempTestPaths) {
+      let successRatio = 1;
+      if (TestResults.failedItBlocks[testPath]) {
+        successRatio = TestResults.failedItBlocks[testPath].length / TestResults.itBlocksCount[testPath];
+      }
+      if (TestResults.failedTests.includes(testPath)) {
+        successRatio = 0;
+      }
+      if (successRatio <= 0.5) {
+        //get the function name so we can pass it to the backend.
+        const testPathChunks = testPath.split('.');
+        const funcName = testPathChunks.length >= 4? testPathChunks[testPathChunks.length - 4] : undefined;
+        if (!funcName) {
+          continue;
+        }
+        retryFunctions.push(funcName);
+      }
+    }
+    return retryFunctions;
+  }
+
+
   public static getTestName(file: string): string {
     const fileParts = file.split('.');
     const fileExt = fileParts[fileParts.length - 1];
@@ -51,32 +87,26 @@ export abstract class Tester {
     }
   }
 
-  public async generateTest(diffs: string, tsFile: string | null, tsFileContent: string | null, testFile: string, testContent: string, retryFunctions?: string[]): Promise<any> {
+  public async generateTest(testInput: TestInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
-    console.log(`Generating test for ${tsFile}`);
+    console.log(`Generating test for ${testInput.sourceFileName}`);
     console.log('    If your functions are long this could take several minutes...');
     // TODO: we need to add a timeout, somethings it hangs
     loadingIndicator.start();
-    const response = await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
+    const response = await Api.generateTest(testInput);
     loadingIndicator.stop();
     return response;
   }
 
 
-  public async generateBugReport(
-      diffs: string,
-      tsFile: string,
-      tsFileContent: string | null,
-      testFile: string,
-      testContent: string,
-      retryFunctions?: string[]): Promise<any> {
+  public async generateBugReport(testInput: TestInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
-    console.log(`Generating bug report for ${tsFile}`);
+    console.log(`Generating bug report for ${testInput.sourceFileName}`);
     console.log('    If your functions are long this could take several minutes...');
     loadingIndicator.start();
-    const response = await Api.generateBugReport(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
+    const response = await Api.generateBugReport(testInput);
     if (response) {
-      Files.writeFileSync(tsFile, response.bugReport);
+      Files.writeFileSync(testInput.generatedFileName, response.bugReport);
     }
     loadingIndicator.stop();
     return response;
