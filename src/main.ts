@@ -228,7 +228,7 @@ export async function main() {
         let testInput: TestInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: bugReportName, generatedFileContent: bugReportContent};
         const response = await tester.generateBugReport(testInput);
 
-        Api.sendBugResults(response, bugReportName, sourceFileName, sourceFileContent);
+        //Api.sendBugResults(response, bugReportName, sourceFileName, sourceFileContent);
       }
     }
   }

@@ -15,11 +15,7 @@ export class Files {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
-    console.log('console.log: filesToFilter');
-    console.log(filesToFilter);
     const filesToDebug: string [] | undefined = getBugFlag();
-    console.log('console.log: filesToDebug');
-    console.log(filesToDebug);
     // get file patterns, returns things like src/* and **/*
     const patternToFilter: string[] | undefined = getPatternFlag();
     // check whether we have an --a flag, marking all
