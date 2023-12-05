@@ -1,61 +1,35 @@
-<details>
-<summary>
- Bug 1 (:red_square:): The function returns 0 when both input parameters are not numbers
-</summary>
 
+        <details>
+          <summary>
+            Bug 1 (:red_square:): The function `expect` does not throw an error when the value is falsy and we are not in production.
+      </summary>
 
-  - **Bug:** The function `multiply` is expected to multiply two numbers. However, it returns 0 when both inputs are not numbers. This could lead to unexpected behavior if the function is used with non-number parameters, as the function will not throw an error but instead return a valid number, potentially hiding the issue.
+      - **Issue:** The `expect` function only logs an error message to the console when the value is falsy and we are not in production.
+      - **Solution:** The `expect` function should throw an error when the value is falsy and we are not in production.
+      - **Test Cases:**
+      - `expect(false);` should throw an error.
+      - `expect(0);` should throw an error.
+      - `expect('');` should throw an error.
+      - `expect(null);` should throw an error.
+      - `expect(undefined);` should throw an error.
+      - `expect(NaN);` should throw an error.
 
-  - **Issue:** 
-    ```javascript
-    if (!checkIfNumber(a) && !checkIfNumber(b)) {
-      return 0;
-    }
-    ```
+      </details>
 
-  - **Solution:** Instead of returning 0 when the inputs are not real numbers, the function should throw an error.
-    ```javascript
-    if (!checkIfNumber(a) || !checkIfNumber(b)) {
-      throw new Error('Input parameters must be numbers');
-    }
-    ```
+      <details>
+    <summary>
+    Bug 2 (:red_square:): The function `expectNot` does not throw an error when the value is truthy and we are not in production.
+    </summary>
 
-  - **Test Cases:** 
-    ```javascript
-    expect(() => multiply('a', 1)).toThrow('Input parameters must be numbers');
-    expect(() => multiply(1, 'b')).toThrow('Input parameters must be numbers');
-    expect(() => multiply('a', 'b')).toThrow('Input parameters must be numbers');
-    ```
+    - **Bug:** The `expectNot` function does not throw an error when the value is truthy and we are not in production.
+    - **Issue:** The `expectNot` function only logs an error message to the console when the value is truthy and we are not in production.
+    - **Solution:** The `expectNot` function should throw an error when the value is truthy and we are not in production.
+    - **Test Cases:**
+      - `expectNot(true);` should throw an error.
+      - `expectNot(1);` should throw an error.
+      - `expectNot('test');` should throw an error.
+      - `expectNot({});` should throw an error.
+      - `expectNot([]);` should throw an error.
+      - `expectNot({ prop: 'value' });` should throw an error.
 
-</details>
-<details>
-<summary>
- Bug 2 (:green_square:): The function does not handle special number cases like Infinity or NaN
-</summary>
-
-
-  - **Bug:** The function `multiply` does not handle special number cases like Infinity or NaN. These are valid numbers in JavaScript, and their behavior in mathematical operations is well-defined, but it may not be what's expected in this function.
-
-  - **Issue:** 
-    ```javascript
-    return a * b;
-    ```
-
-  - **Solution:** The function should check for these special cases and handle them appropriately.
-    ```javascript
-    if (!isFinite(a) || !isFinite(b)) {
-      throw new Error('Input parameters must be finite numbers');
-    }
-    ```
-
-  - **Test Cases:** 
-    ```javascript
-    expect(() => multiply(Infinity, 1)).toThrow('Input parameters must be finite numbers');
-    expect(() => multiply(1, Infinity)).toThrow('Input parameters must be finite numbers');
-    expect(() => multiply(Infinity, Infinity)).toThrow('Input parameters must be finite numbers');
-    expect(() => multiply(NaN, 1)).toThrow('Input parameters must be finite numbers');
-    expect(() => multiply(1, NaN)).toThrow('Input parameters must be finite numbers');
-    expect(() => multiply(NaN, NaN)).toThrow('Input parameters must be finite numbers');
-    ```
-
-</details>
+    </details>
