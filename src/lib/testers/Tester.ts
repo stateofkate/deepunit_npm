@@ -44,21 +44,10 @@ export abstract class Tester {
     failedItBlocks: { [key: string]: string[] },
     failedTests: string[],
     prettierConfig: Object | undefined,
-  ) {
+  ): Promise<string | undefined> {
     const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedItBlocks, failedTests, prettierConfig);
     if (responseData && responseData.testContent) {
-      if (getJsonFlag()) {
-        Files.writeFileSync(
-          'generation-results.json',
-          JSON.stringify({
-            path: finalizedTestPath,
-            content: responseData.testContent,
-            // TODO: add whether test passed
-          }),
-        );
-      } else {
-        Files.writeFileSync(finalizedTestPath, responseData.testContent);
-      }
+      return responseData.testContent;
     }
   }
 
