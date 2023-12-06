@@ -194,6 +194,11 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Return JSON object instead of writing files to disk.',
     })
+    .option('e', {
+      alias: ['email'],
+      type: 'string',
+      description: 'Email for authentication',
+    })
     .help()
     .alias('h', 'help');
 }
@@ -232,6 +237,11 @@ export function getPatternFlag(): string[] | undefined {
 export function getJsonFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!argv.json;
+}
+
+export function getEmailFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.email as string;
 }
 
 export function getGenerateAllFilesFlag(): boolean {

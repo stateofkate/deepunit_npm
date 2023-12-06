@@ -1,7 +1,11 @@
 name: DeepUnit Workflow
 
 on:
-  [push]
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: 'Paths to test'
+        required: true
 
 jobs:
   run-deepunit:
