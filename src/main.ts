@@ -155,14 +155,19 @@ export async function main() {
           console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
           const retryFunctionsResponse = await tester.generateTest(sourceFileDiff, sourceFileName, sourceFileContent, testFileName, testFileContent, retryFunctions);
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
-            //Re-Write these files
-            Files.writeTestsToFiles(retryFunctionsResponse.tests);
+            //Re-write these files
             tests = { ...tests, ...retryFunctionsResponse.tests };
+            tempTestPaths = [ ...tempTestPaths, ...Files.writeTestsToFiles(retryFunctionsResponse.tests) ];
           }
         }
 
-        // retest everything, that way we have a better knowledge of what succeeded.
-        ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
+        // retest everything, that way we have a better knowledge of what succeeded
+        const newTestResults = await tester.getTestResults(tempTestPaths);
+        failedTests = newTestResults.failedTests;
+        passedTests = newTestResults.passedTests;
+        failedTestErrors = newTestResults.failedTestErrors;
+        failedItBlocks = newTestResults.failedItBlocks;
+        itBlocksCount = newTestResults.itBlocksCount;
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
         await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
@@ -198,28 +203,26 @@ export async function main() {
           continue;
         }
 
-        const testFileName = Tester.getBugReportName(sourceFileName);
+        const bugFileName = Tester.getBugReportName(sourceFileName);
 
         let tester: Tester;
 
         tester = new JestTester();
 
-        let testBugFileContent: string = '';
-        if (Files.existsSync(testFileName)) {
-          const result: string | null = Files.getExistingTestContent(testFileName);
-          if (testBugFileContent === null) {
+        let bugFileContent: string = '';
+        if (Files.existsSync(bugFileName)) {
+          const result: string | null = Files.getExistingTestContent(bugFileName);
+          if (!bugFileContent) {
             continue;
           } else {
-            testBugFileContent = result as string;
+            bugFileContent = result as string;
           }
         }
 
         let sourceFileDiff = '';
         const files = getBugFlag() ?? [];
         const sourceFileContent = Files.getFileContent(sourceFileName);
-        const response = await tester.generateBugReport(sourceFileDiff, testFileName, sourceFileContent, sourceFileName, testBugFileContent);
-
-        Api.sendBugResults(response, sourceFileName, sourceFileContent);
+        await tester.generateBugReport(sourceFileDiff, sourceFileContent, sourceFileName, bugFileName, bugFileContent);
       }
     }
   }
