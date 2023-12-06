@@ -9,4 +9,4 @@ deepunit.config.json
 *.deepunittemptest.test.ts
 
 temp
-generation-results.json
+deepunit-tests.json
