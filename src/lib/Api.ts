@@ -16,7 +16,7 @@ import {
   LogsData,
 } from './ApiTypes';
 import { CONFIG } from './Config';
-import { TestInput } from './testers/Tester';
+import { GenerateTestOrReportInput } from './testers/Tester';
 
 enum ApiPaths {
   generate = '/generate-test/new',
@@ -78,24 +78,28 @@ export class Api {
   }
 
 
-  public static async generateTest(testInput: TestInput): Promise<any> {
-    if (!testInput.sourceFileName || !testInput.sourceFileContent) {
+  public static async generateTest(generateTestInput: GenerateTestOrReportInput): Promise<any> {
+    if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateTestData = {
-      sourceFileDiffs: testInput.sourceFileDiff,
-      sourceFile: { [testInput.sourceFileName]: testInput.sourceFileContent },
+      sourceFileDiffs: generateTestInput.sourceFileDiff,
+      sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent },
     };
+
+    if(generateTestInput.testCasesObj) {
+      data.testCasesObj = generateTestInput.testCasesObj;
+    }
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
-    if (testInput.generatedFileName || testInput.generatedFileContent) {
+    if (generateTestInput.generatedFileName || generateTestInput.generatedFileContent) {
       // test file is optional
-      data.testFile = { [testInput.generatedFileName]: testInput.generatedFileContent };
+      data.testFile = { [generateTestInput.generatedFileName]: generateTestInput.generatedFileContent };
     }
-    if (testInput.functionsToTest) {
-      data.functionsToTest = testInput.functionsToTest;
+    if (generateTestInput.functionsToTest) {
+      data.functionsToTest = generateTestInput.functionsToTest;
     }
 
     return await this.post(ApiPaths.generate, data);
@@ -103,26 +107,26 @@ export class Api {
 
   public static async generateBugReport(
 
-    testInput: TestInput
+    generateTestInput: GenerateTestOrReportInput
   ): Promise<any> {
-    if (!testInput.sourceFileName || !testInput.sourceFileContent) {
+    if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateBugReport = {
-      sourceFileDiffs: testInput.sourceFileDiff,
-      sourceFile: { [testInput.sourceFileName]: testInput.sourceFileContent},
+      sourceFileDiffs: generateTestInput.sourceFileDiff,
+      sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent},
     };
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
 
-    if (testInput.generatedFileName || testInput.generatedFileContent) {
+    if (generateTestInput.generatedFileName || generateTestInput.generatedFileContent) {
       // test file is optional
-      data.bugReport = { [testInput.generatedFileName]: testInput.generatedFileContent };
+      data.bugReport = { [generateTestInput.generatedFileName]: generateTestInput.generatedFileContent };
     }
-    if (testInput.functionsToTest) {
-      data.functionsToTest = testInput.functionsToTest;
+    if (generateTestInput.functionsToTest) {
+      data.functionsToTest = generateTestInput.functionsToTest;
     }
 
     return await this.post(ApiPaths.generateBugReport, data);

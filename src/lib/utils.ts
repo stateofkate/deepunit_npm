@@ -225,11 +225,21 @@ export function getFilesFlag(): string[] | undefined {
   return undefined;
 }
 
+export function getBugFileFlag(): string [] | undefined {
+  const argv = setupYargs().argv as ParsedArgs;
+
+  if (argv.bf || argv.bugfile ) {
+    const files = argv.b || argv.bug;
+    console.log('console.log: bugfile flag');
+    return typeof files === 'string' ? files.split(','): undefined;
+  }
+  return undefined;
+
+
+}
+
 export function getBugFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
-  console.log(`console.log: ${argv}`);
-  console.log(argv);
-  console.log(argv.b);
 
   if (argv.b || argv.bug ) {
     const files = argv.b || argv.bug;

@@ -14,6 +14,7 @@ export type GenerateTestData = {
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
   functionsToTest?: string[];
+  testCasesObj?: { [key: string]: string };
 
 };
 

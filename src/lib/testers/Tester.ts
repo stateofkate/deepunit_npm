@@ -4,7 +4,7 @@ import { Files } from '../Files';
 import { LoadingIndicator } from '../utils';
 import console from '../Log';
 
-export interface TestResults {
+export interface TestRunResult {
   failedTests: string[];
   passedTests: string[];
   failedTestErrors: { [key: string]: string };
@@ -17,16 +17,17 @@ export interface TestResults {
 }
 
 
-export interface TestInput {
+export interface GenerateTestOrReportInput {
   sourceFileDiff: string;
   sourceFileName: string | null;
   sourceFileContent: string | null;
   generatedFileName: string;
   generatedFileContent: string;
   functionsToTest?: string[];
+  testCasesObj?: { [key: string]: string };
 }
 
-export type TestOutput = {
+export type JestTestRunResult = {
   file: string;
   testFailedWithError: any;
   jestResult: undefined | any;
@@ -35,7 +36,7 @@ export type TestOutput = {
 
 export abstract class Tester {
 
-  public static getRetryFunctions(TestResults: TestResults, tempTestPaths: string[]): string[] {
+  public static getRetryFunctions(TestResults: TestRunResult, tempTestPaths: string[]): string[] {
     let retryFunctions: string[] = [];
     for (const testPath of tempTestPaths) {
       let successRatio = 1;
@@ -87,7 +88,7 @@ export abstract class Tester {
     }
   }
 
-  public async generateTest(testInput: TestInput): Promise<any> {
+  public async generateTest(testInput: GenerateTestOrReportInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
     console.log(`Generating test for ${testInput.sourceFileName}`);
     console.log('    If your functions are long this could take several minutes...');
@@ -99,7 +100,7 @@ export abstract class Tester {
   }
 
 
-  public async generateBugReport(testInput: TestInput): Promise<any> {
+  public async generateBugReport(testInput: GenerateTestOrReportInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
     console.log(`Generating bug report for ${testInput.sourceFileName}`);
     console.log('    If your functions are long this could take several minutes...');
@@ -116,6 +117,6 @@ export abstract class Tester {
    * Check if the test works in the framework
    * @param files
    */
-  public abstract getTestResults(files: string[]): Promise<TestResults>;
+  public abstract getTestResults(files: string[]): Promise<TestRunResult>;
 }
 
