@@ -206,7 +206,7 @@ export async function main() {
       }
     }
 
-    if (getJsonFlag()) {
+    if (getJsonFlag() && completedTestFiles.length > 0) {
       Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles }));
     }
 
