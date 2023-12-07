@@ -252,6 +252,7 @@ export class Config {
   private async confirmJestExists() {
     // we overwrote the framework, ignore the checks
     if (this.testingLanguageOverride) {
+      console.log('Using test language override of' + this.testingLanguageOverride);
       return;
     }
 

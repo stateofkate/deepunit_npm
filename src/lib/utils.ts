@@ -141,6 +141,11 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const yesAnswers = ['y', 'yes'];
 
   return new Promise((resolve) => {
+    // if we have a get yes flag, then we are assuming the user is going to say yes
+    if (getYesFlag()) {
+      resolve(true);
+      return;
+    }
     rl.question(prompt + ' (type y/n):', (answer) => {
       if (yesAnswers.includes(answer.trim().toLowerCase())) {
         resolve(true);
@@ -204,6 +209,11 @@ export function setupYargs() {
       type: 'string',
       description: 'Email for authentication',
     })
+    .option('y', {
+      alias: ['yes'],
+      type: 'boolean',
+      description: 'Say yes to all prompts about downloading.',
+    })
     .help()
     .alias('h', 'help');
 }
@@ -257,6 +267,11 @@ export function getMetaFlag(): string {
 export function getGenerateAllFilesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.a || argv.all);
+}
+
+export function getYesFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.y || argv.yes);
 }
 
 export class LoadingIndicator {
