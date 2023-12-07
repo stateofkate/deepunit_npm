@@ -93,7 +93,7 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
 export async function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
-  await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
+  //await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
   await Log.getInstance().sendLogs();
   process.exit(1);
 }
@@ -229,13 +229,11 @@ export function getBugFileFlag(): string [] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
 
   if (argv.bf || argv.bugfile ) {
-    const files = argv.b || argv.bug;
+    const files = argv.bf || argv.bugfile;
     console.log('console.log: bugfile flag');
     return typeof files === 'string' ? files.split(','): undefined;
   }
   return undefined;
-
-
 }
 
 export function getBugFlag(): string[] | undefined {

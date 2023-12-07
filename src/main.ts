@@ -60,9 +60,12 @@ export async function main() {
   Printer.printFilesToTest(filesToTest);
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
+  console.log('console.log: filesByDirectory');
+  console.log(filesByDirectory);
 
   // break code execution into different paths depending on which user flag
   if (flagType != 'bugFlag' && flagType != 'bugFileFlag') {
+    console.log('error1');
     let testsWithErrors: string[] = [];
     let passingTests: string[] = [];
     let unsupportedFiles: (string | null)[] = [];
@@ -72,6 +75,7 @@ export async function main() {
 
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
+      console.log(filesInDirectory);
       while (filesInDirectory.length > 0) {
         const sourceFileName = filesInDirectory.pop();
         if (sourceFileName === undefined) {
@@ -193,6 +197,9 @@ export async function main() {
     process.exit(0);
   }
   else if (flagType == 'bugFlag' || flagType == 'bugFileFlag') {
+    console.log('noterrorhere');
+    console.log('console.log: filesByDirectory');
+    console.log(filesByDirectory);
     for (const directory in filesByDirectory) {
       let filesInDirectory = filesByDirectory[directory];
       while (filesInDirectory.length > 0) {
@@ -227,6 +234,7 @@ export async function main() {
 
         if(flagType == 'bugFileFlag')
         {
+          console.log('doesitregister');
 
             let testsWithErrors: string[] = [];
             let passingTests: string[] = [];
@@ -275,9 +283,14 @@ export async function main() {
                     // Create object based on testInput interface to pass into GenerateTest
                     // Kate look here: should pass in functions
                     let testInput: GenerateTestOrReportInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: testFileName, generatedFileContent: testFileContent, testCasesObj:testCasesObj};
+                    console.log('console.log: testInput');
+                    console.log(testInput);
+
 
                     //Calls openAI to generate model response
                     const response = await tester.generateTest(testInput);
+                    console.log('testGeneration response');
+                    console.log(response);
                     if (response.stateCode === StateCode.FileNotSupported) {
                         unsupportedFiles.push(sourceFileName);
                         continue;

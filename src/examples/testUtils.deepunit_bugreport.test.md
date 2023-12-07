@@ -5,6 +5,7 @@
       </summary>
 
       - **Issue:** The `expect` function only logs an error message to the console when the value is falsy and we are not in production.
+      - **Function:** expect
       - **Solution:** The `expect` function should throw an error when the value is falsy and we are not in production.
       - **Test Cases:**
       - `expect(false);` should throw an error.
@@ -22,6 +23,7 @@
     </summary>
 
     - **Bug:** The `expectNot` function does not throw an error when the value is truthy and we are not in production.
+    - **Function:** expectNot
     - **Issue:** The `expectNot` function only logs an error message to the console when the value is truthy and we are not in production.
     - **Solution:** The `expectNot` function should throw an error when the value is truthy and we are not in production.
     - **Test Cases:**
