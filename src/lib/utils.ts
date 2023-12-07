@@ -214,6 +214,11 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Say yes to all prompts about downloading.',
     })
+    .option('ff', {
+      alias: ['force-filter'],
+      type: 'boolean',
+      description: 'For --f flag to filter for unwanted files.',
+    })
     .help()
     .alias('h', 'help');
 }
@@ -252,6 +257,11 @@ export function getPatternFlag(): string[] | undefined {
 export function getJsonFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!argv.json;
+}
+
+export function getForceFilter(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.ff || argv['force-filter']);
 }
 
 export function getEmailFlag(): string {

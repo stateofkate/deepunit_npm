@@ -57,8 +57,7 @@ export abstract class Tester {
     console.log('    If your functions are long this could take several minutes...');
     // TODO: we need to add a timeout, somethings it hangs
     loadingIndicator.start();
-    // const response = await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
-    const response = { error: 'error' };
+    const response = await Api.generateTest(diffs, tsFile, tsFileContent, testFile, testContent, retryFunctions);
     loadingIndicator.stop();
     return response;
   }
