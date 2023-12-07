@@ -2,26 +2,27 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import {exitWithError, getBugFlag, getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
+import { exitWithError, getBugFlag, getFilesFlag, getForceFilter, getGenerateAllFilesFlag, getPatternFlag, setupYargs } from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
 import { string } from 'yargs';
 
-
 export class Files {
-
-
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
 
-    const filesToDebug: string [] | undefined = getBugFlag();
+    const filesToDebug: string[] | undefined = getBugFlag();
 
     // get file patterns, returns things like src/* and **/*
     const patternToFilter: string[] | undefined = getPatternFlag();
     // check whether we have an --a flag, marking all
     const shouldGenerateAllFiles = getGenerateAllFilesFlag();
+
+    if (getForceFilter()) {
+      console.log('Using force filter to apply ignore filter to all files.');
+    }
 
     let flagType = '';
 
@@ -64,12 +65,11 @@ export class Files {
       }
     }
 
-    const {filteredFiles, ignoredFiles} = Files.filterFiles(filesToWriteTestsFor);
-
+    const { filteredFiles, ignoredFiles } = Files.filterFiles(filesToWriteTestsFor);
 
     let readyFilesToTest: string[] = [];
     // we don't want to filter files if they have specified the exact files they want.
-    if (filesToFilter || filesToDebug) {
+    if ((filesToFilter || filesToDebug) && !getForceFilter()) {
       readyFilesToTest = filesToWriteTestsFor;
     } else {
       // we have filtered out some files, lets notify the user what we removed
@@ -82,7 +82,7 @@ export class Files {
     // if we didn't get any files, return error
     if (readyFilesToTest.length <= 0) {
       await exitWithError(
-          Color.yellow('Run deepunit with flag -h for more information.') +
+        Color.yellow('Run deepunit with flag -h for more information.') +
           '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
       );
     }
@@ -91,13 +91,9 @@ export class Files {
       filesFlagReturn: {
         readyFilesToTest,
         flagType,
-      }
+      },
     };
-
-
   }
-
-
 
   public static getChangedFiles(): string[] {
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
