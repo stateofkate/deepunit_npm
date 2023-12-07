@@ -6,6 +6,9 @@ on:
       paths:
         description: 'Paths to test'
         required: true
+      pr:
+        description: 'Pull request ID'
+        required: true
 
 jobs:
   run-deepunit:
@@ -23,7 +26,8 @@ jobs:
         run: npm install
 
       - name: Run DeepUnit
-        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --email 'support@deepunit.ai'
+        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --email 'support@deepunit.ai' --meta ${{ github.event.inputs.paths }}
+
 
       - name: Store as Artifact
         uses: actions/upload-artifact@v2

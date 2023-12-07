@@ -194,6 +194,11 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Return JSON object instead of writing files to disk.',
     })
+    .option('m', {
+      alias: ['meta'],
+      type: 'string',
+      description: 'Meta Data to be saved in the json file',
+    })
     .option('e', {
       alias: ['email'],
       type: 'string',
@@ -242,6 +247,11 @@ export function getJsonFlag(): boolean {
 export function getEmailFlag(): string {
   const argv = setupYargs().argv as ParsedArgs;
   return argv.email as string;
+}
+
+export function getMetaFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.meta as string;
 }
 
 export function getGenerateAllFilesFlag(): boolean {

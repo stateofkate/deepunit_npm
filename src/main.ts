@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
-import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
+import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Color, Printer } from './lib/Printer';
 import { Tester, TestResults } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -207,7 +207,7 @@ export async function main() {
     }
 
     if (getJsonFlag() && completedTestFiles.length > 0) {
-      Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles }));
+      Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles, meta: getMetaFlag() ?? '' }));
     }
 
     Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
