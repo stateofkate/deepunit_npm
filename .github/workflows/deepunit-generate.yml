@@ -1,3 +1,4 @@
+
 name: DeepUnit Workflow
 
 on:
@@ -6,8 +7,8 @@ on:
       paths:
         description: 'Paths to test'
         required: true
-      pr:
-        description: 'Pull request ID'
+      meta:
+        description: 'Meta Data'
         required: true
 
 jobs:
@@ -26,7 +27,7 @@ jobs:
         run: npm install
 
       - name: Run DeepUnit
-        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --email 'support@deepunit.ai' --meta ${{ github.event.inputs.pr }} 
+        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta ${{ github.event.inputs.meta }} 
 
 
       - name: Store as Artifact
