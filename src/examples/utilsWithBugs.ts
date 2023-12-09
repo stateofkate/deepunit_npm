@@ -1,12 +1,12 @@
-import { CONFIG } from './Config';
-import { Api, ClientCode } from './Api';
+import { CONFIG } from '../lib/Config';
+import { Api, ClientCode } from '../lib/Api';
 import { createInterface } from 'readline';
-import { Color, Printer } from './Printer';
+import { Color, Printer } from '../lib/Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Arguments } from 'yargs';
-import { Log } from './Log';
+import { Log } from '../lib/Log';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
