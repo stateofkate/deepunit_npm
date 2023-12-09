@@ -62,8 +62,6 @@ export async function main() {
   Printer.printFilesToTest(filesToTest);
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
-  console.log('console.log: filesByDirectory');
-  console.log(filesByDirectory);
 
 
   // break code execution into different paths depending on which user flag
@@ -113,7 +111,6 @@ export async function main() {
   }
     if (flagType != 'bugFlag') {
       const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
-      console.log('error1');
 
       //this is for retry
       let testsWithErrors: string[] = [];
