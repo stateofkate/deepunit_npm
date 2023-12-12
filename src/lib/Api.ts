@@ -2,7 +2,19 @@ import axios, { AxiosError } from 'axios';
 import { AUTH } from '../main';
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
-import { SendBugAnalyticsData, ApiBaseData, FixErrorsData, GenerateBugReport, GenerateTestData, RecombineTestData, SendAnalyticsData, SendBugResults, SendResultData, FeedbackData, LogsData } from './ApiTypes';
+import {
+  SendBugAnalyticsData,
+  ApiBaseData,
+  FixErrorsData,
+  GenerateBugReport,
+  GenerateTestData,
+  RecombineTestData,
+  SendAnalyticsData,
+  SendBugResults,
+  SendResultData,
+  FeedbackData,
+  LogsData,
+} from './ApiTypes';
 import { CONFIG } from './Config';
 
 enum ApiPaths {
@@ -33,8 +45,8 @@ const apiPath = (path: ApiPaths | string) => `${CONFIG.apiHost}${path}`;
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths | string, customData?: T) {
-    const headers = {'Content-Type': 'application/json'};
+  public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0) {
+    const headers = { 'Content-Type': 'application/json' };
 
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
@@ -48,7 +60,7 @@ export class Api {
     try {
       const apiPathToCall = apiPath(path);
       debugMsg(`POST REQUEST ${apiPathToCall}`, data);
-      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPathToCall, data, {headers});
+      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPathToCall, data, { headers });
       if (response.data.error) {
         throw new Error(response.data.error);
       }
@@ -58,10 +70,9 @@ export class Api {
         return await exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);
-      return {httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message};
+      return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
     }
   }
-
 
   public static async generateTest(
     diffs: string,
@@ -122,7 +133,7 @@ export class Api {
     }
 
     return await this.post(ApiPaths.generateBugReport, data);
-}
+  }
 
   public static async fixErrors(errorMessage: string, testFileName: string, testContent: string, diff: string, tsFileContent: string): Promise<undefined | any> {
     const data: FixErrorsData = {
@@ -179,11 +190,7 @@ export class Api {
     await this.post(ApiPaths.sendResults, data);
   }
 
-  public static async sendBugResults(
-    bugReport: string,
-    sourceFileName: string,
-    sourceFileContent: string,
-  ) {
+  public static async sendBugResults(bugReport: string, sourceFileName: string, sourceFileContent: string) {
     const data: SendBugResults = {
       bugReport,
       sourceFileName,
@@ -193,13 +200,13 @@ export class Api {
     await this.post(ApiPaths.sendBugResults, data);
   }
 
-  public static async sendAnalytics(message: string, clientCode: ClientCode) {
+  public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {
     const data: SendAnalyticsData = {
       logMessage: message,
       scriptTarget: CONFIG.scriptTarget,
       vscode: checkVSCodeFlag(),
     };
-    await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
+    await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data, attempts);
   }
 
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
@@ -214,11 +221,11 @@ export class Api {
     return await this.post(ApiPaths.feedback, data);
   }
 
-  public static async SendLogs(logs: string): Promise<void> {
+  public static async SendLogs(logs: string, attempts: number = 0): Promise<void> {
     const data: LogsData = {
       logs: logs,
       vscode: checkVSCodeFlag(),
     };
-    return await this.post(ApiPaths.logs, data);
+    return await this.post(ApiPaths.logs, data, attempts);
   }
 }

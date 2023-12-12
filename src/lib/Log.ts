@@ -35,8 +35,8 @@ export class Log {
     originalConsole.warn(message);
   }
 
-  public async sendLogs(): Promise<void> {
-    await Api.SendLogs(this.logs);
+  public async sendLogs(attempts: number = 0): Promise<void> {
+    await Api.SendLogs(this.logs, attempts);
   }
 }
 
