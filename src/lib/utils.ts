@@ -93,7 +93,7 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
 export async function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
-  //await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
+  await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
   await Log.getInstance().sendLogs();
   process.exit(1);
 }
@@ -201,7 +201,7 @@ export function setupYargs() {
     .option('bf', {
       alias: ['bugfile'],
       type: 'string',
-      description: 'Generate unit tests for bugs'
+      description: 'Generate bug report then use the test cases to generate unit tests'
     })
     .help()
     .alias('h', 'help');
@@ -212,13 +212,10 @@ export function setupYargs() {
 
 export function getFilesFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
-  console.log(argv);
-  console.log(argv.f);
 
 
   if (argv.f || argv.file || argv.files) {
     const files = argv.f || argv.file || argv.files;
-    console.log('console.log: file flag');
     return typeof files === 'string' ? files.split(',') : undefined;
   }
 
@@ -230,7 +227,6 @@ export function getBugFileFlag(): string [] | undefined {
 
   if (argv.bf || argv.bugfile ) {
     const files = argv.bf || argv.bugfile;
-    console.log('console.log: bugfile flag');
     return typeof files === 'string' ? files.split(','): undefined;
   }
   return undefined;
@@ -241,7 +237,6 @@ export function getBugFlag(): string[] | undefined {
 
   if (argv.b || argv.bug ) {
     const files = argv.b || argv.bug;
-    console.log('console.log: bug flag');
     return typeof files === 'string' ? files.split(','): undefined;
   }
   return undefined;
