@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import {exitWithError, getBugFlag, getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
+import {exitWithError, getBugFileFlag, getBugFlag, getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
 import { string } from 'yargs';
@@ -16,8 +16,9 @@ export class Files {
     // get files to filter with --f arg, returning direct paths
     const filesToFilter: string[] | undefined = getFilesFlag();
 
-    const filesToDebug: string [] | undefined = getBugFlag();
+    const filesToDebugAndWriteTests: string[] | undefined = getBugFileFlag();
 
+    const filesToDebug: string [] | undefined = getBugFlag();
     // get file patterns, returns things like src/* and **/*
     const patternToFilter: string[] | undefined = getPatternFlag();
     // check whether we have an --a flag, marking all
@@ -55,6 +56,10 @@ export class Files {
       console.log('Finding files to test for bugs');
       flagType = 'bugFlag';
       filesToWriteTestsFor = glob.sync(filesToDebug, {});
+    } else if (filesToDebugAndWriteTests) {
+      console.log('Finding files to test for bugs and then write unit tests for');
+      flagType = 'bugFileFlag';
+      filesToWriteTestsFor = glob.sync(filesToDebugAndWriteTests,{});
     } else {
       console.log('Finding all changed files in your repository');
       if (!CONFIG.isGitRepository) {

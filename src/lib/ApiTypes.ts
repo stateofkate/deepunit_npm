@@ -9,18 +9,19 @@ export type ApiBaseData = {
 };
 
 export type GenerateTestData = {
-  diffs: string;
+  sourceFileDiffs: string;
   sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
   functionsToTest?: string[];
+  testCasesObj?: { [key: string]: string };
 
 };
 
 export type GenerateBugReport = {
-  diffs: string;
+  sourceFileDiffs: string;
   sourceFile?: { [key: string]: string };
-  testFile?: { [key: string]: string};
+  bugReport?: { [key: string]: string};
   testingLanguageOverride?: string;
   functionsToTest?: string [];
 };
@@ -52,7 +53,9 @@ export type RecombineTestData = {
   includeFailingTests: boolean;
   scriptTarget: string;
 };
-export type SendResultData = {
+
+
+export type SendResultDataPost = {
   failedTests: string[];
   passedTests: string[];
   tests: Record<string, string>;
@@ -60,6 +63,8 @@ export type SendResultData = {
   scriptTarget: string;
   sourceFileName: string;
   sourceFileContent: string;
+  promptInputRecord: Record<string, string>;
+  modelTextResponseRecord: Record<string, string>;
 };
 export type SendAnalyticsData = {
   logMessage: string;
@@ -74,6 +79,7 @@ export type SendBugAnalyticsData = {
 
 export type SendBugResults = {
   bugReport: string;
+  bugReportName: string;
   sourceFileName: string;
   sourceFileContent: string;
   scriptTarget: string;
