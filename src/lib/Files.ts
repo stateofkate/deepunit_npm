@@ -244,14 +244,15 @@ export class Files {
     return !rel.startsWith('../') && rel !== '..';
   }
 
-  public static writeTestsToFiles(tests: { [key: string]: string }): string[] {
+  public static writeTestsToFiles(tests: { [key: string]: string }, filePathChunk: string): string[] {
     let testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {
         if (!fs.existsSync(testFilePath)) {
-          fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+          fs.mkdirSync(path.dirname(filePathChunk + testFilePath), { recursive: true });
         }
-        Files.writeFileSync(testFilePath, testCode);
+        Files.writeFileSync(filePathChunk + testFilePath, testCode);
+
         testPaths.push(testFilePath);
       } catch (e) {
         console.error({ testCode, message: 'Error while saving', e, testFilePath });
@@ -281,8 +282,8 @@ export class Files {
     });
   }
 
-  public static groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
-    const filesByDirectory: Record<string, string[]> = {};
+  public static groupFilesByDirectory(changedFiles: string[]): { [key:string]:string[] } {
+    const filesByDirectory: { [key: string]: string[] } = {};
 
     for (const file of changedFiles) {
       const directory = path.dirname(file);
