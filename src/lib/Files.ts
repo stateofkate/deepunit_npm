@@ -2,16 +2,19 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import { exitWithError, getBugFlag, getFilesFlag, getForceFilter, getGenerateAllFilesFlag, getPatternFlag, setupYargs } from './utils';
+import { exitWithError, getAbsolutePathsFlag, getBugFlag, getFilesFlag, getForceFilter, getGenerateAllFilesFlag, getPatternFlag, setupYargs } from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
-import { string } from 'yargs';
 
 export class Files {
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
+
     // get files to filter with --f arg, returning direct paths
-    const filesToFilter: string[] | undefined = getFilesFlag();
+    let filesToFilter: string[] | undefined = getFilesFlag();
+    if (getAbsolutePathsFlag() && filesToFilter) {
+      filesToFilter = await Files.mapGitPathsToCurrentDirectory(filesToFilter);
+    }
 
     const filesToDebug: string[] | undefined = getBugFlag();
 
@@ -118,6 +121,23 @@ export class Files {
       });
     } else {
       return changedFiles;
+    }
+  }
+
+  public static async mapGitPathsToCurrentDirectory(relativePaths: string[]): Promise<string[]> {
+    try {
+      const rootGitDirectory = execSync('git rev-parse --show-toplevel').toString().trim();
+      const currentWorkingDirectory = process.cwd();
+
+      // Map each relative path to an absolute path based on the current working directory
+      return relativePaths.map((relativePath) => {
+        const absolutePathFromGitRoot = path.join(rootGitDirectory, relativePath);
+
+        return path.relative(currentWorkingDirectory, absolutePathFromGitRoot);
+      });
+    } catch (error) {
+      console.error('Error occurred, unable to map git paths to relative paths:', error);
+      return relativePaths;
     }
   }
 

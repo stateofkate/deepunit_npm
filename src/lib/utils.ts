@@ -219,6 +219,10 @@ export function setupYargs() {
       type: 'boolean',
       description: 'For --f flag to filter for unwanted files.',
     })
+    .option('ab', {
+      type: 'boolean',
+      description: 'For --f flag to be absolute paths from start of repository',
+    })
     .help()
     .alias('h', 'help');
 }
@@ -282,6 +286,11 @@ export function getGenerateAllFilesFlag(): boolean {
 export function getYesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.y || argv.yes);
+}
+
+export function getAbsolutePathsFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.ab;
 }
 
 export class LoadingIndicator {
