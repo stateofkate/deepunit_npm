@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
-import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
+import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Color, Printer } from './lib/Printer';
 import { Tester, TestResults } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -59,6 +59,8 @@ export async function main() {
   Printer.printFilesToTest(filesToTest);
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
+
+  const completedTestFiles: { path: string; content: string }[] = [];
 
   if (flagType != 'bugFlag') {
     let testsWithErrors: string[] = [];
@@ -157,7 +159,7 @@ export async function main() {
           if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
             //Re-write these files
             tests = { ...tests, ...retryFunctionsResponse.tests };
-            tempTestPaths = [ ...tempTestPaths, ...Files.writeTestsToFiles(retryFunctionsResponse.tests) ];
+            tempTestPaths = [...tempTestPaths, ...Files.writeTestsToFiles(retryFunctionsResponse.tests)];
           }
         }
 
@@ -170,7 +172,18 @@ export async function main() {
         itBlocksCount = newTestResults.itBlocksCount;
 
         Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-        await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
+        const testFile = await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
+
+        if (testFile) {
+          if (getJsonFlag()) {
+            // store for later export
+            completedTestFiles.push({ path: testFileName, content: testFile });
+          } else {
+            Files.writeFileSync(testFileName, testFile);
+          }
+        } else {
+          console.warn('Unable to recombine tests');
+        }
 
         //then we will need to delete all the temp test files.
         Files.deleteTempFiles(tempTestPaths);
@@ -187,7 +200,13 @@ export async function main() {
       }
     }
 
-    Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+    if (getJsonFlag() && completedTestFiles.length > 0) {
+      const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+      Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }));
+    } else {
+      Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+    }
+
     Printer.printOutro();
     if (filesToTest.length === 0) {
       console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');

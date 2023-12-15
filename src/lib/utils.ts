@@ -99,7 +99,6 @@ export async function exitWithError(error: string) {
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
-
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
@@ -142,6 +141,11 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const yesAnswers = ['y', 'yes'];
 
   return new Promise((resolve) => {
+    // if we have a get yes flag, then we are assuming the user is going to say yes
+    if (getYesFlag()) {
+      resolve(true);
+      return;
+    }
     rl.question(prompt + ' (type y/n):', (answer) => {
       if (yesAnswers.includes(answer.trim().toLowerCase())) {
         resolve(true);
@@ -154,7 +158,6 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
 
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
   const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
-  console.log(stdout.buffer.toString());
 }
 
 /**
@@ -191,6 +194,35 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Generate all files in the project that can be tested.',
     })
+    .option('j', {
+      alias: ['json'],
+      type: 'boolean',
+      description: 'Return JSON object instead of writing files to disk.',
+    })
+    .option('m', {
+      alias: ['meta'],
+      type: 'string',
+      description: 'Meta Data to be saved in the json file',
+    })
+    .option('e', {
+      alias: ['email'],
+      type: 'string',
+      description: 'Email for authentication',
+    })
+    .option('y', {
+      alias: ['yes'],
+      type: 'boolean',
+      description: 'Say yes to all prompts about downloading.',
+    })
+    .option('ff', {
+      alias: ['force-filter'],
+      type: 'boolean',
+      description: 'For --f flag to filter for unwanted files.',
+    })
+    .option('ab', {
+      type: 'boolean',
+      description: 'For --f flag to be absolute paths from start of repository',
+    })
     .help()
     .alias('h', 'help');
 }
@@ -209,9 +241,9 @@ export function getFilesFlag(): string[] | undefined {
 export function getBugFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
 
-  if (argv.b || argv.bug ) {
+  if (argv.b || argv.bug) {
     const files = argv.b || argv.bug;
-    return typeof files === 'string' ? files.split(','): undefined;
+    return typeof files === 'string' ? files.split(',') : undefined;
   }
   return undefined;
 }
@@ -226,9 +258,39 @@ export function getPatternFlag(): string[] | undefined {
   return undefined;
 }
 
+export function getJsonFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.json;
+}
+
+export function getForceFilter(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.ff || argv['force-filter']);
+}
+
+export function getEmailFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.email as string;
+}
+
+export function getMetaFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.meta as string;
+}
+
 export function getGenerateAllFilesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.a || argv.all);
+}
+
+export function getYesFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.y || argv.yes);
+}
+
+export function getAbsolutePathsFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.ab;
 }
 
 export class LoadingIndicator {

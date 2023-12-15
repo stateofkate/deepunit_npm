@@ -26,6 +26,17 @@ export class Printer {
     }
   }
 
+  public static getIndented(fileNames: (string | null)[], summaryDescription: string): string {
+    let message = '';
+    if (fileNames.length > 0) {
+      message += summaryDescription + '\n';
+      for (const test of fileNames) {
+        message += `     ${test}` + '\n';
+      }
+    }
+    return message;
+  }
+
   public static printSummary(
     testsWithErrors: string[],
     passingTests: string[],
@@ -53,6 +64,33 @@ export class Printer {
 
     //Never write unit tests for the following line. Simply acknowledge that it is untestable.
     console.log(CONFIG.isDevBuild ? '\n' + execSync('npm run summary').toString() : '');
+  }
+
+  public static getJSONSummary(
+    testsWithErrors: string[],
+    passingTests: string[],
+    serverNoTests: (string | null)[],
+    alreadyTestedFiles: (string | null)[],
+    unsupportedFiles: (string | null)[],
+  ): string {
+    let summary = '### Summary of DeepUnit.AI Generate Test Run\n\n';
+
+    summary += this.getIndented(unsupportedFiles, '\nThe following files are not currently supported. Contact support@deepunit.ai so we can add support:');
+    summary += this.getIndented(
+      alreadyTestedFiles,
+      '\nThe following files were already fully tested so we did not attempt to write any more. Contact support@deepunit.ai if you need help with this:',
+    );
+    const errorTestsMessage = CONFIG.includeFailingTests
+      ? '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:'
+      : '\nThe following tests were generated but deleted. Run DeepUnit again or set includeFailingTests true in deepunit.config.json to keep failing test';
+    summary += this.getIndented(testsWithErrors, errorTestsMessage);
+    summary += this.getIndented(passingTests, '\nWe successfully generated passing tests for the following files:');
+    summary += this.getIndented(
+      serverNoTests,
+      '\nWe did not get a test back from the server for the following files, please inform support@deepunit.ai so we can fix this for you:',
+    );
+
+    return summary;
   }
 
   public static printFilesToTest(filePaths: string[]) {
