@@ -143,8 +143,6 @@ export async function main() {
           }
 
           const testFileName = Tester.getTestName(sourceFileName);
-          console.log('sourceFileName');
-          console.log(sourceFileName);
 
 
 
