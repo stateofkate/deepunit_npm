@@ -244,7 +244,7 @@ export class Files {
     return !rel.startsWith('../') && rel !== '..';
   }
 
-  public static writeTestsToFiles(tests: Record<string, string>): string[] {
+  public static writeTestsToFiles(tests: { [key: string]: string }): string[] {
     let testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {

@@ -5,8 +5,8 @@ import { LoadingIndicator } from '../utils';
 import console from '../Log';
 
 export interface TestRunResult {
-  passedTests: Record <string,string>;
-  failedTests: Record <string,string>;
+  passedTests: { [key: string]: string };
+  failedTests: { [key: string]: string };
   failedTestErrors: { [key: string]: string };
   /**
    * Key: FileName
@@ -49,7 +49,7 @@ export abstract class Tester {
       if (successRatio <= 0.5) {
         //get the function name so we can pass it to the backend.
         const testPathChunks = testPath.split('.');
-        const funcName = testPathChunks.length >= 4? testPathChunks[testPathChunks.length - 4] : undefined;
+        const funcName = testPathChunks[0];
         if (!funcName) {
           continue;
         }
@@ -78,7 +78,7 @@ export abstract class Tester {
     tempTestPaths: { [key: string]: string },
     finalizedTestPath: string,
     testFileContent: string,
-    failedTests: Record<string,string>,
+    failedTests: { [key: string]: string },
     failedItBlocks: { [key: string]: string[] },
     prettierConfig: Object | undefined,
   ) {

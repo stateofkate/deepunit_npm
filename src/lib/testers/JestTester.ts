@@ -48,8 +48,8 @@ export class JestTester extends Tester {
   public async getTestResults(files: string[]): Promise<TestRunResult> {
     const result = await this.runTests(files);
     //func name is key
-    let passedTests: Record<string,string> = {};
-    let failedTests: Record<string,string> = {};
+    let passedTests: { [key: string]: string } = {};
+    let failedTests: { [key: string]: string } = {};
     let failedTestErrors: any = {};
     let failedItBlocks: { [key: string]: string[] } = {};
     let itBlocksCount: { [key: string]: number } = {};

@@ -147,7 +147,7 @@ export class Api {
   public static async recombineTests(
     tempTests: { [key: string]: string },
     testFileContent: string,
-    failedTests: Record<string,string>,
+    failedTests: { [key: string]: string },
     failedItBlocks: { [key: string]: string[] },
     prettierConfig: Object | undefined,
   ) {
@@ -184,9 +184,9 @@ export class Api {
   }
 
   public static async sendResults(
-    failedTests: Record<string,string>,
-    passedTests: Record<string,string>,
-    tests: Record<string, string>,
+    failedTests: { [key: string]: string },
+    passedTests: { [key: string]: string },
+    tests: { [key: string]: string },
     failedTestErrors: any,
     sourceFileName: string,
     sourceFileContent: string,

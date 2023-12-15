@@ -132,7 +132,6 @@ export async function main() {
       //we are looping through each file in each directory
       for (const directory in filesByDirectory) {
         let filesInDirectory = filesByDirectory[directory];
-        console.log(filesInDirectory);
 
         //while there are still files in the directory, we remove them from the filesindirectory array
         //and do the whole generatetest process for it in this giant while loop lol
@@ -205,7 +204,7 @@ export async function main() {
           // get data to pass to backend
 
           // if we are then we are good to go, keep processing test
-          let tests: Record<string, string> = response.tests;
+          let tests: { [key: string]: string } = response.tests;
           // Write the temporary test files, so we can test the generated tests
           let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
@@ -227,26 +226,28 @@ export async function main() {
             if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
               //Re-Write these files
               Files.writeTestsToFiles(retryFunctionsResponse.tests);
-              //tests = { ...passedTests, ...retryFunctionsResponse.tests };
+              //tests = { ...response.tests, ...retryFunctionsResponse.tests };
             }
           }
 
           // run the regenerated test code (try to compile it for user) to get results whether pass/file
           let retryTestResults: TestRunResult = await tester.getTestResults(tempTestPaths);
+          // if statement for including failing tests;
           tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests};
+          passedTests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
           let recombineTests: { [key: string]: string } = {};
-          for (const testPath in retryFunctionsResponse.tests) {
+          for (const testPath in retryFunctionsResponse) {
             if (testPath in tests) {
-              recombineTests[testPath] = retryFunctionsResponse[testPath];
+              recombineTests[testPath] = retryFunctionsResponse.tests[testPath] as string;
             }
           }
           for(const testPath in response.tests) {
             if (testPath in tests) {
-              recombineTests[testPath] = retryFunctionsResponse[testPath];
+              recombineTests[testPath] = response.tests[testPath];
             }
           }
 
-          //Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
+          Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
           await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
 
           //then we will need to delete all the temp test files.
