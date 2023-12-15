@@ -49,22 +49,20 @@ export type RecombineTestData = {
   prettierConfig?: Object;
   testFileContent: string;
   failedItBlocks: { [key: string]: string[] };
-  failedTests: string[];
+  failedTests: Record<string,string>
   includeFailingTests: boolean;
   scriptTarget: string;
 };
 
 
 export type SendResultDataPost = {
-  failedTests: string[];
-  passedTests: string[];
+  failedTests: Record<string, string>,
+  passedTests: Record<string, string>,
   tests: Record<string, string>;
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
   sourceFileName: string;
   sourceFileContent: string;
-  promptInputRecord: Record<string, string>;
-  modelTextResponseRecord: Record<string, string>;
 };
 export type SendAnalyticsData = {
   logMessage: string;

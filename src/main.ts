@@ -203,8 +203,6 @@ export async function main() {
           }
 
           // get data to pass to backend
-          let promptInputRecord: Record<string, string> = response.promptInputRecord;
-          let modelTextResponseRecord: Record<string, string> = response.modelTextResponseRecord;
 
           // if we are then we are good to go, keep processing test
           let tests: Record<string, string> = response.tests;
@@ -212,11 +210,11 @@ export async function main() {
           let tempTestPaths: string[] = Files.writeTestsToFiles(tests);
 
           //Get the testresults
-          let testResults: TestRunResult = await tester.getTestResults(tempTestPaths);
-          let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = testResults;
+          let firstTestResults: TestRunResult = await tester.getTestResults(tempTestPaths);
+          let { failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = firstTestResults;
 
           // get failed functions to retry
-          const retryFunctions: string[] = Tester.getRetryFunctions(testResults, tempTestPaths);
+          const retryFunctions: string[] = Tester.getRetryFunctions(firstTestResults, tempTestPaths);
 
           //modify testInput object to retry only for functions that failed
           testInput.functionsToTest = retryFunctions;
@@ -228,22 +226,27 @@ export async function main() {
             if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
               //Re-Write these files
               Files.writeTestsToFiles(retryFunctionsResponse.tests);
-              tests = { ...tests, ...retryFunctionsResponse.tests };
+              //tests = { ...passedTests, ...retryFunctionsResponse.tests };
             }
           }
 
           // run the regenerated test code (try to compile it for user) to get results whether pass/file
-          ({ failedTests, passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = await tester.getTestResults(tempTestPaths));
+          let retryTestResults: TestRunResult = await tester.getTestResults(tempTestPaths);
+          tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests};
+          for(const testPath in tests) {
 
-          Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent, promptInputRecord,
-            modelTextResponseRecord);
-          await tester.recombineTests(tests, testFileName, testFileContent, failedItBlocks, failedTests, prettierConfig);
+          }
+
+
+
+          //Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
+          await tester.recombineTests(tests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
 
           //then we will need to delete all the temp test files.
           Files.deleteTempFiles(tempTestPaths);
 
-          if (passedTests.length > 0) {
-            if (CONFIG.includeFailingTests && failedTests.length > 0) {
+          if (Object.keys(passedTests).length > 0) {
+            if (CONFIG.includeFailingTests && Object.keys(failedTests).length > 0) {
               testsWithErrors.push(testFileName);
             } else {
               passingTests.push(testFileName);

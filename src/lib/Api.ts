@@ -147,8 +147,8 @@ export class Api {
   public static async recombineTests(
     tempTests: { [key: string]: string },
     testFileContent: string,
+    failedTests: Record<string,string>,
     failedItBlocks: { [key: string]: string[] },
-    failedTests: string[],
     prettierConfig: Object | undefined,
   ) {
     let data: RecombineTestData = {
@@ -167,30 +167,6 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
-  public static async sendResults(
-      failedTests: string[],
-      passedTests: string[],
-      tests: Record<string, string>,
-      failedTestErrors: any,
-      sourceFileName: string,
-      sourceFileContent: string,
-      promptInputRecord: Record<string, string>,
-      modelTextResponseRecord: Record<string, string>,
-  ) {
-    const data: SendResultDataPost = {
-      failedTests,
-      passedTests,
-      tests,
-      failedTestErrors,
-      sourceFileName,
-      sourceFileContent,
-      promptInputRecord,
-      modelTextResponseRecord,
-      scriptTarget: CONFIG.scriptTarget,
-    };
-    await this.post(ApiPaths.sendResults, data);
-  }
-
   public static async sendBugResults(
     bugReport: string,
     bugReportName: string,
@@ -205,6 +181,26 @@ export class Api {
       scriptTarget: CONFIG.scriptTarget,
     };
     await this.post(ApiPaths.sendBugResults, data);
+  }
+
+  public static async sendResults(
+    failedTests: Record<string,string>,
+    passedTests: Record<string,string>,
+    tests: Record<string, string>,
+    failedTestErrors: any,
+    sourceFileName: string,
+    sourceFileContent: string,
+  ) {
+    const data: SendResultDataPost = {
+      failedTests,
+      passedTests,
+      tests,
+      failedTestErrors,
+      sourceFileName,
+      sourceFileContent,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendResults, data);
   }
 
   public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {

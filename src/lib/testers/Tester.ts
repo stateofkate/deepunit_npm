@@ -5,8 +5,8 @@ import { LoadingIndicator } from '../utils';
 import console from '../Log';
 
 export interface TestRunResult {
-  failedTests: string[];
-  passedTests: string[];
+  passedTests: Record <string,string>;
+  failedTests: Record <string,string>;
   failedTestErrors: { [key: string]: string };
   /**
    * Key: FileName
@@ -43,7 +43,7 @@ export abstract class Tester {
       if (TestResults.failedItBlocks[testPath]) {
         successRatio = TestResults.failedItBlocks[testPath].length / TestResults.itBlocksCount[testPath];
       }
-      if (TestResults.failedTests.includes(testPath)) {
+      if (testPath in TestResults.failedTests) {
         successRatio = 0;
       }
       if (successRatio <= 0.5) {
@@ -78,11 +78,11 @@ export abstract class Tester {
     tempTestPaths: { [key: string]: string },
     finalizedTestPath: string,
     testFileContent: string,
+    failedTests: Record<string,string>,
     failedItBlocks: { [key: string]: string[] },
-    failedTests: string[],
     prettierConfig: Object | undefined,
   ) {
-    const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedItBlocks, failedTests, prettierConfig);
+    const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedTests, failedItBlocks, prettierConfig);
     if (responseData && responseData.testContent) {
       Files.writeFileSync(finalizedTestPath, responseData.testContent);
     }
