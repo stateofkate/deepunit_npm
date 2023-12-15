@@ -220,9 +220,10 @@ export async function main() {
           testInput.functionsToTest = retryFunctions;
 
           // retry functions that failed
+          let retryFunctionsResponse: any = {};
           if (retryFunctions && CONFIG.retryTestGenerationOnFailure) {
             console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
-            const retryFunctionsResponse = await tester.generateTest(testInput);
+            retryFunctionsResponse = await tester.generateTest(testInput);
             if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
               //Re-Write these files
               Files.writeTestsToFiles(retryFunctionsResponse.tests);
@@ -233,14 +234,20 @@ export async function main() {
           // run the regenerated test code (try to compile it for user) to get results whether pass/file
           let retryTestResults: TestRunResult = await tester.getTestResults(tempTestPaths);
           tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests};
-          for(const testPath in tests) {
-
+          let recombineTests: { [key: string]: string } = {};
+          for (const testPath in retryFunctionsResponse.tests) {
+            if (testPath in tests) {
+              recombineTests[testPath] = retryFunctionsResponse[testPath];
+            }
+          }
+          for(const testPath in response.tests) {
+            if (testPath in tests) {
+              recombineTests[testPath] = retryFunctionsResponse[testPath];
+            }
           }
 
-
-
           //Api.sendResults(failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-          await tester.recombineTests(tests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
+          await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
 
           //then we will need to delete all the temp test files.
           Files.deleteTempFiles(tempTestPaths);
