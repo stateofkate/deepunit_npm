@@ -110,9 +110,6 @@ export async function main() {
 
   }
     if (flagType != 'bugFlag') {
-      //const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
-
-
       //this is for retry
       let testsWithErrors: string[] = [];
 
@@ -229,7 +226,6 @@ export async function main() {
             if ((retryFunctionsResponse.stateCode === StateCode.Success && retryFunctionsResponse?.tests) || !isEmpty(retryFunctionsResponse.tests)) {
               //Re-Write these files
               retryTempTestNames = Files.writeTestsToFiles(retryFunctionsResponse.tests, filePathChunk);
-              //tests = { ...response.tests, ...retryFunctionsResponse.tests };
             }
           }
 
@@ -237,9 +233,14 @@ export async function main() {
           // run the regenerated test code (try to compile it for user) to get results whether pass/file
           let retryTestResults: TestRunResult = await tester.getTestResults(firstGenTempTestNames);
           // if statement for including failing tests;
-          tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests};
-          passedTests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
           let recombineTests: { [key: string]: string } = {};
+          if(CONFIG.includeFailingTests){
+            tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests};
+            passedTests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
+          } else if (!CONFIG.includeFailingTests) {
+            tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
+            passedTests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
+          }
           for (const testPath in retryFunctionsResponse) {
             if (testPath in tests) {
               recombineTests[testPath] = retryFunctionsResponse.tests[testPath] as string;
@@ -250,6 +251,9 @@ export async function main() {
               recombineTests[testPath] = response.tests[testPath];
             }
           }
+
+
+
 
           Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
           await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
