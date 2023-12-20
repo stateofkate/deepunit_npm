@@ -102,9 +102,9 @@ export async function exitWithError(error: string, attempts = 0) {
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
-  const { latestVersion } = await Api.getLatestVersion()
-  const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/)
-  let needsUpdating
+  const { latestVersion } = await Api.getLatestVersion();
+  const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
+  let needsUpdating;
   if (versionRegex.test(latestVersion.trim()) && versionRegex.test((await CONFIG.getVersion()).trim())) {
     const latestVersionNumbers = latestVersion.split(".")
     const versionNumbers = (await CONFIG.getVersion()).split(".")
@@ -144,19 +144,23 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const yesAnswers = ["y", "yes"]
 
   return new Promise((resolve) => {
-    rl.question(prompt + " (type y/n):", (answer) => {
+    // if we have a get yes flag, then we are assuming the user is going to say yes
+    if (getYesFlag()) {
+      resolve(true);
+      return;
+    }
+    rl.question(prompt + ' (type y/n):', (answer) => {
       if (yesAnswers.includes(answer.trim().toLowerCase())) {
-        resolve(true)
+        resolve(true);
       } else {
-        resolve(false)
+        resolve(false);
       }
-    })
-  })
+    });
+  });
 }
 
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
   const stdout = execSync(`npm install ${isDevDep ? "-D " : ""}${newPackage}`)
-  console.log(stdout.buffer.toString())
 }
 
 /**
@@ -204,6 +208,35 @@ export function setupYargs() {
       alias: ['bugfile'],
       type: 'string',
       description: 'Generate bug report then use the test cases to generate unit tests'
+    })
+    .option('j', {
+      alias: ['json'],
+      type: 'boolean',
+      description: 'Return JSON object instead of writing files to disk.',
+    })
+    .option('m', {
+      alias: ['meta'],
+      type: 'string',
+      description: 'Meta Data to be saved in the json file',
+    })
+    .option('e', {
+      alias: ['email'],
+      type: 'string',
+      description: 'Email for authentication',
+    })
+    .option('y', {
+      alias: ['yes'],
+      type: 'boolean',
+      description: 'Say yes to all prompts about downloading.',
+    })
+    .option('ff', {
+      alias: ['force-filter'],
+      type: 'boolean',
+      description: 'For --f flag to filter for unwanted files.',
+    })
+    .option('ab', {
+      type: 'boolean',
+      description: 'For --f flag to be absolute paths from start of repository',
     })
     .help()
     .alias("h", "help")
@@ -253,9 +286,39 @@ export function getPatternFlag(): string[] | undefined {
   return undefined
 }
 
+export function getJsonFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.json;
+}
+
+export function getForceFilter(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.ff || argv['force-filter']);
+}
+
+export function getEmailFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.email as string;
+}
+
+export function getMetaFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.meta as string;
+}
+
 export function getGenerateAllFilesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs
   return !!(argv.a || argv.all)
+}
+
+export function getYesFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.y || argv.yes);
+}
+
+export function getAbsolutePathsFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.ab;
 }
 
 export class LoadingIndicator {

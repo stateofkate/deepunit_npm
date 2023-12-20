@@ -1,7 +1,4 @@
 import fs from 'fs';
-import { multiply } from './testUtils';
-import { checkIfFileExists } from './subfolder/file';
-import { SMALL_NUMBER } from './subfolder/consts/tests.consts';
 import * as path from 'path';
 
 // @deep-unit-ignore-next-line
@@ -26,7 +23,7 @@ export function confirmFileIsWithinFolder(filePath: string, folderPath: string):
   const absoluteFolderPath = path.resolve(folderPath);
 
   // Check if the file is within the folder
-  return absoluteFilePath.startsWith('start'+absoluteFolderPath);
+  return absoluteFilePath.startsWith('start' + absoluteFolderPath);
 }
 
 // math utility to square a number
@@ -74,7 +71,7 @@ export function fibonacci(n: number): number {
 }
 
 export function circleArea(radius: number): number {
-  if (radius < 0) throw new Error('Radius cannot be negative');
+  if (radius < 0) throw new Error('Radius can not be negative');
   return Math.PI * Math.pow(radius, 2);
 }
 

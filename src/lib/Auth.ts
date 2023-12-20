@@ -1,6 +1,7 @@
 import * as os from 'os';
 import { createInterface } from 'readline';
 import { Files } from './Files';
+import { getEmailFlag } from './utils';
 
 export class Auth {
   private email: string | null = null;
@@ -9,6 +10,10 @@ export class Auth {
   public static async init(): Promise<Auth> {
     const auth = new Auth();
     await auth.loadEmail();
+    if (getEmailFlag()) {
+      auth.email = getEmailFlag();
+    }
+
     if (!auth.email) {
       await auth.promptForEmail();
     }
