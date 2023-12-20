@@ -105,10 +105,7 @@ export class Api {
     return await this.post(ApiPaths.generate, data);
   }
 
-  public static async generateBugReport(
-
-    generateTestInput: GenerateTestOrReportInput
-  ): Promise<any> {
+  public static async generateBugReport(generateTestInput: GenerateTestOrReportInput): Promise<any> {
     if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }

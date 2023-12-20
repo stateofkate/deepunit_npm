@@ -1,7 +1,7 @@
 import { CONFIG } from '../Config';
 import { Api } from '../Api';
 import { Files } from '../Files';
-import { LoadingIndicator } from '../utils';
+import { LoadingIndicator, getJsonFlag } from '../utils';
 import console from '../Log';
 
 export interface TestRunResult {
@@ -69,7 +69,7 @@ export abstract class Tester {
 
   public static getBugReportName(file: string): string {
     const fileParts = file.split('.');
-    const fileExt = 'md'
+    const fileExt = 'md';
     const testFileName = fileParts.slice(0, -1).join('.') + '.deepunit_bugreport.' + CONFIG.testSuffix + '.' + fileExt;
     return testFileName;
   }
@@ -81,10 +81,10 @@ export abstract class Tester {
     failedItBlocks: { [key: string]: string[] },
     failedTests: string[],
     prettierConfig: Object | undefined,
-  ) {
+  ): Promise<string | undefined> {
     const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedItBlocks, failedTests, prettierConfig);
     if (responseData && responseData.testContent) {
-      Files.writeFileSync(finalizedTestPath, responseData.testContent);
+      return responseData.testContent;
     }
   }
 
@@ -99,6 +99,7 @@ export abstract class Tester {
     return response;
   }
 
+<<<<<<< HEAD
 
   public async generateBugReport(testInput: GenerateTestOrReportInput): Promise<any> {
     const loadingIndicator = new LoadingIndicator();
@@ -119,4 +120,3 @@ export abstract class Tester {
    */
   public abstract getTestResults(files: string[]): Promise<TestRunResult>;
 }
-
