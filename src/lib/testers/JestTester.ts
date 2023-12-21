@@ -1,8 +1,8 @@
 import { ExecException, exec, execSync } from 'child_process';
-import { TestResult, TestResults, Tester } from './Tester';
+import { JestTestRunResult, TestRunResult, Tester } from './Tester';
 
 export class JestTester extends Tester {
-  public async runTests(relativePathArray: string[]): Promise<TestResult[]> {
+  public async runTests(relativePathArray: string[]): Promise<JestTestRunResult[]> {
     const execPromisified = (command: string): Promise<string> => {
       return new Promise((resolve, reject) => {
         exec(command, (error: ExecException | null, stdout: string, stderr: string) => {
@@ -16,7 +16,7 @@ export class JestTester extends Tester {
     };
 
     const promises = relativePathArray.map(async (filePath) => {
-      const testResult: TestResult = {
+      const testResult: JestTestRunResult = {
         file: filePath,
         testFailedWithError: undefined,
         jestResult: undefined,
@@ -45,27 +45,34 @@ export class JestTester extends Tester {
     return aggregatedResults;
   }
 
-  public async getTestResults(files: string[]): Promise<TestResults> {
+  public async getTestResults(files: string[]): Promise<TestRunResult> {
     const result = await this.runTests(files);
-    let passedTests: string[] = [];
-    let failedTests: string[] = [];
+    //func name is key
+    let passedTests: { [key: string]: string } = {};
+    let failedTests: { [key: string]: string } = {};
     let failedTestErrors: any = {};
     let failedItBlocks: { [key: string]: string[] } = {};
     let itBlocksCount: { [key: string]: number } = {};
     for (const testResult of result) {
       const testPathFound: string | undefined = files.find((substring) => testResult.file.endsWith(substring));
-      const testPath = testPathFound ? testPathFound : (testResult.file as string);
+      const testPath: string = testPathFound ? testPathFound : (testResult.file as string);
+      const testPathChunks = testPath.split('.');
+      const funcName: string = testPathChunks[0];
 
       if (testResult.testFailedWithError || !testResult.jestResult || !testResult.jestResult.success) {
-        // an error happened when running the test
-        failedTests.push(testPath);
+        // if an error happened when running the test
+
         failedTestErrors[testPath] = testResult.testFailedWithError.stack;
+
+        failedTests[testPath] = funcName;
+
       } else {
         if (testResult.jestResult?.testResults[0]?.status == 'passed') {
-          passedTests.push(testPath);
+          passedTests[testPath] = funcName;
+
         } else {
           // the test was a valid script, but failed
-          failedTests.push(testPath);
+          failedTests[testPath] = funcName;
           failedTestErrors[testPath] = testResult.jestResult.stack;
           // handle what "it" blocks failed
           const failedItStatements = testResult.jestResult.assertionResults.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
