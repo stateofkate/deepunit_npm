@@ -81,10 +81,10 @@ export abstract class Tester {
     failedTests: { [key: string]: string },
     failedItBlocks: { [key: string]: string[] },
     prettierConfig: Object | undefined,
-  ): Promise<string | undefined> {
+  ) {
     const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedTests, failedItBlocks, prettierConfig);
     if (responseData && responseData.testContent) {
-      return responseData.testContent;
+      Files.writeFileSync(finalizedTestPath, responseData.testContent);
     }
   }
 
