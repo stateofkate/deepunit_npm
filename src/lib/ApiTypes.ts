@@ -9,16 +9,17 @@ export type ApiBaseData = {
 };
 
 export type GenerateTestData = {
-  diffs: string;
+  sourceFileDiffs: string;
   sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
   functionsToTest?: string[];
+  testCasesObj?: { [key: string]: string };
 
 };
 
 export type GenerateBugReport = {
-  diffs: string;
+  sourceFileDiffs: string;
   sourceFile?: { [key: string]: string };
   bugReport?: { [key: string]: string};
   testingLanguageOverride?: string;
@@ -48,14 +49,16 @@ export type RecombineTestData = {
   prettierConfig?: Object;
   testFileContent: string;
   failedItBlocks: { [key: string]: string[] };
-  failedTests: string[];
+  failedTests: { [key: string]: string }
   includeFailingTests: boolean;
   scriptTarget: string;
 };
-export type SendResultData = {
-  failedTests: string[];
-  passedTests: string[];
-  tests: Record<string, string>;
+
+
+export type SendResultDataPost = {
+  failedTests: { [key: string]: string },
+  passedTests: { [key: string]: string },
+  tests: { [key: string]: string };
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
   sourceFileName: string;

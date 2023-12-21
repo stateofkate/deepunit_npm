@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import { exitWithError, getAbsolutePathsFlag, getBugFlag, getFilesFlag, getForceFilter, getGenerateAllFilesFlag, getPatternFlag, setupYargs } from './utils';
+import {exitWithError, getAbsolutePathsFlag, getBugFileFlag, getBugFlag, getForceFilter,getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
 
@@ -10,14 +10,15 @@ export class Files {
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
 
+    const filesToDebugAndWriteTests: string[] | undefined = getBugFileFlag();
     // get files to filter with --f arg, returning direct paths
     let filesToFilter: string[] | undefined = getFilesFlag();
     if (getAbsolutePathsFlag() && filesToFilter) {
       filesToFilter = await Files.mapGitPathsToCurrentDirectory(filesToFilter);
     }
 
-    const filesToDebug: string[] | undefined = getBugFlag();
 
+    const filesToDebug: string [] | undefined = getBugFlag();
     // get file patterns, returns things like src/* and **/*
     const patternToFilter: string[] | undefined = getPatternFlag();
     // check whether we have an --a flag, marking all
@@ -59,6 +60,10 @@ export class Files {
       console.log('Finding files to test for bugs');
       flagType = 'bugFlag';
       filesToWriteTestsFor = glob.sync(filesToDebug, {});
+    } else if (filesToDebugAndWriteTests) {
+      console.log('Finding files to test for bugs and then write unit tests for');
+      flagType = 'bugFileFlag';
+      filesToWriteTestsFor = glob.sync(filesToDebugAndWriteTests,{});
     } else {
       console.log('Finding all changed files in your repository');
       if (!CONFIG.isGitRepository) {
@@ -255,14 +260,15 @@ export class Files {
     return !rel.startsWith('../') && rel !== '..';
   }
 
-  public static writeTestsToFiles(tests: Record<string, string>): string[] {
+  public static writeTestsToFiles(tests: { [key: string]: string }, filePathChunk: string): string[] {
     let testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {
         if (!fs.existsSync(testFilePath)) {
-          fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+          fs.mkdirSync(path.dirname(filePathChunk + testFilePath), { recursive: true });
         }
-        Files.writeFileSync(testFilePath, testCode);
+        Files.writeFileSync(filePathChunk + testFilePath, testCode);
+
         testPaths.push(testFilePath);
       } catch (e) {
         console.error({ testCode, message: 'Error while saving', e, testFilePath });
@@ -292,8 +298,8 @@ export class Files {
     });
   }
 
-  public static groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
-    const filesByDirectory: Record<string, string[]> = {};
+  public static groupFilesByDirectory(changedFiles: string[]): { [key:string]:string[] } {
+    const filesByDirectory: { [key: string]: string[] } = {};
 
     for (const file of changedFiles) {
       const directory = path.dirname(file);

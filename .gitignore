@@ -10,3 +10,4 @@ deepunit.config.json
 
 temp
 deepunit-tests.json
+.DS_Store

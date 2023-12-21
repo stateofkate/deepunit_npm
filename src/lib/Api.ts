@@ -11,11 +11,12 @@ import {
   RecombineTestData,
   SendAnalyticsData,
   SendBugResults,
-  SendResultData,
+  SendResultDataPost,
   FeedbackData,
   LogsData,
 } from './ApiTypes';
 import { CONFIG } from './Config';
+import { GenerateTestOrReportInput } from './testers/Tester';
 
 enum ApiPaths {
   generate = '/generate-test/new',
@@ -40,12 +41,14 @@ export enum ClientCode {
   ClientExited = 'ClientExited',
   ClientErrored = 'ClientErrored',
 }
+
+
 const apiPath = (path: ApiPaths | string) => `${CONFIG.apiHost}${path}`;
 
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths | string, customData?: T) {
+  public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0) {
     const headers = { 'Content-Type': 'application/json' };
 
     let data: ApiBaseData = {
@@ -74,62 +77,53 @@ export class Api {
     }
   }
 
-  public static async generateTest(
-    diffs: string,
-    sourceFileName: string | null,
-    sourceFileContent: string | null,
-    testFileName: string,
-    testFileContent: string,
-    functionsToTest?: string[],
-  ): Promise<any> {
-    if (!sourceFileName || !sourceFileContent) {
+
+  public static async generateTest(generateTestInput: GenerateTestOrReportInput): Promise<any> {
+    if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateTestData = {
-      diffs,
-      sourceFile: { [sourceFileName]: sourceFileContent },
+      sourceFileDiffs: generateTestInput.sourceFileDiff,
+      sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent },
     };
+
+    if(generateTestInput.testCasesObj) {
+      data.testCasesObj = generateTestInput.testCasesObj;
+    }
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
-    if (testFileName || testFileContent) {
+    if (generateTestInput.generatedFileName || generateTestInput.generatedFileContent) {
       // test file is optional
-      data.testFile = { [testFileName]: testFileContent };
+      data.testFile = { [generateTestInput.generatedFileName]: generateTestInput.generatedFileContent };
     }
-    if (functionsToTest) {
-      data.functionsToTest = functionsToTest;
+    if (generateTestInput.functionsToTest) {
+      data.functionsToTest = generateTestInput.functionsToTest;
     }
 
     return await this.post(ApiPaths.generate, data);
   }
 
-  public static async generateBugReport(
-    diffs: string,
-    sourceFileName: string,
-    sourceFileContent: string | null,
-    bugFileName: string,
-    bugFileContent: string | null,
-    functionsToTest?: string[],
-  ): Promise<any> {
-    if (!sourceFileName || !sourceFileContent) {
+  public static async generateBugReport(generateTestInput: GenerateTestOrReportInput): Promise<any> {
+    if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
     let data: GenerateBugReport = {
-      diffs,
-      sourceFile: { [sourceFileName]: sourceFileContent ?? '' },
+      sourceFileDiffs: generateTestInput.sourceFileDiff,
+      sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent},
     };
 
     if (CONFIG.testingLanguageOverride) {
       data.testingLanguageOverride = CONFIG.testingLanguageOverride;
     }
 
-    if (bugFileName || bugFileContent) {
+    if (generateTestInput.generatedFileName || generateTestInput.generatedFileContent) {
       // test file is optional
-      data.bugReport = { [bugFileName]: bugFileContent ?? '' };
+      data.bugReport = { [generateTestInput.generatedFileName]: generateTestInput.generatedFileContent };
     }
-    if (functionsToTest) {
-      data.functionsToTest = functionsToTest;
+    if (generateTestInput.functionsToTest) {
+      data.functionsToTest = generateTestInput.functionsToTest;
     }
 
     return await this.post(ApiPaths.generateBugReport, data);
@@ -150,8 +144,8 @@ export class Api {
   public static async recombineTests(
     tempTests: { [key: string]: string },
     testFileContent: string,
+    failedTests: { [key: string]: string },
     failedItBlocks: { [key: string]: string[] },
-    failedTests: string[],
     prettierConfig: Object | undefined,
   ) {
     let data: RecombineTestData = {
@@ -170,15 +164,31 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
+  public static async sendBugResults(
+    bugReport: string,
+    bugReportName: string,
+    sourceFileName: string,
+    sourceFileContent: string,
+  ) {
+    const data: SendBugResults = {
+      bugReport,
+      bugReportName,
+      sourceFileName,
+      sourceFileContent,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendBugResults, data);
+  }
+
   public static async sendResults(
-    failedTests: string[],
-    passedTests: string[],
-    tests: Record<string, string>,
+    failedTests: { [key: string]: string },
+    passedTests: { [key: string]: string },
+    tests: { [key: string]: string },
     failedTestErrors: any,
     sourceFileName: string,
     sourceFileContent: string,
   ) {
-    const data: SendResultData = {
+    const data: SendResultDataPost = {
       failedTests,
       passedTests,
       tests,
@@ -190,24 +200,13 @@ export class Api {
     await this.post(ApiPaths.sendResults, data);
   }
 
-  public static async sendBugResults(bugReport: string, bugReportName: string, sourceFileName: string, sourceFileContent: string) {
-    const data: SendBugResults = {
-      bugReport,
-      bugReportName,
-      sourceFileName,
-      sourceFileContent,
-      scriptTarget: CONFIG.scriptTarget,
-    };
-    await this.post(ApiPaths.sendBugResults, data);
-  }
-
-  public static async sendAnalytics(message: string, clientCode: ClientCode) {
+  public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {
     const data: SendAnalyticsData = {
       logMessage: message,
       scriptTarget: CONFIG.scriptTarget,
       vscode: checkVSCodeFlag(),
     };
-    await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data);
+    await this.post(ApiPaths.sendAnalytics + '/?code=' + clientCode, data, attempts);
   }
 
   public static async getLatestVersion(): Promise<{ latestVersion: string }> {
@@ -222,11 +221,11 @@ export class Api {
     return await this.post(ApiPaths.feedback, data);
   }
 
-  public static async SendLogs(logs: string): Promise<void> {
+  public static async SendLogs(logs: string, attempts: number = 0): Promise<void> {
     const data: LogsData = {
       logs: logs,
       vscode: checkVSCodeFlag(),
     };
-    return await this.post(ApiPaths.logs, data);
+    return await this.post(ApiPaths.logs, data, attempts);
   }
 }

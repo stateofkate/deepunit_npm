@@ -1,12 +1,12 @@
-import { CONFIG } from './Config';
-import { Api, ClientCode } from './Api';
+import { CONFIG } from '../lib/Config';
+import { Api, ClientCode } from '../lib/Api';
 import { createInterface } from 'readline';
-import { Color, Printer } from './Printer';
+import { Color, Printer } from '../lib/Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Arguments } from 'yargs';
-import { Log } from './Log';
+import { Log } from '../lib/Log';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
@@ -90,18 +90,16 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
   });
 }
 
-export async function exitWithError(error: string, attempts = 0) {
+export async function exitWithError(error: string) {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
-  attempts += 1;
-  if (attempts > 2) {
-    await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored, attempts);
-    await Log.getInstance().sendLogs();
-  }
+  await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
+  await Log.getInstance().sendLogs();
   process.exit(1);
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
+
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
@@ -144,11 +142,6 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const yesAnswers = ['y', 'yes'];
 
   return new Promise((resolve) => {
-    // if we have a get yes flag, then we are assuming the user is going to say yes
-    if (getYesFlag()) {
-      resolve(true);
-      return;
-    }
     rl.question(prompt + ' (type y/n):', (answer) => {
       if (yesAnswers.includes(answer.trim().toLowerCase())) {
         resolve(true);
@@ -161,6 +154,7 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
 
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
   const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
+  console.log(stdout.buffer.toString());
 }
 
 /**
@@ -168,8 +162,6 @@ export function installPackage(newPackage: string, isDevDep?: boolean): void {
  */
 
 interface ParsedArgs extends Arguments {
-  b?: string;
-  bug?: string;
   f?: string;
   file?: string;
   files?: string;
@@ -199,76 +191,31 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Generate all files in the project that can be tested.',
     })
-    .option('b', {
-      alias: ['bug'],
-      type: 'string',
-      description: 'Generate bug report',
-    })
-    .option('bf', {
-      alias: ['bugfile'],
-      type: 'string',
-      description: 'Generate bug report then use the test cases to generate unit tests',
-    })
-    .option('j', {
-      alias: ['json'],
-      type: 'boolean',
-      description: 'Return JSON object instead of writing files to disk, enables programmatic usage of DeepUnit in CI',
-    })
-    .option('m', {
-      alias: ['meta'],
-      type: 'string',
-      description: 'Meta Data to be saved in the json file, enables programmatic usage of DeepUnit in CI',
-    })
-    .option('e', {
-      alias: ['email'],
-      type: 'string',
-      description: 'Email for authentication, enables programmatic usage of DeepUnit in CI',
-    })
-    .option('y', {
-      alias: ['yes'],
-      type: 'boolean',
-      description: 'Say yes to all prompts about downloading, enables programmatic usage of DeepUnit in CI.',
-    })
-    .option('ff', {
-      alias: ['force-filter'],
-      type: 'boolean',
-      description: 'For --f flag to filter for unwanted files.',
-    })
-    .option('ab', {
-      type: 'boolean',
-      description: 'For --f flag to be absolute paths from start of repository',
-    })
     .help()
     .alias('h', 'help');
 }
 
-export function getFilesFlag(): string[] | undefined {
-  const argv = setupYargs().argv as ParsedArgs;
+export function getFilesFlag(): string[] {
+  const args = process.argv.slice(2);
+  let files: string[] = [];
 
-  if (argv.f || argv.file || argv.files) {
-    const files = argv.f || argv.file || argv.files;
-    return typeof files === 'string' ? files.split(',') : undefined;
-  }
+  args.forEach((arg, index) => {
+    if ((arg === '--f' || arg === '--file' || arg === '--files') && index + 1 < args.length) {
+      files = files.concat(args[index + 1].split(','));
+    }
+  });
 
-  return undefined;
+  return files;
 }
 
-export function getBugFileFlag(): string[] | undefined {
-  const argv = setupYargs().argv as ParsedArgs;
 
-  if (argv.bf || argv.bugfile) {
-    const files = argv.bf || argv.bugfile;
-    return typeof files === 'string' ? files.split(',') : undefined;
-  }
-  return undefined;
-}
 
 export function getBugFlag(): string[] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
 
-  if (argv.b || argv.bug) {
+  if (argv.b || argv.bug ) {
     const files = argv.b || argv.bug;
-    return typeof files === 'string' ? files.split(',') : undefined;
+    return typeof files === 'string' ? files.split(','): undefined;
   }
   return undefined;
 }
@@ -283,39 +230,9 @@ export function getPatternFlag(): string[] | undefined {
   return undefined;
 }
 
-export function getJsonFlag(): boolean {
-  const argv = setupYargs().argv as ParsedArgs;
-  return !!argv.json;
-}
-
-export function getForceFilter(): boolean {
-  const argv = setupYargs().argv as ParsedArgs;
-  return !!(argv.ff || argv['force-filter']);
-}
-
-export function getEmailFlag(): string {
-  const argv = setupYargs().argv as ParsedArgs;
-  return argv.email as string;
-}
-
-export function getMetaFlag(): string {
-  const argv = setupYargs().argv as ParsedArgs;
-  return argv.meta as string;
-}
-
 export function getGenerateAllFilesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.a || argv.all);
-}
-
-export function getYesFlag(): boolean {
-  const argv = setupYargs().argv as ParsedArgs;
-  return !!(argv.y || argv.yes);
-}
-
-export function getAbsolutePathsFlag(): boolean {
-  const argv = setupYargs().argv as ParsedArgs;
-  return !!argv.ab;
 }
 
 export class LoadingIndicator {
