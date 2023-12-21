@@ -153,8 +153,6 @@ export async function main() {
         }
 
         let testFileContent: string = '';
-        console.log(`result of: ${Files.existsSync(testFileName)}`);
-        console.log(testFileName);
         if (Files.existsSync(testFileName)) {
           const result: string | null = Files.getExistingTestContent(testFileName);
           if (testFileContent === null) {
@@ -163,7 +161,6 @@ export async function main() {
             testFileContent = result as string;
           }
         }
-        console.log(testFileContent);
 
         let sourceFileDiff = '';
         const files = getFilesFlag() ?? [];
