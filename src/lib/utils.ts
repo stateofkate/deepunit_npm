@@ -1,12 +1,12 @@
-import { CONFIG } from "./Config"
-import { Api, ClientCode } from "./Api"
-import { createInterface } from "readline"
-import { Color, Printer } from "./Printer"
-import { execSync } from "child_process"
-import yargs from "yargs/yargs"
-import { hideBin } from "yargs/helpers"
-import { Arguments } from "yargs"
-import { Log } from "./Log"
+import { CONFIG } from './Config';
+import { Api, ClientCode } from './Api';
+import { createInterface } from 'readline';
+import { Color, Printer } from './Printer';
+import { execSync } from 'child_process';
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
+import { Arguments } from 'yargs';
+import { Log } from './Log';
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
@@ -14,22 +14,22 @@ import { Log } from "./Log"
  */
 export function expect(truthyVal: any): any {
   if (CONFIG.doProd && !truthyVal) {
-    type FalsyTypeKeys = "boolean" | "number" | "string" | "object" | "undefined" | "NaN"
+    type FalsyTypeKeys = 'boolean' | 'number' | 'string' | 'object' | 'undefined' | 'NaN';
     const falsyTypes: Record<FalsyTypeKeys, string> = {
       boolean: "boolean 'false'",
       number: "number '0'",
-      string: "empty string",
+      string: 'empty string',
       object: "'null'",
       undefined: "'undefined'",
       NaN: "'NaN'",
-    }
-    const typeKey = (Number.isNaN(truthyVal) ? "NaN" : typeof truthyVal) as FalsyTypeKeys //typeof NaN is number, so we must handle NaN
-    const error = new Error(`DEBUG: Value was expected to be truthy but was falsy, falsy type is ${falsyTypes[typeKey]}`)
-    console.error(error.message)
-    console.error(error.stack)
+    };
+    const typeKey = (Number.isNaN(truthyVal) ? 'NaN' : typeof truthyVal) as FalsyTypeKeys; //typeof NaN is number, so we must handle NaN
+    const error = new Error(`DEBUG: Value was expected to be truthy but was falsy, falsy type is ${falsyTypes[typeKey]}`);
+    console.error(error.message);
+    console.error(error.stack);
   }
 
-  return truthyVal
+  return truthyVal;
 }
 
 /**
@@ -37,9 +37,9 @@ export function expect(truthyVal: any): any {
  * @param falsyVal - any value we expect to be falsy
  */
 export function expectNot(falsyVal: any): any {
-  expect(!falsyVal)
+  expect(!falsyVal);
 
-  return falsyVal
+  return falsyVal;
 }
 
 /**
@@ -48,7 +48,7 @@ export function expectNot(falsyVal: any): any {
  */
 export function debugMsg(...input: any) {
   if (!CONFIG.doProd && !CONFIG.prodTesting) {
-    console.log(input)
+    console.log(input);
   }
 }
 
@@ -60,19 +60,19 @@ export function debugMsg(...input: any) {
 export function isEmpty(obj: Object) {
   for (const prop in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, prop)) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 export function checkFeedbackFlag(): boolean {
-  return process.argv.includes("--feedback")
+  return process.argv.includes('--feedback');
 }
 
 export function checkVSCodeFlag(): boolean {
-  return process.argv.includes("--vscode")
+  return process.argv.includes('--vscode');
 }
 
 export async function promptUserInput(prompt: string, backToUser: string): Promise<string> {
@@ -80,25 +80,25 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
     const rl = createInterface({
       input: process.stdin,
       output: process.stdout,
-    })
+    });
 
     rl.question(prompt, (answer) => {
-      console.log(backToUser)
-      rl.close()
-      resolve(answer)
-    })
-  })
+      console.log(backToUser);
+      rl.close();
+      resolve(answer);
+    });
+  });
 }
 
 export async function exitWithError(error: string, attempts = 0) {
-  console.error(error)
-  console.log("Need help? Email support@deepunit.ai")
-  attempts += 1
+  console.error(error);
+  console.log('Need help? Email support@deepunit.ai');
+  attempts += 1;
   if (attempts > 2) {
-    await Api.sendAnalytics("Client Errored: " + error, ClientCode.ClientErrored, attempts)
-    await Log.getInstance().sendLogs()
+    await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored, attempts);
+    await Log.getInstance().sendLogs();
   }
-  process.exit(1)
+  process.exit(1);
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
@@ -106,32 +106,32 @@ export async function validateVersionIsUpToDate(): Promise<void> {
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
   if (versionRegex.test(latestVersion.trim()) && versionRegex.test((await CONFIG.getVersion()).trim())) {
-    const latestVersionNumbers = latestVersion.split(".")
-    const versionNumbers = (await CONFIG.getVersion()).split(".")
+    const latestVersionNumbers = latestVersion.split('.');
+    const versionNumbers = (await CONFIG.getVersion()).split('.');
 
     if (versionNumbers.length < 2 || latestVersionNumbers.length < 2 || versionNumbers[0] < latestVersionNumbers[0] || versionNumbers[1] < latestVersionNumbers[1]) {
-      needsUpdating = true
+      needsUpdating = true;
     }
   } else {
-    await exitWithError("Unable to process version.")
+    await exitWithError('Unable to process version.');
   }
 
   if (needsUpdating) {
-    console.log("\n" + Color.red("DeepUnit is running an outdated version. We no longer support this version."))
-    console.log("Please upgrade by running:")
-    console.log(Color.yellow("npm install [package-name]@latest -D"))
-    console.log('or by typing "y" and then pressing enter.')
-    const wantsToUpdate = await getYesOrNoAnswer("Update DeepUnit?")
+    console.log('\n' + Color.red('DeepUnit is running an outdated version. We no longer support this version.'));
+    console.log('Please upgrade by running:');
+    console.log(Color.yellow('npm install [package-name]@latest -D'));
+    console.log('or by typing "y" and then pressing enter.');
+    const wantsToUpdate = await getYesOrNoAnswer('Update DeepUnit?');
     if (wantsToUpdate) {
       try {
-        console.log("Updating deepunit...")
-        installPackage("deepunit@latest", true)
+        console.log('Updating deepunit...');
+        installPackage('deepunit@latest', true);
       } catch (error) {
-        await exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`)
+        await exitWithError(`Unable to run 'npm install -D deepunit@latest': ${error}`);
       }
     } else {
-      Api.sendAnalytics("Client Exited: User decided to not update DeepUnit using the default command", ClientCode.ClientExited)
-      process.exit(100)
+      Api.sendAnalytics('Client Exited: User decided to not update DeepUnit using the default command', ClientCode.ClientExited);
+      process.exit(100);
     }
   }
 }
@@ -140,8 +140,8 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
-  })
-  const yesAnswers = ["y", "yes"]
+  });
+  const yesAnswers = ['y', 'yes'];
 
   return new Promise((resolve) => {
     // if we have a get yes flag, then we are assuming the user is going to say yes
@@ -160,7 +160,7 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
 }
 
 export function installPackage(newPackage: string, isDevDep?: boolean): void {
-  const stdout = execSync(`npm install ${isDevDep ? "-D " : ""}${newPackage}`)
+  const stdout = execSync(`npm install ${isDevDep ? '-D ' : ''}${newPackage}`);
 }
 
 /**
@@ -182,52 +182,52 @@ interface ParsedArgs extends Arguments {
 export function setupYargs() {
   return yargs(hideBin(process.argv))
     .usage(
-      "For complete documentation visit https://deepunit.ai/docs\nUsage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.",
+      'For complete documentation visit https://deepunit.ai/docs\nUsage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.',
     )
-    .option("f", {
-      alias: ["file", "files"],
-      type: "string",
-      description: "Test only files with the given path, separated by commas. Example: --f src/main.ts,lib/MathUtils.ts",
+    .option('f', {
+      alias: ['file', 'files'],
+      type: 'string',
+      description: 'Test only files with the given path, separated by commas. Example: --f src/main.ts,lib/MathUtils.ts',
     })
-    .option("p", {
-      alias: ["pattern"],
-      type: "string",
-      description: "Test only files that match pattern. Example: --p *{lib,src}/*{.ts,.js}",
+    .option('p', {
+      alias: ['pattern'],
+      type: 'string',
+      description: 'Test only files that match pattern. Example: --p *{lib,src}/*{.ts,.js}',
     })
-    .option("a", {
-      alias: ["all"],
-      type: "boolean",
-      description: "Generate all files in the project that can be tested.",
+    .option('a', {
+      alias: ['all'],
+      type: 'boolean',
+      description: 'Generate all files in the project that can be tested.',
     })
     .option('b', {
       alias: ['bug'],
       type: 'string',
-      description: 'Generate bug report'
+      description: 'Generate bug report',
     })
     .option('bf', {
       alias: ['bugfile'],
       type: 'string',
-      description: 'Generate bug report then use the test cases to generate unit tests'
+      description: 'Generate bug report then use the test cases to generate unit tests',
     })
     .option('j', {
       alias: ['json'],
       type: 'boolean',
-      description: 'Return JSON object instead of writing files to disk.',
+      description: 'Return JSON object instead of writing files to disk, enables programmatic usage of DeepUnit in CI',
     })
     .option('m', {
       alias: ['meta'],
       type: 'string',
-      description: 'Meta Data to be saved in the json file',
+      description: 'Meta Data to be saved in the json file, enables programmatic usage of DeepUnit in CI',
     })
     .option('e', {
       alias: ['email'],
       type: 'string',
-      description: 'Email for authentication',
+      description: 'Email for authentication, enables programmatic usage of DeepUnit in CI',
     })
     .option('y', {
       alias: ['yes'],
       type: 'boolean',
-      description: 'Say yes to all prompts about downloading.',
+      description: 'Say yes to all prompts about downloading, enables programmatic usage of DeepUnit in CI.',
     })
     .option('ff', {
       alias: ['force-filter'],
@@ -239,51 +239,48 @@ export function setupYargs() {
       description: 'For --f flag to be absolute paths from start of repository',
     })
     .help()
-    .alias("h", "help")
+    .alias('h', 'help');
 }
-
-
 
 export function getFilesFlag(): string[] | undefined {
-  const argv = setupYargs().argv as ParsedArgs
-
-
-  if (argv.f || argv.file || argv.files) {
-    const files = argv.f || argv.file || argv.files
-    return typeof files === "string" ? files.split(",") : undefined
-  }
-
-  return undefined
-}
-
-export function getBugFileFlag(): string [] | undefined {
   const argv = setupYargs().argv as ParsedArgs;
 
-  if (argv.bf || argv.bugfile ) {
+  if (argv.f || argv.file || argv.files) {
+    const files = argv.f || argv.file || argv.files;
+    return typeof files === 'string' ? files.split(',') : undefined;
+  }
+
+  return undefined;
+}
+
+export function getBugFileFlag(): string[] | undefined {
+  const argv = setupYargs().argv as ParsedArgs;
+
+  if (argv.bf || argv.bugfile) {
     const files = argv.bf || argv.bugfile;
-    return typeof files === 'string' ? files.split(','): undefined;
+    return typeof files === 'string' ? files.split(',') : undefined;
   }
   return undefined;
 }
 
 export function getBugFlag(): string[] | undefined {
-  const argv = setupYargs().argv as ParsedArgs
+  const argv = setupYargs().argv as ParsedArgs;
 
   if (argv.b || argv.bug) {
-    const files = argv.b || argv.bug
-    return typeof files === "string" ? files.split(",") : undefined
+    const files = argv.b || argv.bug;
+    return typeof files === 'string' ? files.split(',') : undefined;
   }
-  return undefined
+  return undefined;
 }
 
 export function getPatternFlag(): string[] | undefined {
-  const argv = setupYargs().argv as ParsedArgs
-  const pattern = argv.p || argv.pattern
+  const argv = setupYargs().argv as ParsedArgs;
+  const pattern = argv.p || argv.pattern;
   if (pattern) {
-    return [pattern]
+    return [pattern];
   }
 
-  return undefined
+  return undefined;
 }
 
 export function getJsonFlag(): boolean {
@@ -307,8 +304,8 @@ export function getMetaFlag(): string {
 }
 
 export function getGenerateAllFilesFlag(): boolean {
-  const argv = setupYargs().argv as ParsedArgs
-  return !!(argv.a || argv.all)
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!(argv.a || argv.all);
 }
 
 export function getYesFlag(): boolean {
@@ -322,21 +319,21 @@ export function getAbsolutePathsFlag(): boolean {
 }
 
 export class LoadingIndicator {
-  private chars: string[] = ["|", "/", "-", "\\"]
-  private x: number = 0
-  private interval?: NodeJS.Timeout
+  private chars: string[] = ['|', '/', '-', '\\'];
+  private x: number = 0;
+  private interval?: NodeJS.Timeout;
 
   start(): void {
     this.interval = setInterval(() => {
-      process.stdout.write(`\rGenerating: ${Color.lightBlue(this.chars[this.x++])}`)
-      this.x &= 3 // Keep x within the bounds of chars array
-    }, 250) // The speed of rotation, 250 milliseconds
+      process.stdout.write(`\rGenerating: ${Color.lightBlue(this.chars[this.x++])}`);
+      this.x &= 3; // Keep x within the bounds of chars array
+    }, 250); // The speed of rotation, 250 milliseconds
   }
 
   stop(): void {
     if (this.interval) {
-      clearInterval(this.interval)
-      process.stdout.write("\r \r") // Clear the line
+      clearInterval(this.interval);
+      process.stdout.write('\r \r'); // Clear the line
     }
   }
 }
