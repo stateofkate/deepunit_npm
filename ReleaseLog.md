@@ -7,7 +7,7 @@ Features
 ## 1.8.4
 Changes
 - Refactored some code
-- dd improved prompting
+- improved prompting
 - Allow arbitrary prompt injection
 
 ## 1.8.3
