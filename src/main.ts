@@ -30,7 +30,7 @@ export async function main() {
 
   // setup the auth channel and see if they are logged in or not
   AUTH = await Auth.init();
-  console.log('testing consle logs work');
+
   // check to confirm we still support this version
   await validateVersionIsUpToDate();
 
@@ -284,8 +284,7 @@ export async function main() {
 
     if (getJsonFlag() && completedTestFiles.length > 0) {
       const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
-      const deepunitTests: string = '"' + JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }, null, 2) + '"';
-      console.log(deepunitTests);
+      const deepunitTests: string = JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }, null, 2)
       Files.writeFileSync('deepunit-tests.json', deepunitTests);
     }
 

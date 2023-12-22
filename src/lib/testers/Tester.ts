@@ -85,8 +85,8 @@ export abstract class Tester {
     const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedTests, failedItBlocks, prettierConfig);
     if (responseData && responseData.testContent) {
       Files.writeFileSync(finalizedTestPath, responseData.testContent);
+      return responseData.testContent;
     }
-    return responseData;
   }
 
   public async generateTest(testInput: GenerateTestOrReportInput): Promise<any> {
