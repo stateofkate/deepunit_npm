@@ -3,7 +3,7 @@
 import { TestingFrameworks } from './main.consts';
 import { CONFIG } from './lib/Config';
 import { Files } from './lib/Files';
-import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
+import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
 import { Color, Printer } from './lib/Printer';
 import { Tester, TestRunResult, GenerateTestOrReportInput } from './lib/testers/Tester';
 import { JestTester } from './lib/testers/JestTester';
@@ -62,6 +62,8 @@ export async function main() {
   Printer.printFilesToTest(filesToTest);
 
   const filesByDirectory = Files.groupFilesByDirectory(filesToTest);
+
+  const completedTestFiles: { path: string; content: string }[] = [];
 
   // break code execution into different paths depending on which user flag
   //bug report goes first (anything not test generation goes first)
@@ -256,7 +258,18 @@ export async function main() {
 
 
         Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-        await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
+        const testFile = await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
+
+        if (testFile) {
+          if (getJsonFlag()) {
+            // store for later export
+            completedTestFiles.push({ path: testFileName, content: testFile });
+          } else {
+            Files.writeFileSync(testFileName, testFile);
+          }
+        } else {
+          console.warn('Unable to recombine tests');
+        }
 
         //get test path
         const finalTempTestNames = firstGenTempTestNames.concat(retryTempTestNames);
@@ -280,7 +293,12 @@ export async function main() {
       }
     }
 
-    Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+    if (getJsonFlag() && completedTestFiles.length > 0) {
+      const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+      Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }));
+    } else {
+      Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
+    }
     Printer.printOutro();
     if (filesToTest.length === 0) {
       console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
