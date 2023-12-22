@@ -1,5 +1,9 @@
 # Release Log
 
+## 1.8.6
+Bugs
+- Fix an issue with CI object properties
+
 ## 1.8.5
 Features
 - Fix an issue with the json flag
