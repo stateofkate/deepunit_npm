@@ -297,6 +297,7 @@ export async function main() {
       const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
       Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }));
     }
+
     Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
     Printer.printOutro();
     if (filesToTest.length === 0) {
