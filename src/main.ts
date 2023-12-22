@@ -101,15 +101,13 @@ export async function main() {
           sourceFileName,
           sourceFileContent,
           generatedFileName: bugReportName,
-          generatedFileContent: bugReportContent
+          generatedFileContent: bugReportContent,
         };
         const response = await tester.generateBugReport(bugReportInput);
 
         testCasesObj = response.testCasesObj;
-
       }
     }
-
   }
   if (flagType != 'bugFlag') {
     //this is for retry
@@ -127,7 +125,6 @@ export async function main() {
     //files that that get parsed successfully but for some reason tests were not generated
     let serverDidNotSendTests: (string | null)[] = [];
 
-
     //files by Directory is a record of <directory,files>
     //we are looping through each file in each directory
     for (const directory in filesByDirectory) {
@@ -142,8 +139,6 @@ export async function main() {
         }
 
         const testFileName = Tester.getTestName(sourceFileName);
-
-
 
         let tester: Tester;
         //check jest config
@@ -170,7 +165,6 @@ export async function main() {
           sourceFileDiff = Files.getDiff([sourceFileName]);
         }
         const sourceFileContent = Files.getFileContent(sourceFileName);
-
 
         let testInput: GenerateTestOrReportInput;
         // Create object based on testInput interface to pass into GenerateTest
@@ -221,7 +215,7 @@ export async function main() {
 
         // retry functions that failed
         let retryFunctionsResponse: any = {};
-        let retryTempTestNames: string [] = [];
+        let retryTempTestNames: string[] = [];
         if (retryFunctions && CONFIG.retryTestGenerationOnFailure) {
           console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
           retryFunctionsResponse = await tester.generateTest(testInput);
@@ -231,31 +225,27 @@ export async function main() {
           }
         }
 
-
         // run the regenerated test code (try to compile it for user) to get results whether pass/file
         let retryTestResults: TestRunResult = await tester.getTestResults(firstGenTempTestNames);
         // if statement for including failing tests;
         let recombineTests: { [key: string]: string } = {};
-        if(CONFIG.includeFailingTests){
-          tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests};
-          passedTests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
+        if (CONFIG.includeFailingTests) {
+          tests = { ...firstTestResults.passedTests, ...retryTestResults.passedTests, ...retryTestResults.failedTests };
+          passedTests = { ...firstTestResults.passedTests, ...retryTestResults.passedTests };
         } else if (!CONFIG.includeFailingTests) {
-          tests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
-          passedTests = {...firstTestResults.passedTests, ...retryTestResults.passedTests};
+          tests = { ...firstTestResults.passedTests, ...retryTestResults.passedTests };
+          passedTests = { ...firstTestResults.passedTests, ...retryTestResults.passedTests };
         }
         for (const testPath in retryFunctionsResponse) {
           if (testPath in tests) {
             recombineTests[testPath] = retryFunctionsResponse.tests[testPath] as string;
           }
         }
-        for(const testPath in response.tests) {
+        for (const testPath in response.tests) {
           if (testPath in tests) {
             recombineTests[testPath] = response.tests[testPath];
           }
         }
-
-
-
 
         Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
         const testFile = await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, failedItBlocks, prettierConfig);
@@ -273,10 +263,9 @@ export async function main() {
 
         //get test path
         const finalTempTestNames = firstGenTempTestNames.concat(retryTempTestNames);
-        const finalTempTestPaths = finalTempTestNames.map(testName => {
+        const finalTempTestPaths = finalTempTestNames.map((testName) => {
           return filePathChunk + testName;
         });
-
 
         //then we will need to delete all the temp test files.
         Files.deleteTempFiles(finalTempTestPaths);
@@ -295,7 +284,8 @@ export async function main() {
 
     if (getJsonFlag() && completedTestFiles.length > 0) {
       const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
-      Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }));
+      const deepunitTests: string = JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }, null, 2)
+      Files.writeFileSync('deepunit-tests.json', deepunitTests);
     }
 
     Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
@@ -308,14 +298,12 @@ export async function main() {
   }
 }
 
-
 if (require.main === module) {
   main();
 
-  process.on('SIGINT', async function() {
+  process.on('SIGINT', async function () {
     await Api.sendAnalytics('Client Exited: User quit process', ClientCode.ClientExited);
     await Log.getInstance().sendLogs();
     process.exit();
   });
-
 }
