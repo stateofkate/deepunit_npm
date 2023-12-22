@@ -1,3 +1,4 @@
+
 name: DeepUnit Workflow
 
 on:
@@ -26,7 +27,7 @@ jobs:
         run: npm install
 
       - name: Run DeepUnit
-        run: npm run start -- --f \${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta \${{ github.event.inputs.meta }} 
+        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta ${{ github.event.inputs.meta }} 
 
 
       - name: Store as Artifact
