@@ -296,9 +296,8 @@ export async function main() {
     if (getJsonFlag() && completedTestFiles.length > 0) {
       const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
       Files.writeFileSync('deepunit-tests.json', JSON.stringify({ results: completedTestFiles, summary, meta: getMetaFlag() ?? '' }));
-    } else {
-      Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
     }
+    Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
     Printer.printOutro();
     if (filesToTest.length === 0) {
       console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
