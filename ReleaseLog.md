@@ -1,5 +1,15 @@
 # Release Log
 
+## 1.8.5
+Features
+- Fix an issue with the json flag
+
+## 1.8.4
+Changes
+- Refactored some code
+- improved prompting
+- Allow arbitrary prompt injection
+
 ## 1.8.3
 Features
 - Added new flags to support absolute paths with --ab
