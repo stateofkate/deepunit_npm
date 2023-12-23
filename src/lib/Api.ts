@@ -53,6 +53,7 @@ export class Api {
 
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
+      frameworkVers: CONFIG.frameworkVers,
       testingFramework: CONFIG.testingFramework,
       version: await CONFIG.getVersion(),
       email: AUTH.getEmail(),

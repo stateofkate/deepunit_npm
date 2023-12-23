@@ -20,6 +20,7 @@ export const maxFixFailingTestAttempts = 2;
  */
 export class Config {
   frontendFramework: string = '';
+  frameworkVers: string = '';
   testSuffix: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
@@ -44,6 +45,7 @@ export class Config {
     this.determineDevBuild();
     this.detectTestSuffix();
     this.testingFramework = this.getTestFramework();
+    this.frameworkVers = this.getFrameworkVersion();
     this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
     if (this.testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(this.testingFrameworkOverride)) {
       this.testingFramework = this.testingFrameworkOverride as TestingFrameworks;
@@ -84,6 +86,16 @@ export class Config {
       await exitWithError('Unable to detect DeepUnit version, this should never happen.'); //should never happen but in case
       return '';
     }
+  }
+
+  private getFrameworkVersion(): string {
+    let frameworkVersion = this.getPackageVersionIfInstalled(this.frontendFramework);
+    if(frameworkVersion) {
+      return frameworkVersion;
+    } else {
+      return '';
+    }
+
   }
 
   private getLanguage(): string {
@@ -245,6 +257,7 @@ export class Config {
   public async confirmAllPackagesNeeded() {
     await this.confirmJestExists();
     if (this.frontendFramework == 'react') {
+
       await this.confirmReactPackages();
     }
   }
@@ -284,10 +297,8 @@ export class Config {
   }
 
   private async confirmReactPackages() {
-    // if it is version 18, let them deal with dependencies
-    if (this.confirmRunningReactVersion18()) {
-      return;
-    }
+
+
 
     const requiredPackaged = [
       { name: '@testing-library/react', installVersion: 'release-12.x' },
@@ -341,7 +352,7 @@ export class Config {
     return false;
   }
 
-  private getPackageVersionIfInstalled(requiredPackaged: string): string | null {
+  public getPackageVersionIfInstalled(requiredPackaged: string): string | null {
     let packageJsonPath = 'package.json';
 
     if (fs.existsSync(packageJsonPath)) {
