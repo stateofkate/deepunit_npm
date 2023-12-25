@@ -39,6 +39,7 @@ export async function main() {
   let testCasesObj;
 
   // confirm we have all packages for type of project
+  // is where we code in react18 dependency
   await CONFIG.confirmAllPackagesNeeded();
 
   // check to confirm we still support this version

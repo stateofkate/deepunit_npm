@@ -1,5 +1,9 @@
 # Release Log
 
+## 1.8.7
+Features
+- Improved React 18 support
+
 ## 1.8.6
 Bugs
 - Fix an issue with CI object properties
