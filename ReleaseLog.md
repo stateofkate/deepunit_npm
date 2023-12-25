@@ -1,6 +1,6 @@
 # Release Log
 
-## 1.8.6
+## 1.8.7
 Features
 - Improved React 18 support
 
