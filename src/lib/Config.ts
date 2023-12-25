@@ -331,7 +331,6 @@ export class Config {
     }
   }
 
-  // REACT KLUDGE: we do not support react 18 yet
   private confirmRunningReactVersion18(): boolean {
     const reactVersion = this.getPackageVersionIfInstalled('react');
     const versionRegex = new RegExp(/([\d.]+)/);
