@@ -2,7 +2,7 @@ import { TestingFrameworks } from '../main.consts';
 
 export type ApiBaseData = {
   frontendFramework: string;
-  frameworkVers?: string;
+  frameworkVersion?: string;
   testingFramework: TestingFrameworks;
   version: string;
   email: string | null;

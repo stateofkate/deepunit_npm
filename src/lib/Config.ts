@@ -20,7 +20,7 @@ export const maxFixFailingTestAttempts = 2;
  */
 export class Config {
   frontendFramework: string = '';
-  frameworkVers: string = '';
+  frameworkVersion: string = '';
   testSuffix: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
@@ -45,7 +45,7 @@ export class Config {
     this.determineDevBuild();
     this.detectTestSuffix();
     this.testingFramework = this.getTestFramework();
-    this.frameworkVers = this.getFrameworkVersion();
+    this.frameworkVersion = this.getFrameworkVersion();
     this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
     if (this.testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(this.testingFrameworkOverride)) {
       this.testingFramework = this.testingFrameworkOverride as TestingFrameworks;
