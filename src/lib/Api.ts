@@ -29,7 +29,6 @@ enum ApiPaths {
   logs = '/feedback/logs',
   generateBugReport = '/generate-bug-report/bug-new',
   sendBugResults = '/generate-bug-report/send-bug-results',
-  sendBugAnalytics = '/generate-bug-report/send-bug-analytics',
 }
 export enum StateCode {
   'Success' = 0,
@@ -40,6 +39,7 @@ export enum StateCode {
 export enum ClientCode {
   ClientExited = 'ClientExited',
   ClientErrored = 'ClientErrored',
+  JestTesterResult = 'JestTesterResult',
 }
 
 

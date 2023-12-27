@@ -6,6 +6,10 @@ Features
 
 ## 1.8.6
 Bugs
+- Fix an issue with Jest results intermittently throwing an error
+
+## 1.8.6
+Bugs
 - Fix an issue with CI object properties
 
 ## 1.8.5

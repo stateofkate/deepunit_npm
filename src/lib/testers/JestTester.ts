@@ -1,5 +1,6 @@
 import { ExecException, exec, execSync } from 'child_process';
 import { JestTestRunResult, TestRunResult, Tester } from './Tester';
+import {Api, ClientCode} from "../Api";
 
 export class JestTester extends Tester {
   public async runTests(relativePathArray: string[]): Promise<JestTestRunResult[]> {
@@ -75,8 +76,9 @@ export class JestTester extends Tester {
           failedTests[testPath] = funcName;
           failedTestErrors[testPath] = testResult.jestResult.stack;
           // handle what "it" blocks failed
-          const failedItStatements = testResult.jestResult.assertionResults.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
-          itBlocksCount[testPath] = testResult.jestResult.assertionResults.length;
+          await Api.sendAnalytics(JSON.stringify(testResult, null, 2), ClientCode.JestTesterResult);
+          const failedItStatements = testResult.jestResult.assertionResults?.filter((assertion: any) => assertion.status == 'failed').map((assertion: any) => assertion.title);
+          itBlocksCount[testPath] = testResult.jestResult.assertionResults?.length ?? 0;
           // if there is any failed statements set it
           if (failedItStatements.length > 0) {
             failedItBlocks[testPath] = failedItStatements;
