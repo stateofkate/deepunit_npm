@@ -65,6 +65,9 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
 }
 ```
 
+## Provide testing intent or additional instructions for more accurate tests
+To provide more specific instructions to the AI model (problems, testing paths, edge cases to look for), simply provide a comment at the top or your source code file beginning with 'deepunit-prompt-start' and ending with 'deepunit-prompt-end'
+
 ## Flags for identifying bugs
 You can identify bugs with the --b flag. The --b flag will take in a file path and identify if there are potential bugs in it and return to you a bug report including a unit tests that identifies the bug
 `npx deepunit --b path/to/file.ts`
