@@ -65,7 +65,7 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
 }
 ```
 
-## Provide additional instructions to AI model
+## Provide additional testing/debugging instructions to AI model
 To provide more specific instructions to the AI model (problems, testing paths, edge cases to look for), simply provide a comment at the top or your source code file beginning with 'deepunit-prompt-start' and ending with 'deepunit-prompt-end'
 
 ## Flags for identifying bugs
