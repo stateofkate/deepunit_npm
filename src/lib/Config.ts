@@ -22,7 +22,7 @@ export class Config {
   frontendFramework: string = '';
   frameworkVersion: string = '';
   testSuffix: string = '';
-  testingFramework: TestingFrameworks = TestingFrameworks.unknown;
+  testingFramework: TestingFrameworks = TestingFrameworks.jasmine;
   scriptTarget: string = '';
   doProd: boolean;
   apiHost: string = '';

@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-import { TestingFrameworks } from './main.consts';
-import { CONFIG } from './lib/Config';
-import { Files } from './lib/Files';
-import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
-import { Color, Printer } from './lib/Printer';
-import { Tester, TestRunResult, GenerateTestOrReportInput } from './lib/testers/Tester';
-import { JestTester } from './lib/testers/JestTester';
-import { Api, ClientCode, StateCode } from './lib/Api';
-import { Auth } from './lib/Auth';
-import { Log } from './lib/Log';
+import {TestingFrameworks} from './main.consts';
+import {CONFIG} from './lib/Config';
+import {Files} from './lib/Files';
+import {checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate} from './lib/utils';
+import {Color, Printer} from './lib/Printer';
+import {GenerateTestOrReportInput, Tester, TestRunResult} from './lib/testers/Tester';
+import {JestTester} from './lib/testers/JestTester';
+import {Api, ClientCode, StateCode} from './lib/Api';
+import {Auth} from './lib/Auth';
+import {Log} from './lib/Log';
+import {JasmineTester} from "./lib/testers/JasmineTester";
 
 // global classes
 
@@ -37,10 +38,12 @@ export async function main() {
   Files.setup();
 
   let testCasesObj;
-
-  // confirm we have all packages for type of project
-  // is where we code in react18 dependency
-  await CONFIG.confirmAllPackagesNeeded();
+  
+  if(CONFIG.testingFramework === TestingFrameworks.jest) {
+    // confirm we have all packages for type of project
+    // is where we code in react18 dependency
+    await CONFIG.confirmAllPackagesNeeded();
+  }
 
   // check to confirm we still support this version
   if (checkFeedbackFlag()) {
@@ -142,12 +145,12 @@ export async function main() {
         const testFileName = Tester.getTestName(sourceFileName);
 
         let tester: Tester;
-        //check jest config
-        //ky note: wouldn't config for testingFramework be at project level
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
-        } else {
-          return await exitWithError(`Unable failed to detect Jest config. If this repo has Jest installed set "testingFramework": "jest" in deepunit.config.json`);
+        } if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
+          tester = new JasmineTester();
+        }else {
+          return await exitWithError(`Unable failed to detect testing config. If this repo has Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
         }
 
         let testFileContent: string = '';
@@ -177,7 +180,7 @@ export async function main() {
 
         //Calls openAI to generate model response
         const response = await tester.generateTest(testInput);
-
+console.log(response)
         //this could get abstracted away
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);

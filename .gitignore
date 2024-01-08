@@ -1,4 +1,6 @@
 node_modules
+passport/node_modules
+passport/.angular
 .idea/
 src/main.test.ts
 dist

@@ -3,14 +3,15 @@ import { CONFIG } from './Config';
 
 export class Printer {
   public static printOutro(): void {
-    const LINE_DIVIDER = '##################################################';
+    const LINE_DIVIDER = '#################################################';
     console.log(LINE_DIVIDER);
     console.log('\nWe love feedback. Let us know of any suggestions, bugs, issues, or problems so we can make DeepUnit better.');
     console.log('\nTo provide feedback, please run "npm run deepunit -- --feedback"');
   }
 
   public static printIntro() {
-    const LINE_DIVIDER = '##################################################';
+    console.log('heyaaaaa')
+    const LINE_DIVIDER = '###################################################';
     console.log(LINE_DIVIDER);
     console.log('##### Generating unit tests with DeepUnit.AI #####');
     console.log(LINE_DIVIDER);
