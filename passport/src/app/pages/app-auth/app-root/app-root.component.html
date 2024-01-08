@@ -1,0 +1,7 @@
+<div class="AppRoot__container">
+  <app-left-nav class="AppRoot__leftNav " [ngClass]="{'AppRoot__leftNav--responsiveOpen': leftNavExpanded, 'AppRoot__leftNav--responsiveClosed': !leftNavExpanded}" (hamburgerToggle)="toggleLeftNav()"></app-left-nav>
+  <div class="AppRoot__contentContainer"><app-app-nav-bar (hamburgerToggle)="toggleLeftNav()"></app-app-nav-bar>
+  <!-- todo: create a router outlet with child routes for each leftnav page -->
+    <router-outlet></router-outlet>
+  </div>
+</div>

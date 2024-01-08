@@ -1,0 +1,157 @@
+.LandingPage__headerFlex {
+/*  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;*/
+  margin-bottom: 18%;
+
+}
+.LandingPage__centered {
+  text-align: center;
+  font-family: "Inter",sans-serif;
+}
+
+.LandingPage__header {
+  margin-top: 250px;
+  width: 50%;
+  font-size: 4rem;
+  font-weight: bold;
+  line-height: 1.2em;
+  color: rgba(68,68,68,1);
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  @media only screen and (max-width: 695px) {
+    width: 75%;
+      font-size: 3rem;
+    margin-top: 150px;
+  }
+}
+
+.LandingPage__subHeader {
+  width: 80%;
+  font-size: 1.5rem;
+  line-height: 52.8px;
+  font-weight: 300;
+  color: rgba(68,68,68,1);
+  letter-spacing: .002em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.LandingPage__missionTextContainer {
+  width: max(min(900px, 85%), 40%);
+  min-width: 300px;
+  margin-bottom: 5vh;
+  text-align: center;
+}
+
+.LandingPage__CTAButton {
+  background-color: red;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.LandingPage__coloredBackground {
+  background-color: #EBF1F5;
+}
+
+.LandingPage__whiteBackground {
+  background-color: white;
+}
+
+.LandingPage__howDoesItWorkBackground {
+  background-color: #EBF1F5;
+}
+
+
+.LandingPage__howDoesItWorkContainer {
+  //flex properties
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+
+  //spacing
+  padding-top: 10%;
+  padding-bottom: 5%;
+  width: 60%;
+  padding-left: 15%;
+  //text
+  font-family: "Inter",sans-serif;
+
+  //background
+}
+
+.LandingPage__howDoesItWorkTextContainer {
+  width: max(min(300px, 85%), 40%);
+  min-width: 300px;
+  margin-bottom: 5vh;
+}
+
+.LandingPage__howDoesItWorkImageContainer {
+  width: 30%;
+  min-width: 250px;
+  max-width: 40%;
+  margin-left: 50px;
+}
+
+.LandingPage__howDoesItWorkHeader {
+  font-size: 3rem;
+  line-height: 52.8px;
+  font-weight: 400;
+  color: rgba(68,68,68,1);
+  letter-spacing: .002em;
+  margin-bottom: 25px;
+}
+
+.LandingPage__howDoesItWorkExplanation {
+  font-size: 1.5rem;
+  line-height: 1.5em;
+  font-weight: 400;
+  color: rgba(68,68,68,1);
+  letter-spacing: .002em;
+  margin-bottom: 50px;
+}
+
+.LandingPage__howDoesItWorkImage {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.LandingPage__moreInfoColorContainer {
+  margin-top: 100px;
+  border: red 5px;
+}
+
+.LandingPage__moreInfoSectionContainer {
+  padding-top: 50px;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 10%;
+  font-family: "Inter",sans-serif;
+}
+
+.LandingPage__moreInfoHeader {
+  font-size: 2.5rem;
+  line-height: 52.8px;
+  font-weight: 400;
+  color: rgba(68,68,68,1);
+  letter-spacing: .002em;
+  margin-bottom: 25px;
+}
+
+
+.LandingPage__questionText {
+  font-size: 1.5rem;
+  line-height: 1.5em;
+  font-weight: 400;
+  color: rgba(68,68,68,1);
+  letter-spacing: .002em;
+  margin-bottom: 10px;
+}
+
+.LandingPage__answerText {
+  font-size: 1.125rem;
+  margin-bottom: 30px;
+}

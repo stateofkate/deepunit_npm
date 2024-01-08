@@ -1,0 +1,23 @@
+<div class="OpLogin__background"></div>
+<div class="OpLogin__container">
+  <div class="OpLogin__card">
+  <form class="OpLogin__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <h3 class="OpLogin__cardHeader">Login</h3>
+    <div class="OpLogin__formElements">
+    <section>
+      <label class="OpLogin__emailLabel" for="email">Email</label>
+      <div class="OpLogin__inputBounder"><input class="OpLogin__emailInput" id="email" name="email" type="email" placeholder=" " autocomplete="username" required formControlName="email" value="w@w.w"/></div>
+      <div class="OpLogin__errorWrapper"><small *ngIf="form.get('email')?.errors && form.get('email')?.value" class="OpLogin__error">Must be a valid email address and no more than 255 characters.</small>
+      </div>
+    </section>
+    <section class="OpLogin__passwordSection">
+      <label class="OpLogin__passwordLabel" for="current-password">Password</label>
+      <div class="OpLogin__inputBounder"><input class="OpLogin__passwordInput" id="current-password" name="current-password" type="password" autocomplete="current-password" required formControlName="password" value="12345#67890"/></div>
+      <div class="OpLogin__errorWrapper"><small *ngIf="form.get('password')?.errors && form.get('password')?.value" class="OpLogin__error">Password must be between 8 and 100 characters.</small>
+        <small *ngIf="loginError && !(form.get('password')?.errors && form.get('password')?.value)" class="OpLogin__error">Incorrect email or password.</small></div>
+    </section>
+    <button class="OpLogin__submitButton" [ngClass]="{'OpLogin__submitButtonValid' : form.valid}" type="submit" [disabled]="!form.valid">Login</button>
+    </div>
+  </form>
+  </div>
+</div>
