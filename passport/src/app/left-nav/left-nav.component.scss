@@ -1,0 +1,100 @@
+@use "sass:map";
+@import 'mixins.scss';
+
+.LeftNav__container {
+  background: rgb(78, 85, 95); //url(/assets/images/darkbg4.png);
+  height: 100vh;
+  //margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border-right: rgb(161, 160, 160) solid 1px;
+  border-top: 0px;
+  border-bottom: 0px;
+  border-left: 0px;
+  font-weight: 300;
+  //position: absolute;
+}
+.LeftNav__toggleAndNameWrapper {
+  margin-right: auto;
+  margin-left: auto;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+}
+.LeftNav__name {
+  color: rgb(231, 234, 232);
+  font-weight: normal;
+  font-size: 20px;
+  display: inline;
+}
+.LeftNav__toggleButton {
+  margin-right: 8px;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+  display: none;
+}
+.LeftNav__toggleSvg {
+  width: 24px;
+  height: 24px;
+  fill: black;
+}
+.LeftNav__link {
+  color: rgb(231, 234, 232);
+  font-size: 18px;
+  margin-top: 2rem;
+  margin-left: 2.5rem;
+  text-decoration: none;
+}
+
+
+.LeftNav__bottomContainer {
+  justify-self: flex-end;
+  margin-bottom: 3rem;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+}
+.LeftNav__button {
+  width: 80%;
+  min-width: 80px;
+  margin-right: auto;
+  margin-left: auto;
+  border-radius: 10px;
+  border: solid 0.5px lightgray;
+  transition: all 0.3s ease 0s;
+  cursor: pointer;
+  background-color: rgb(249, 223, 158);
+  box-shadow: 0px 2px 5px rgba(120, 117, 117, 0.4);
+}
+.LeftNav__button:hover {
+  background-color: #2EE59D;
+  box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
+  color: #fff;
+  transform: translateY(-7px);
+}
+
+@include tfpBreakpointLessThan(small480) {
+  .LeftNav__button {
+    width: 50px;
+  }
+}
+
+@include tfpBreakpointLessThan(large992) {
+  .LeftNav__toggleButton {
+    display: inline;
+  }
+}
+
+/*
+@media(max-width: $smallTest) {
+  .LeftNav__button {
+    width: 50px;
+  }
+}
+*/

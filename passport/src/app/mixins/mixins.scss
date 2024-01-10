@@ -1,0 +1,33 @@
+@use "sass:map";
+
+//https://levelup.gitconnected.com/handle-media-breakpoints-in-angular-and-sass-b8cef4137747
+//Added this breakpoints mixin so that we could have consistent breakpoints that are readable without needing to consult the source file for the breakpoints exact pixels
+$breakpoints: (
+  xsmall320: 320px,
+  small480: 480px,
+  medium768: 768px,
+  large992: 992px,
+  bigboy1200: 1200px,
+) !default;
+
+//Breakpoint felt a little generic and could lead to overriding another breakpoint function, so added a prefix
+@mixin tfpBreakpointLessThan($breakpoint) {
+  @if map-has-key($breakpoints, $breakpoint) {
+    @media(max-width: map-get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+  @else {
+    @warn "Unable to find `#{breakpoint}`. Available breakpoints are defined in mixins/mixins.scss. They are as follows: #{map-keys($breakpoints)}";
+  }
+}
+@mixin tfpBreakpointGreaterThan($breakpoint) {
+  @if map-has-key($breakpoints, $breakpoint) {
+    @media(min-width: map-get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+  @else {
+    @warn "Unable to find `#{breakpoint}`. Available breakpoints are defined in mixins/mixins.scss. They are as follows: #{map-keys($breakpoints)}";
+  }
+}

@@ -1,0 +1,44 @@
+<div class="ListGymInvites__flexContainer">
+  <div>Showing columns:
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('id')">id: {{ columns.id }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('phone')">Phone: {{ columns.phone }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('emailaddress')">Email Address: {{ columns.emailaddress }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('inviteCode')">Invite Code: {{ columns.inviteCode }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('postmarkMessageID')">PostmarkMessageID: {{ columns.postmarkMessageID }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('state')">State: {{ columns.state }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('createdByOpUserId')">createdByOpUserId: {{ columns.createdByOpUserId }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('isactive')">isactive: {{ columns.isactive }}</button>
+    <button class="ListGymInvites__togglebutton" (click)="toggleValue('createddate')">createddate: {{ columns.createddate }}</button>
+  </div>
+  <div>Currently listing all invites. In the future as this list become unwieldy we should add pagination/filtering but thats a champagne problem</div>
+<table class="ListGymInvites__table">
+  <thead>
+  <tr>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.id">ID</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.phone">Phone</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.emailaddress">Email Address</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.inviteCode">Invite Code</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.postmarkMessageID">Postmark Message ID</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.state">State</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.createdByOpUserId">Created By Op User ID</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.isactive">Is Active</th>
+    <th class="ListGymInvites__tdtr" *ngIf="columns.createddate">Created Date</th>
+  </tr>
+  </thead>
+  <tbody>
+  <ng-container *ngFor="let data of gymInvitelist">
+    <tr [ngClass]="{'sent': data.state === 'sent', 'not-sent': data.state !== 'sent'}">
+      <td *ngIf="columns.id" class="ListGymInvites__tdtr">{{ data.id }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.phone">{{ data.phone }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.emailaddress">{{ data.emailaddress }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.inviteCode">{{ data.inviteCode }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.postmarkMessageID">{{ data.postmarkMessageID }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.state">{{ data.state }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.createdByOpUserId">{{ data.createdByOpUserId }}</td>
+      <td class="ListGymInvites__tdtr" [ngClass]="{'active': data.isactive, 'not-active': !data.isactive}" *ngIf="columns.isactive">{{ data.isactive }}</td>
+      <td class="ListGymInvites__tdtr" *ngIf="columns.createddate">{{ data.createddate | date }}</td>
+    </tr>
+  </ng-container>
+  </tbody>
+</table>
+</div>

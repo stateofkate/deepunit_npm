@@ -1,0 +1,26 @@
+/* You can add global styles to this file, and also import other style files */
+//https://www.npmjs.com/package/inter-ui
+@use "inter-ui/default" with (
+  $inter-font-display: swap,
+  $inter-font-path: '~inter-ui/Inter (web)'
+);
+@use "inter-ui/variable" with (
+  $inter-font-display: swap,
+  $inter-font-path: '~inter-ui/Inter (web)' //switching around the tilde fixed this... such a strange one: https://github.com/angular/components/issues/24227#issuecomment-1016483498
+);
+@include default.all;
+@include variable.all;
+
+html { font-family: "Inter", "system-ui"; }
+
+@supports (font-variation-settings: normal) {
+  html { font-family: "Inter var", "system-ui"; }
+}
+
+
+
+body {
+  margin: 0; //Apparently there is a default 8px margin... I dislike this...
+  font-family: "Inter", sans-serif;
+}
+

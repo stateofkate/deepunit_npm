@@ -1,0 +1,34 @@
+<div *ngIf="problem" class="GymSignup__problem">{{this.problem}}<a href="mailto:Justin@TheFitPassport.com">Justin@TheFitPassport.com</a></div>
+<div *ngIf="!problem" class="GymSignup__flexParent">
+  <div class="GymSignup__description">Sign up</div>
+  <div class="GymSignup__joke">Like leg day, you can't skip this</div>
+  <div class="GymSignup__formParent">
+    <div class="GymSignup__box">
+  <form class="" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="">
+
+      <div class="GymSignup__fieldContainer">
+        <label class="GymSignup__LabelText GymSignup__emailSpacer" for="email">Full Name</label>
+        <input class="GymSignup__input"  [ngClass]="{'GymSignup--errorBorder': form.controls.name.invalid && (form.controls.name.touched ||formIsTouched)}" id="name" name="text" type="text" placeholder=" " autocomplete="name" required formControlName="name"/>
+      </div>
+
+      <div class="GymSignup__fieldContainer">
+          <label class="GymSignup__LabelText GymSignup__fieldSpacer" for="email">Email</label>
+          <input class="GymSignup__input" [ngClass]="{'GymSignup--errorBorder': form.controls.email.invalid && (form.controls.email.touched || formIsTouched)}" id="email" name="email" type="email" placeholder=" " autocomplete="email" required formControlName="email"/>
+      </div>
+
+
+      <div class="GymSignup__fieldContainer">
+          <label class="GymSignup__LabelText GymSignup__fieldSpacer" for="new-password">Password</label>
+          <input class="GymSignup__input" [ngClass]="{'GymSignup--errorBorder': form.controls.password.invalid && (form.controls.password.touched ||formIsTouched)}" id="new-password" name="new-password" type="password" autocomplete="new-password" required formControlName="password"/>
+      </div>
+
+      <!-- Error message for each input -->
+      <div *ngIf="formIsTouched && formErrorMessage" class="GymSignup__formErrorMessage">{{formErrorMessage}}</div>
+    </div>
+  </form>
+  </div>
+    <button class="GymSignup__submitButton" [ngClass]="{'' : form.valid}" type="submit" (click)="onSubmit()">Create Account</button>
+  </div>
+</div>
+
