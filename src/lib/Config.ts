@@ -235,6 +235,7 @@ export class Config {
     return [];
   }
 
+  
   /**
    * Get an string value from config (even if the value is something else, we convert to string)
    */
