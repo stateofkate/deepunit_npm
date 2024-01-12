@@ -11,6 +11,7 @@ import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import {Log} from './lib/Log';
 import {JasmineTester} from "./lib/testers/JasmineTester";
+import fs from "fs";
 
 // global classes
 
@@ -147,10 +148,10 @@ export async function main() {
         let tester: Tester;
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
-        } if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
+        } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
           tester = new JasmineTester();
         }else {
-          return await exitWithError(`Unable failed to detect testing config. If this repo has Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
+          return await exitWithError(`Unable to detect a testing config. If this repo has Jasmine or Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
         }
 
         let testFileContent: string = '';
@@ -165,8 +166,10 @@ export async function main() {
 
         let sourceFileDiff = '';
         const files = getFilesFlag() ?? [];
-        if (!CONFIG.generateAllFiles && files.length <= 0 && CONFIG.isGitRepository) {
-          sourceFileDiff = Files.getDiff([sourceFileName]);
+        if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
+          //If they are generating all files then the diff would not be relevant, however if they are not then we want to make sure to include the diff so that we can filter to only functions they have changed
+          await CONFIG.askForDefaultBranch();
+          sourceFileDiff = await Files.getDiff([sourceFileName]);
         }
         const sourceFileContent = Files.getFileContent(sourceFileName);
 
@@ -180,7 +183,10 @@ export async function main() {
 
         //Calls openAI to generate model response
         const response = await tester.generateTest(testInput);
-console.log(response)
+        console.log(response)
+        fs.writeFileSync(sourceFileName+'prototyping-file.json', JSON.stringify(response.testCodeIts, null, 2).replace(/\\n/g, '\n'))
+        fs.writeFileSync(sourceFileName+'prototyping-file.md', response.md)
+        exitWithError('')
         //this could get abstracted away
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);

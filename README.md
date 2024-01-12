@@ -38,10 +38,10 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
 
 ```javascript
 {
-  // Force what the frontendframework is (react, node) in case we detect it wrong
+  // Force what the frontendframework is (react, node, angular, etc) in case we detect it wrong
   "frontendFramework": "react"
 
-  // Forces DeepUnit to assume the testing framework. This is helpful if we are unable to detect your framework or you use a Jest compatible framework like Vitest
+  // We default to Jasmine if we are unable to detect your testing framework. This config forces sets the testing framework. This config is helpful if we are unable to detect that you are using jest or you use a Jest compatible framework like Vitest. 
   "testingFramework": "jest"
 
   // Which directories you want to ignore, path is from the root of the project. In case of a monorepo it is the root of the package.json deepunit is installed in.
@@ -59,9 +59,12 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
   // What language you want the tests to generate in (forcing it to be a specific language)
   // Options are "javascript" or "typescript" right now
   "testingLanguageOverride": "javascript",
-
+    
   // if tests fail on the first generation, try again a second time to generate tests. Almost doubles the time of execution.
   "retryTestGenerationOnFailure": true
+  
+  // we use git to get diffs from the default branch. The default is master unless configured here.
+  "defaultBranch": "main"
 }
 ```
 

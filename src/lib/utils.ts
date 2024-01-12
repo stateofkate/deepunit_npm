@@ -135,7 +135,28 @@ export async function validateVersionIsUpToDate(): Promise<void> {
     }
   }
 }
-
+/**
+ * Prompts the user with a question and returns the user's text input. If the Yes flag was used it will use the default answer.
+ * @param {string} prompt - The question to prompt the user with.
+ * @returns {Promise<string>} The user's input as a string or the default answer when the yes flag was used.
+ */
+export async function askQuestion(prompt: string, defaultAnswer: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  
+  return new Promise((resolve) => {
+    if (getYesFlag()) {
+      resolve(defaultAnswer);
+      return;
+    }
+    rl.question(prompt, (answer) => {
+      rl.close(); // It's important to close the readline interface
+      resolve(answer);
+    });
+  });
+}
 export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const rl = createInterface({
     input: process.stdin,
