@@ -52,7 +52,7 @@ run-deepunit:
     - echo "Target branch $TARGET_BRANCH"
     - git fetch origin $TARGET_BRANCH:$TARGET_BRANCH
     - git fetch origin $SOURCE_BRANCH:$SOURCE_BRANCH
-    - CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH | tr '\n' ' ')
+    - CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH | tr '\n' ', ')
     - echo "Changed files $CHANGED_FILES"
     - echo "Current directory $(pwd)"
     - echo "Listing files in current directory:"
