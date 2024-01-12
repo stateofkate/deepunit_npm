@@ -50,6 +50,8 @@ run-deepunit:
       fi
     - echo "Source branch $SOURCE_BRANCH"
     - echo "Target branch $TARGET_BRANCH"
+    - git fetch origin $TARGET_BRANCH:$TARGET_BRANCH
+    - git fetch origin $SOURCE_BRANCH:$SOURCE_BRANCH
     - CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH)
     - echo $(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH)
     - echo "Changed files $CHANGED_FILES"
