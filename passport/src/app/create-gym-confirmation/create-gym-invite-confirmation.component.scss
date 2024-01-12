@@ -1,0 +1,59 @@
+@import 'mixins.scss';
+
+.CreateGymConfirmation__flexParent {
+  display: flex;
+  flex-direction: column;
+}
+.CreateGymConfirmation__flexContent {
+  align-items: baseline;
+  flex-direction: row;
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
+  margin-top: 18px;
+}
+.CreateGymConfirmation__checkSVG {
+  width: 40px;
+  margin-left: 18px;
+}
+.CreateGymConfirmation__description {
+  display: inline;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: 18px;
+}
+.CreateGymConfirmation__button {
+  width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  border-radius: 15px;
+  border: none;
+  transition: all 0.3s ease 0s;
+}
+.CreateGymConfirmation__button:hover {
+  background-color: #2EE59D;
+  box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
+  color: #fff;
+  transform: translateY(-7px);
+}
+
+.CreateGymConfirmation__table {
+  border-collapse: collapse;
+  margin-left: 18px;
+  margin-right: 18px;
+  margin-top: 18px;
+}
+@include tfpBreakpointLessThan(medium768) {
+  .CreateGymConfirmation__table {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+}
+.CreateGymConfirmation__td {
+  border: 1px solid #999;
+  padding: 0.5rem;
+  text-align: left;
+}

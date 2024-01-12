@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { AUTH } from '../main';
+import { AUTH } from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import {
@@ -29,7 +29,6 @@ enum ApiPaths {
   logs = '/feedback/logs',
   generateBugReport = '/generate-bug-report/bug-new',
   sendBugResults = '/generate-bug-report/send-bug-results',
-  sendBugAnalytics = '/generate-bug-report/send-bug-analytics',
 }
 export enum StateCode {
   'Success' = 0,
@@ -40,6 +39,7 @@ export enum StateCode {
 export enum ClientCode {
   ClientExited = 'ClientExited',
   ClientErrored = 'ClientErrored',
+  JestTesterResult = 'JestTesterResult',
 }
 
 
@@ -53,6 +53,7 @@ export class Api {
 
     let data: ApiBaseData = {
       frontendFramework: CONFIG.frontendFramework,
+      frameworkVersion: CONFIG.frameworkVersion,
       testingFramework: CONFIG.testingFramework,
       version: await CONFIG.getVersion(),
       email: AUTH.getEmail(),
@@ -105,10 +106,7 @@ export class Api {
     return await this.post(ApiPaths.generate, data);
   }
 
-  public static async generateBugReport(
-
-    generateTestInput: GenerateTestOrReportInput
-  ): Promise<any> {
+  public static async generateBugReport(generateTestInput: GenerateTestOrReportInput): Promise<any> {
     if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
@@ -147,8 +145,8 @@ export class Api {
   public static async recombineTests(
     tempTests: { [key: string]: string },
     testFileContent: string,
+    failedTests: { [key: string]: string },
     failedItBlocks: { [key: string]: string[] },
-    failedTests: string[],
     prettierConfig: Object | undefined,
   ) {
     let data: RecombineTestData = {
@@ -167,30 +165,6 @@ export class Api {
     return await this.post(ApiPaths.recombineTests, data);
   }
 
-  public static async sendResults(
-      failedTests: string[],
-      passedTests: string[],
-      tests: Record<string, string>,
-      failedTestErrors: any,
-      sourceFileName: string,
-      sourceFileContent: string,
-      promptInputRecord: Record<string, string>,
-      modelTextResponseRecord: Record<string, string>,
-  ) {
-    const data: SendResultDataPost = {
-      failedTests,
-      passedTests,
-      tests,
-      failedTestErrors,
-      sourceFileName,
-      sourceFileContent,
-      promptInputRecord,
-      modelTextResponseRecord,
-      scriptTarget: CONFIG.scriptTarget,
-    };
-    await this.post(ApiPaths.sendResults, data);
-  }
-
   public static async sendBugResults(
     bugReport: string,
     bugReportName: string,
@@ -205,6 +179,26 @@ export class Api {
       scriptTarget: CONFIG.scriptTarget,
     };
     await this.post(ApiPaths.sendBugResults, data);
+  }
+
+  public static async sendResults(
+    failedTests: { [key: string]: string },
+    passedTests: { [key: string]: string },
+    tests: { [key: string]: string },
+    failedTestErrors: any,
+    sourceFileName: string,
+    sourceFileContent: string,
+  ) {
+    const data: SendResultDataPost = {
+      failedTests,
+      passedTests,
+      tests,
+      failedTestErrors,
+      sourceFileName,
+      sourceFileContent,
+      scriptTarget: CONFIG.scriptTarget,
+    };
+    await this.post(ApiPaths.sendResults, data);
   }
 
   public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {

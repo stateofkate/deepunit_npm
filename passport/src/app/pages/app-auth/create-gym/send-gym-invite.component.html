@@ -1,0 +1,31 @@
+<div class="CreateGym__headerhorizontalFlex">
+  <div class="CreateGym__rightPaneContainer">
+  <div class="CreateGym__flexContainer">
+  <div class="CreateGym__header"><h3 class="CreateGym__headerH3">Add a new gym</h3></div>
+  <form class="CreateGym__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+
+    <div class="CreateGym__createGymDescription">This sends an email with a link to them. Using the link in the email they will set up their details and onboard.</div>
+    <label class="CreateGym__labels" for="email">Email</label><input class="CreateGym__inputs" id="email" name="email" type="email" placeholder=" " autocomplete="username" required formControlName="email" value="w@w.w"/>
+    <div class="CreateGym__errorReservedSpace"><small *ngIf="form.get('email')?.errors && form.get('email')?.value">Must be a valid email address and no more than 255 characters.</small></div>
+
+    <label class="CreateGym__labels CreateGym__phone"  for="phone-number-input">Gym Phone Number</label><input appPhoneMask class="form-control appPhoneMaskDirective CreateGym__inputs"  id="phone-number-input" name="phone-number-input" type="text" autocomplete="tel" required formControlName="phone"/>
+    <div class="CreateGym__errorReservedSpace"><small *ngIf="form.get('phone')?.errors && form.get('phone')?.value">Phone number is required.</small></div>
+
+
+  <div class="CreateGym__errorReservedSpace"><small *ngIf="submissionError" class="CreateGym__error">There was an error submitting the form.</small></div>
+  <button class="CreateGym__submitButton" [ngClass]="{'CreateGym__submitButtonValid': form.valid}" type="submit" [disabled]="!form.valid">Create</button>
+    <div class="CreateGym__backendErrorSpace">{{backendError}}</div>
+</form>
+</div>
+</div>
+
+<div class="CreateGym__plantContainer">
+  <div class="CreateGym__blockContainer">
+    <div class="CreateGym__plantShelf"><img class="CreateGym__plant" src="/assets/images/editedplant.png" width="636"/></div>
+    <div class="CreateGym__plantDescription">
+      <div class="CreateGym__plantDescriptionTitle">Your plant is healthy.</div>
+      <div class="CreateGym__plantDescriptionMargin">Your plant will wilt over time unless you water it by adding more gyms.</div></div>
+
+  </div>
+</div>
+</div>

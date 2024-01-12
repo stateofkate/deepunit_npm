@@ -1,0 +1,164 @@
+@import 'mixins.scss';
+.CreateGym__headerhorizontalFlex {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 68%;
+  flex-direction: row;
+  margin-right: 0;
+}
+@include tfpBreakpointLessThan(medium768) {
+  .CreateGym__headerhorizontalFlex {
+    flex-wrap: wrap;
+  }
+  }
+.CreateGym__flexContainer {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap; //no flexing in your raps allowed, sorry drake
+}
+.CreateGym__header {
+
+background: rgb(245, 244, 244); //rl("/assets/images/mj2headerbg.png");
+border-radius: 20px;
+
+  //filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#DFDEDD", endColorstr="#E2E3E6", GradientType=1 );
+//  height: 3rem;
+  height: 100%;
+}
+.CreateGym__headerH3{
+  display: block;
+  font-size: 1.5rem;
+  margin-block-start: 0em;
+  margin-block-end: 0em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: 300;
+  padding-left: 2.5rem;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+.CreateGym__form {
+  margin-left: 10%;
+  margin-right: 10%;
+  margin-top: 1.25rem;
+
+  display: flex;
+  flex-direction: column;
+}
+.CreateGym__createGymDescription {
+  width: 100%;
+  font-size: 14px;
+}
+.CreateGym__labels {
+  margin-top: 12px;
+}
+.CreateGym__inputs {
+  border-radius: 10px;
+  border: 1px solid lightgray;
+  height: 8px;
+  padding: 12px;
+  font-size: 16px;
+  margin-top: 8px;
+  width: calc(100% - 24px);
+}
+.CreateGym__phone {
+  margin-top: 30px;
+  //width: 100%;
+}
+.CreateGym__submitButton {
+  width: 100%;
+  margin-top: 18px;
+  padding: 6px;
+  border-radius: 10px;
+  border: solid 0.5px lightgray;
+  transition: all 0.3s ease 0s;
+  cursor: pointer;
+  background-color: rgb(249, 223, 158);
+  box-shadow: 0px 2px 5px rgba(120, 117, 117, 0.4);
+}
+.CreateGym__submitButtonValid:hover {
+  background-color: #2EE59D;
+  box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
+  color: #fff;
+  transform: translateY(-7px);
+}
+.CreateGym__backendErrorSpace {
+  height: 40px;
+  color: red;
+  font-size: 12px;
+}
+.CreateGym__errorReservedSpace {
+  height: 16px;
+}
+.CreateGym__error {
+  color: red;
+  display: block;
+  margin-top: 12px;
+}
+.CreateGym__rightPaneContainer {
+  background: rgb(228, 229, 232);  //url("/assets/images/mj2cardbg.png");
+
+  border-radius: 20px;
+  margin: 2% 24px 36px 36px;
+  box-shadow: 4px 2px 5px 0px #7F7F7F,
+  -2px 4px 5px 0px #707070;
+  overflow: hidden;
+  z-index: 10; //only added to make the box be on top of the plant for a cool look
+
+  height: 420px;
+  width: 505px;
+  min-width: 300px;
+}
+.CreateGym__plantContainer {
+  background: rgb(228, 229, 232);  //url("/assets/images/mj2cardbg.png");
+
+  border-radius: 20px;
+  margin: 2% 24px 36px 36px;
+  box-shadow: 4px 2px 5px 0px #7F7F7F,
+  -2px 4px 5px 0px #707070;
+
+  height: 400px;
+  width: 300px;
+  //overflow: hidden;
+}
+.CreateGym__blockContainer {
+  display: block;
+}
+.CreateGym__plantShelf {
+  //position: relative;
+  //overflow: visible;
+}
+.CreateGym__plant {
+  //position: absolute;
+  top: -560px;
+  //left: -85px;
+  //flex-grow: 1;
+  margin-left: -170px;
+  margin-top: -180px;
+  overflow: visible;
+  z-index: 210;
+  opacity: 80;
+
+}
+.CreateGym__plantDescription {
+  //position: relative;
+  margin-top: -185px;
+  background-color: rgb(245, 244, 244);
+  //height: 120px;
+  //flex-grow: 2;
+  overflow: hidden;
+  border-radius: 20px;
+  height: 125px;
+  z-index: 1; //must be over the plant image
+  //padding: 16px;
+}
+.CreateGym__plantDescriptionTitle {
+  margin: 22px 16px 16px 16px;
+  font-size: 18px;
+}
+
+.CreateGym__plantDescriptionMargin {
+  margin: 16px;
+  font-size: 15px;
+}
+

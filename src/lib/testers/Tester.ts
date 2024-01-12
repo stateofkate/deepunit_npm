@@ -1,12 +1,12 @@
 import { CONFIG } from '../Config';
 import { Api } from '../Api';
 import { Files } from '../Files';
-import { LoadingIndicator } from '../utils';
+import { LoadingIndicator, getJsonFlag } from '../utils';
 import console from '../Log';
 
 export interface TestRunResult {
-  failedTests: string[];
-  passedTests: string[];
+  passedTests: { [key: string]: string };
+  failedTests: { [key: string]: string };
   failedTestErrors: { [key: string]: string };
   /**
    * Key: FileName
@@ -43,13 +43,13 @@ export abstract class Tester {
       if (TestResults.failedItBlocks[testPath]) {
         successRatio = TestResults.failedItBlocks[testPath].length / TestResults.itBlocksCount[testPath];
       }
-      if (TestResults.failedTests.includes(testPath)) {
+      if (testPath in TestResults.failedTests) {
         successRatio = 0;
       }
       if (successRatio <= 0.5) {
         //get the function name so we can pass it to the backend.
         const testPathChunks = testPath.split('.');
-        const funcName = testPathChunks.length >= 4? testPathChunks[testPathChunks.length - 4] : undefined;
+        const funcName = testPathChunks[0];
         if (!funcName) {
           continue;
         }
@@ -69,7 +69,7 @@ export abstract class Tester {
 
   public static getBugReportName(file: string): string {
     const fileParts = file.split('.');
-    const fileExt = 'md'
+    const fileExt = 'md';
     const testFileName = fileParts.slice(0, -1).join('.') + '.deepunit_bugreport.' + CONFIG.testSuffix + '.' + fileExt;
     return testFileName;
   }
@@ -78,13 +78,14 @@ export abstract class Tester {
     tempTestPaths: { [key: string]: string },
     finalizedTestPath: string,
     testFileContent: string,
+    failedTests: { [key: string]: string },
     failedItBlocks: { [key: string]: string[] },
-    failedTests: string[],
     prettierConfig: Object | undefined,
-  ) {
-    const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedItBlocks, failedTests, prettierConfig);
+  ): Promise<string | undefined> {
+    const responseData = await Api.recombineTests(tempTestPaths, testFileContent, failedTests, failedItBlocks, prettierConfig);
     if (responseData && responseData.testContent) {
       Files.writeFileSync(finalizedTestPath, responseData.testContent);
+      return responseData.testContent;
     }
   }
 
@@ -119,4 +120,3 @@ export abstract class Tester {
    */
   public abstract getTestResults(files: string[]): Promise<TestRunResult>;
 }
-

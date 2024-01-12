@@ -1,0 +1,46 @@
+<div class="CreateGymConfirmation__flexParent">
+  <div class="CreateGymConfirmation__flexContent"><img class="CreateGymConfirmation__checkSVG" src="assets/svg/greenCheckGPT.svg"><div class="CreateGymConfirmation__description">We have successfully sent the invite email. Here's the raw data saved: </div></div>
+  <button class="CreateGymConfirmation__button" (click)="goBackToCreateGym()">Invite another Gym</button>
+  <table class="CreateGymConfirmation__table">
+    <tr>
+      <th class="CreateGymConfirmation__td">Column</th>
+      <th class="CreateGymConfirmation__td">Value</th>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">id</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.id}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">phone</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.phone}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">emailaddress</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.emailaddress}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">inviteCode</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.inviteCode}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">postmarkMessageID</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.postmarkMessageID}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">state</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.state}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">createdByOpUserId</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.createdByOpUserId}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">isactive</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.isactive}}</td>
+    </tr>
+    <tr>
+      <td class="CreateGymConfirmation__td">createddate</td>
+      <td class="CreateGymConfirmation__td">{{inviteData.createddate}}</td>
+    </tr>
+  </table>
+</div>

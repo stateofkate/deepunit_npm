@@ -1,0 +1,65 @@
+@import 'mixins.scss';
+
+.AppRoot__container {
+  display: flex;
+  height: 100vh;
+//  background-color: ;
+  background: rgb(217, 219, 223); //url("/assets/images/mj2lightbackdrop.png");
+  //filter: noise(5%);
+}
+.AppRoot__leftNav {
+  //display: inline;
+  width: 280px;
+  border-bottom-right-radius: 25px;
+  //background: rgb(72, 81, 96) url("/assets/svg/noise.svg");
+
+  //border-right: solid 1px;
+  //border-color: rgb(113, 128, 150);
+  z-index: 20000; //make it very high
+  //position: static;
+}
+.AppRoot__leftNav--responsiveOpen {
+  left: 0px;
+}
+.AppRoot__leftNav--responsiveClosed {
+  left: -200px;
+}
+@include tfpBreakpointLessThan(large992) {
+  .AppRoot__leftNav {
+    position: absolute;
+    width: 200px;
+  }
+}
+.AppRoot__contentContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: auto;
+}
+.AppRoot__navBar {
+
+}
+@include tfpBreakpointLessThan(medium768) {
+
+}
+.AppRoot__rightPaneContainer {
+  //background-color:rgb(248, 251, 252);
+//  background: url("/assets/images/secondarybg4.png");
+  background: rgb(228, 229, 232);  //url("/assets/images/mj2cardbg.png");
+
+  border-radius: 20px;
+  margin: 4% 24px 36px 36px;
+  box-shadow: 4px 2px 5px 0px #7F7F7F,
+  -2px 4px 5px 0px #707070;
+  width: 80%;
+  overflow: hidden;
+}
+.AppRoot__rightPane {
+
+  display: flex;
+  flex-wrap: wrap;
+}
+.AppRoot__rightPaneFullWidth {
+  width: 100%;
+  height: auto;
+}

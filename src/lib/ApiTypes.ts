@@ -2,6 +2,7 @@ import { TestingFrameworks } from '../main.consts';
 
 export type ApiBaseData = {
   frontendFramework: string;
+  frameworkVersion?: string;
   testingFramework: TestingFrameworks;
   version: string;
   email: string | null;
@@ -49,22 +50,20 @@ export type RecombineTestData = {
   prettierConfig?: Object;
   testFileContent: string;
   failedItBlocks: { [key: string]: string[] };
-  failedTests: string[];
+  failedTests: { [key: string]: string }
   includeFailingTests: boolean;
   scriptTarget: string;
 };
 
 
 export type SendResultDataPost = {
-  failedTests: string[];
-  passedTests: string[];
-  tests: Record<string, string>;
+  failedTests: { [key: string]: string },
+  passedTests: { [key: string]: string },
+  tests: { [key: string]: string };
   failedTestErrors: { [key: string]: string };
   scriptTarget: string;
   sourceFileName: string;
   sourceFileContent: string;
-  promptInputRecord: Record<string, string>;
-  modelTextResponseRecord: Record<string, string>;
 };
 export type SendAnalyticsData = {
   logMessage: string;

@@ -1,0 +1,210 @@
+<ngx-spinner type="ball-scale-multiple"><div class="GymSetup__loader">Upload {{ progress$ | async}} % complete</div></ngx-spinner>
+<div class="GymSetup__flexParent">
+  <div *ngIf="currStep ===1" class="GymSetup__stepOne" [ngClass]="{'GymSteup__stepHidden': stepOne !== 1}">
+    <div class="GymSetup__stepOneDescription">First lets learn a bit about your gym</div>
+    <div class="GymSetup__stepOneadditionalInfo">The info we collect will be shown to in the app to people looking for a gym</div>
+    <div class="GymSetup__stepBox">
+      <!-- Apply GymSetup--errorBorder when the formControlName has an error -->
+      <form class="GymSetup__stepOneForm" [formGroup]="formOne">
+      <label class="GymSetup__LabelText GymSetup__stepOneGymNameLabelSpacer">Gym Name</label>
+      <input class="GymSetup__textInput GymSetup__stepOneInputSpacer" [ngClass]="{'GymSetup--errorBorder': formOne.controls.name.invalid && (formOne.controls.name.touched || formOneIsTouched)}" type="text" required formControlName="name" >
+      <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">Gym Phone Number</label>
+      <input appPhoneMask class="form-control appPhoneMaskDirective  GymSetup__textInput GymSetup__stepOneInputSpacer"  [ngClass]="{'GymSetup--errorBorder': formOne.controls.phone.invalid && (formOne.controls.phone.touched||formOneIsTouched)}" type="text" formControlName="phone">
+      <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">Address</label>
+      <input class="GymSetup__textInput GymSetup__stepOneInputSpacer" [ngClass]="{'GymSetup--errorBorder': formOne.controls.address.invalid && (formOne.controls.address.touched ||formOneIsTouched)}"type="text" formControlName="address">
+      <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">Website</label>
+      <input class="GymSetup__textInput GymSetup__stepOneInputSpacer"  [ngClass]="{'GymSetup--errorBorder': formOne.controls.website.invalid && (formOne.controls.website.touched||formOneIsTouched)}" type="text" formControlName="website">
+      <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">Description</label>
+      <textarea class="GymSetup__textInput GymSetup__stepOneInputSpacer GymSetup__descriptionTextBox"  [ngClass]="{'GymSetup--errorBorder': formOne.controls.description.invalid && (formOne.controls.description.touched || formOneIsTouched)}" formControlName="description"></textarea>
+      </form>
+      <!-- Error message for each input -->
+      <div *ngIf="formOneIsTouched && formOneErrorMessage" class="GymSetup__formOneErrorMessage">{{formOneErrorMessage}}</div>
+    </div>
+    <button class="GymSetup__StepOneButton" (click)="stepOneContinue()">Continue</button>
+
+  </div>
+
+    <div *ngIf="currStep ===2" class="GymSetup__stepOne" [ngClass]="{'GymSteup__stepHidden': stepOne !== 2}">
+      <div class="GymSetup__stepOneDescription">What are your hours of operation?</div>
+      <div class="GymSetup__stepOneadditionalInfo">Please only enter hours someone will need to be present to check people in for a workout</div>
+      <div class="GymSetup__stepTwoBox">
+        <form class="GymSetup__stepOneForm" [formGroup]="formTwo">
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Monday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <!-- Apply GymSetup--errorBorder when the formControlName has an error -->
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.mondayOpen.invalid && (formTwo.controls.mondayOpen.touched || formTwoIsTouched)}" type="time"  name="mondayOpen"  required  formControlName="mondayOpen" [(ngModel)]="gymToSetup.mondayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.mondayClose.invalid && (formTwo.controls.mondayClose.touched || formTwoIsTouched)}" type="time"  name="mondayClose" formControlName="mondayClose" required [(ngModel)]="gymToSetup.mondayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'monday')"><label class="GymSetup__openClose">Closed</label>
+            <button class="GymSetup__copyToAllDays" (click)="copyToAll()">Copy to all days</button>
+          </div>
+
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Tuesday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <!-- Apply GymSetup--errorBorder when the formControlName has an error -->
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.tuesdayOpen.invalid && (formTwo.controls.tuesdayOpen.touched || formTwoIsTouched)}" type="time"  name="tuesdayOpen"  required  formControlName="tuesdayOpen" [(ngModel)]="gymToSetup.tuesdayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.tuesdayClose.invalid && (formTwo.controls.tuesdayClose.touched || formTwoIsTouched)}" type="time"  name="tuesdayClose" formControlName="tuesdayClose" required [(ngModel)]="gymToSetup.tuesdayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'tuesday')"><label class="GymSetup__openClose">Closed</label>
+          </div>
+
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Wednesday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.wednesdayOpen.invalid && (formTwo.controls.wednesdayOpen.touched || formTwoIsTouched)}" type="time"  name="wednesdayOpen" formControlName="wednesdayOpen" required [(ngModel)]="gymToSetup.wednesdayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.wednesdayClose.invalid && (formTwo.controls.wednesdayClose.touched || formTwoIsTouched)}" type="time"  name="wednesdayClose" formControlName="wednesdayClose" required [(ngModel)]="gymToSetup.wednesdayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'wednesday')"><label class="GymSetup__openClose">Closed</label>
+          </div>
+
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Thursday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.thursdayOpen.invalid && (formTwo.controls.thursdayOpen.touched || formTwoIsTouched)}" type="time"  name="thursdayOpen" formControlName="thursdayOpen" required [(ngModel)]="gymToSetup.thursdayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.thursdayClose.invalid && (formTwo.controls.thursdayClose.touched || formTwoIsTouched)}" type="time"  name="thursdayClose" formControlName="thursdayClose" required [(ngModel)]="gymToSetup.thursdayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'thursday')"><label class="GymSetup__openClose">Closed</label>
+          </div>
+
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Friday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.fridayOpen.invalid && (formTwo.controls.fridayOpen.touched || formTwoIsTouched)}" type="time"  name="fridayOpen" formControlName="fridayOpen" required [(ngModel)]="gymToSetup.fridayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.fridayClose.invalid && (formTwo.controls.fridayClose.touched || formTwoIsTouched)}" type="time"  name="fridayClose" formControlName="fridayClose" required  [(ngModel)]="gymToSetup.fridayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'friday')"><label class="GymSetup__openClose">Closed</label>
+          </div>
+
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Saturday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.saturdayOpen.invalid && (formTwo.controls.saturdayOpen.touched || formTwoIsTouched)}" type="time"  name="saturdayOpen" formControlName="saturdayOpen" required [(ngModel)]="gymToSetup.saturdayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.saturdayClose.invalid && (formTwo.controls.saturdayClose.touched || formTwoIsTouched)}" type="time"  name="saturdayClose" formControlName="saturdayClose" required [(ngModel)]="gymToSetup.saturdayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'saturday')"><label class="GymSetup__openClose">Closed</label>
+          </div>
+
+
+          <div class="GymSetup__stepTwoDayOfWeek">
+            <label class="GymSetup__dayLabelText">Sunday</label>
+            <div class="GymSetup__StepTwoHoursInputFlex">
+              <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.sundayOpen.invalid && (formTwo.controls.sundayOpen.touched || formTwoIsTouched)}" type="time"  name="sundayOpen" formControlName="sundayOpen" required [(ngModel)]="gymToSetup.sundayOpen"> <span>-</span> <input class="GymSetup__hoursInput GymSetup__stepTwoInputSpacer" [ngClass]="{'GymSetup--errorBorder': formTwo.controls.sundayClose.invalid && (formTwo.controls.sundayClose.touched || formTwoIsTouched)}" type="time"  name="sundayClose" formControlName="sundayClose" required [(ngModel)]="gymToSetup.sundayClose">
+            </div>
+            <input class="GymSetup__closeCheckboxInput" type="checkbox" (change)="boxChecked($event, 'sunday')"><label class="GymSetup__openClose">Closed</label>
+          </div>
+
+
+          <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">Holiday Schedule: Please list any holiday hours or closures. You can always update your hours later if they change.</label>
+          <textarea class="GymSetup__textInput GymSetup__stepOneInputSpacer GymSetup__descriptionTextBox" formControlName="holidaySchedule"></textarea>
+          <!-- One error message for all the inputs -->
+          <div *ngIf="formTwoIsTouched && formTwoErrorMessage" class="GymSetup__formOneErrorMessage">{{formTwoErrorMessage}}</div>
+        </form>
+      </div>
+      <button class="GymSetup__StepOneButton" (click)="stepTwoContinue()">Continue</button>
+
+    </div>
+
+    <div *ngIf="currStep ===3" class="GymSetup__stepOne" [ngClass]="{'GymSteup__stepHidden': stepOne !== 3}">
+      <div class="GymSetup__stepOneDescription">What equipment and amenities are available?</div>
+      <div class="GymSetup__stepOneadditionalInfo">Be sure to include available services and items for purchase</div>
+      <div class="GymSetup__stepTwoBox">
+        <form class="GymSetup__amenitiesForm"  [formGroup]="formThree">
+          <div class="GymSetup__ammenitiesFlexRow">
+
+           <!-- &lt;!&ndash; Column #2&ndash;&gt;
+           Actually lets hold off on this and just have them type it up
+          <div class="GymSetup__ammenitiesColumnOne">
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">{{amenities[0].name}}</label>
+            </div>
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+          </div>
+
+          &lt;!&ndash; Column #2&ndash;&gt;
+          <div class="GymSetup__ammenitiesColumnTwo">
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+            <div class="GymSetup__stepThreeAmenitiesFlex">
+              <input class="GymSetup__amenitiesCheckboxInput" type="checkbox"><label class="GymSetup__amenitiesCheckboxLabel">Dumbells</label>
+            </div>
+          </div>
+
+-->
+
+
+
+          </div>
+          <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">Equipment and Amenities</label><textarea class="GymSetup__textInput GymSetup__stepOneInputSpacer GymSetup__amenitiesDescriptionTextBox" formControlName="additionalAmenities"></textarea>
+        </form>
+      </div>
+      <button class="GymSetup__StepOneButton" (click)="stepThreeContinue()">Continue</button>
+
+    </div>
+
+    <div *ngIf="currStep ===4" class="GymSetup__stepOne" [ngClass]="{'GymSteup__stepHidden': stepOne !== 4}">
+      <div class="GymSetup__stepOneDescription">Pictures</div>
+      <div class="GymSetup__stepOneadditionalInfo">Pictures are optional but highly recommended</div>
+      <div class="GymSetup__stepTwoBox">
+        <form class="GymSetup__amenitiesForm">
+          <input type="file"  accept="image/png, image/jpeg, image/gif" data-multiple-caption="{count} files selected" multiple (change)="onFilesSelected($event)">
+        </form>
+      </div>
+      <button class="GymSetup__StepOneButton" (click)="stepFourContinue()">Continue</button>
+
+    </div>
+
+    <div *ngIf="currStep ===5" class="GymSetup__stepOne" [ngClass]="{'GymSteup__stepHidden': stepOne !== 5}">
+      <div class="GymSetup__stepOneDescription">Liability Waiver</div>
+      <div class="GymSetup__stepOneadditionalInfo">If you have a liability waiver which you need signed before a workout you can upload it here to have members agree before checking in. You can always update this later if required.</div>
+      <div class="GymSetup__stepTwoBox">
+        <form class="GymSetup__amenitiesForm">
+          <input type="file" (change)="onLiabilityWaiverSelect($event)">
+        </form>
+      </div>
+      <button class="GymSetup__StepOneButton" (click)="stepFiveContinue()">Continue</button>
+
+    </div>
+
+    <div *ngIf="currStep ===6" class="GymSetup__stepOne" [ngClass]="{'GymSteup__stepHidden': stepOne !== 6}">
+      <div class="GymSetup__stepOneDescription">Members</div>
+      <div class="GymSetup__stepOneadditionalInfo">This helps up understand the needs of your gym and grow its membership</div>
+      <div class="GymSetup__stepTwoBox">
+        <form class="GymSetup__amenitiesForm" [formGroup]="formSix">
+          <label class="GymSetup__LabelText GymSetup__stepOneLabelSpacer">How many members does your gym have today?</label><textarea class="GymSetup__textInput GymSetup__stepOneInputSpacer GymSetup__descriptionTextBox" [ngClass]="{'GymSetup--errorBorder': formSix.controls.memberCountEstimate.invalid && (formSix.controls.memberCountEstimate.touched || formSixIsTouched)}" formControlName="memberCountEstimate"></textarea>
+          <div *ngIf="formSixIsTouched && formSix.controls.memberCountEstimate.invalid" class="GymSetup__formOneErrorMessage">Please enter an estimate of how many members your gym has</div>
+        </form>
+      </div>
+      <button class="GymSetup__StepOneButton" (click)="stepSixContinue()">Continue</button>
+
+    </div>
+
+
+<div class="GymSetup__stepsSectionFlexParent">
+    <div class="GymSetup__stepsHeader">Steps</div>
+    <div class="GymSetup__stepsStateFlex">
+      <div class="GymSetup__upcomingStep" [ngClass]="{'GymSetup__currentStep' : stepOne === 1, 'GymSetup__stepNavigateable': stepOne > 1}" (click)="goToStep(1)">Basic Info</div>
+      <div class="GymSetup__upcomingStep" [ngClass]="{'GymSetup__currentStep' : stepOne === 2, 'GymSetup__stepNavigateable': stepOne > 2}" (click)="goToStep(2)">Hours</div>
+      <div class="GymSetup__upcomingStep" [ngClass]="{'GymSetup__currentStep' : stepOne === 3, 'GymSetup__stepNavigateable': stepOne > 3}" (click)="goToStep(3)">Amenities</div>
+      <div class="GymSetup__upcomingStep" [ngClass]="{'GymSetup__currentStep' : stepOne === 4, 'GymSetup__stepNavigateable': stepOne > 4}" (click)="goToStep(4)">Pictures</div>
+      <div class="GymSetup__upcomingStep" [ngClass]="{'GymSetup__currentStep' : stepOne === 5, 'GymSetup__stepNavigateable': stepOne > 5}" (click)="goToStep(5)">Liability Waiver</div>
+      <div class="GymSetup__upcomingStep" [ngClass]="{'GymSetup__currentStep' : stepOne === 6}">Members</div>
+    </div>
+</div>
+</div>

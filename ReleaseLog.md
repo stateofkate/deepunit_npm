@@ -1,5 +1,38 @@
 # Release Log
 
+## 1.8.7
+Features
+- Improved React 18 support
+
+## 1.8.6
+Bugs
+- Fix an issue with Jest results intermittently throwing an error
+
+## 1.8.6
+Bugs
+- Fix an issue with CI object properties
+
+## 1.8.5
+Features
+- Fix an issue with the json flag
+
+## 1.8.4
+Changes
+- Refactored some code
+- improved prompting
+- Allow arbitrary prompt injection
+
+## 1.8.3
+Features
+- Added new flags to support absolute paths with --ab
+- Added summary into the json output
+
+## 1.8.2
+Features
+- Added new --email flag
+- Added new --y yes flag to say yes to everything
+- Added --ff flag to force filtering on files
+
 ## 1.7.1
 Features
 - Added a new bug finding feature which will generate a bug report for a given file using the -b flag to pass a file path

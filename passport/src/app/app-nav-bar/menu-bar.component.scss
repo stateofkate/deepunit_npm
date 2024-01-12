@@ -1,0 +1,76 @@
+@import 'mixins.scss';
+.MenuBar__container {
+  display: flex;
+  color: rgb(101, 101, 104);
+  font-weight: 500;
+  text-shadow: 0px 3px 2px rgba(157,156,156,0.6);
+}
+.MenuBar__hamburgerButton {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+@include tfpBreakpointGreaterThan(large992) {
+  .MenuBar__hamburgerButton {
+    display: none;
+  }
+}
+.MenuBar__svg {
+  width: 24px;
+  height: 24px;
+  fill: black;
+  margin-top: 1.5rem;
+  margin-left: 11.141px;
+}
+.MenuBar__rightNav {
+  display: flex;
+  margin-left: auto;
+  margin-top: 1.5rem;
+}
+.MenuBar__nameElement {
+  display: flex;
+  flex-direction: row;
+  margin-right: 1rem;
+  margin-top: 0px;
+  padding: 0;
+}
+.MenuBar__username {
+  margin-bottom: 0;
+  text-align: right;
+  margin-right: 1rem;
+}
+.MenuBar__toolName {
+  text-align: right;
+
+}
+.MenuBar__logOut {
+  margin-right: 3rem;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-shadow: 0px 3px 2px rgba(157,156,156,0.6);
+  margin-left: 1rem;
+  display: table-cell;
+  vertical-align: middle;
+  line-height: 0;
+}
+@include tfpBreakpointLessThan(medium768) {
+  .MenuBar__nameElement {
+    flex-direction: column;
+  }
+  .MenuBar__username {
+    margin-right: 0rem;
+  }
+  .MenuBar__logOut {
+    display: none;
+  }
+}
+/*
+@include tfpBreakpoint(small)*/

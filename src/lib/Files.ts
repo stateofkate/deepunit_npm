@@ -2,27 +2,43 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import {exitWithError, getBugFileFlag, getBugFlag, getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
+import {
+  exitWithError,
+  getAbsolutePathsFlag,
+  getBugFileFlag,
+  getBugFlag,
+  getForceFilter,
+  getFilesFlag,
+  getGenerateAllFilesFlag,
+  getPatternFlag,
+  setupYargs,
+  getYesOrNoAnswer, askQuestion
+} from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
-import { string } from 'yargs';
-
 
 export class Files {
-
-
+  public static hasFetched = false;
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
-    // get files to filter with --f arg, returning direct paths
-    const filesToFilter: string[] | undefined = getFilesFlag();
 
     const filesToDebugAndWriteTests: string[] | undefined = getBugFileFlag();
+    // get files to filter with --f arg, returning direct paths
+    let filesToFilter: string[] | undefined = getFilesFlag();
+    if (getAbsolutePathsFlag() && filesToFilter) {
+      filesToFilter = await Files.mapGitPathsToCurrentDirectory(filesToFilter);
+    }
+
 
     const filesToDebug: string [] | undefined = getBugFlag();
     // get file patterns, returns things like src/* and **/*
     const patternToFilter: string[] | undefined = getPatternFlag();
     // check whether we have an --a flag, marking all
     const shouldGenerateAllFiles = getGenerateAllFilesFlag();
+
+    if (getForceFilter()) {
+      console.log('Using force filter to apply ignore filter to all files.');
+    }
 
     let flagType = '';
 
@@ -69,12 +85,11 @@ export class Files {
       }
     }
 
-    const {filteredFiles, ignoredFiles} = Files.filterFiles(filesToWriteTestsFor);
-
+    const { filteredFiles, ignoredFiles } = Files.filterFiles(filesToWriteTestsFor);
 
     let readyFilesToTest: string[] = [];
     // we don't want to filter files if they have specified the exact files they want.
-    if (filesToFilter || filesToDebug) {
+    if ((filesToFilter || filesToDebug) && !getForceFilter()) {
       readyFilesToTest = filesToWriteTestsFor;
     } else {
       // we have filtered out some files, lets notify the user what we removed
@@ -87,7 +102,7 @@ export class Files {
     // if we didn't get any files, return error
     if (readyFilesToTest.length <= 0) {
       await exitWithError(
-          Color.yellow('Run deepunit with flag -h for more information.') +
+        Color.yellow('Run deepunit with flag -h for more information.') +
           '\nNo files to test were found. Check your config is set right or that you are using the --file flag correctly.',
       );
     }
@@ -96,13 +111,9 @@ export class Files {
       filesFlagReturn: {
         readyFilesToTest,
         flagType,
-      }
+      },
     };
-
-
   }
-
-
 
   public static getChangedFiles(): string[] {
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
@@ -127,6 +138,23 @@ export class Files {
       });
     } else {
       return changedFiles;
+    }
+  }
+
+  public static async mapGitPathsToCurrentDirectory(relativePaths: string[]): Promise<string[]> {
+    try {
+      const rootGitDirectory = execSync('git rev-parse --show-toplevel').toString().trim();
+      const currentWorkingDirectory = process.cwd();
+
+      // Map each relative path to an absolute path based on the current working directory
+      return relativePaths.map((relativePath) => {
+        const absolutePathFromGitRoot = path.join(rootGitDirectory, relativePath);
+
+        return path.relative(currentWorkingDirectory, absolutePathFromGitRoot);
+      });
+    } catch (error) {
+      console.error('Error occurred, unable to map git paths to relative paths:', error);
+      return relativePaths;
     }
   }
 
@@ -157,15 +185,82 @@ export class Files {
     return filteredFiles;
   }
 
-  public static getDiff(files: string[]): string {
-    const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
+  public static async getDiff(files: string[], attempt = 0): Promise<string> {
+    const remoteName = await this.askForRemote()
+    if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
+      const fetchCommand = `git fetch ${remoteName}`
+      const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
+  
+      if (permission) {
+        execSync(fetchCommand); // Ensure you handle errors here
+        this.hasFetched = true;
+      } else {
+        console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
+      }
+    }
+    
+    const diffCmd = `git diff origin/HEAD..HEAD -- ${files.join(' ')}`;
+    try {
+      return execSync(diffCmd)
+        .toString()
+        .split('\n')
+        .filter((line) => !line.trim().startsWith('-'))
+        .join('\n');
+    } catch (error) {
+      if (error.message.includes('bad revision') && attempt < 2) {
+        await Files.setRemoteHead(remoteName); // Call the function to set remote HEAD
+        return this.getDiff(files, attempt+1); // Retry getting the diff
+      } else {
+        console.log('Attempt to get diffs count: ' + attempt)
+        throw error; // Rethrow other errors
+      }
+    }/*
     return execSync(diffCmd)
       .toString()
       .split('\n')
       .filter((line) => !line.trim().startsWith('-'))
-      .join('\n');
+      .join('\n');*/
   }
-
+  /**
+   * Retrieves a list of Git remotes.
+   * @returns {string[]} List of Git remotes.
+   */
+  public static getGitRemotes(): string[] {
+    const remotes = execSync('git remote').toString().trim();
+    return remotes ? remotes.split('\n') : [];
+  }
+  /**
+   * Asks the user to select a Git remote.
+   * @param {string} branch - The branch name for context in the prompt.
+   * @returns {Promise<string>} The selected remote.
+   */
+  public static async askForRemote(): Promise<string> {
+    const remotes = this.getGitRemotes();
+    if (remotes.length === 0) {
+      console.log('No Git remotes found.');
+      return '';
+    }
+    if(remotes.length === 1) {
+      return remotes[0].trim();
+    }
+    
+    const prompt = `What is the name of the remote that we should compare your default branch ${CONFIG.defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
+    return askQuestion(prompt, 'origin');
+  }
+  public static async setRemoteHead(remoteName: string) {
+    
+    const branchName = CONFIG.defaultBranch;
+    
+    const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
+    const permission = getYesOrNoAnswer(`We need to set your local repositories head to track remote. The command we will run is "${setHeadCommand}"`)
+    try {
+      execSync(setHeadCommand);
+      console.log(`\nRemote HEAD set to ${branchName}`);
+    } catch (error) {
+      console.error(`Error setting remote HEAD: ${error.message}`);
+      throw error;
+    }
+  }
   public static getFileContent(file: string | null): string {
     if (file === null) {
       return '';
@@ -244,14 +339,15 @@ export class Files {
     return !rel.startsWith('../') && rel !== '..';
   }
 
-  public static writeTestsToFiles(tests: Record<string, string>): string[] {
+  public static writeTestsToFiles(tests: { [key: string]: string }, filePathChunk: string): string[] {
     let testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {
         if (!fs.existsSync(testFilePath)) {
-          fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+          fs.mkdirSync(path.dirname(filePathChunk + testFilePath), { recursive: true });
         }
-        Files.writeFileSync(testFilePath, testCode);
+        Files.writeFileSync(filePathChunk + testFilePath, testCode);
+
         testPaths.push(testFilePath);
       } catch (e) {
         console.error({ testCode, message: 'Error while saving', e, testFilePath });
@@ -281,8 +377,8 @@ export class Files {
     });
   }
 
-  public static groupFilesByDirectory(changedFiles: string[]): Record<string, string[]> {
-    const filesByDirectory: Record<string, string[]> = {};
+  public static groupFilesByDirectory(changedFiles: string[]): { [key:string]:string[] } {
+    const filesByDirectory: { [key: string]: string[] } = {};
 
     for (const file of changedFiles) {
       const directory = path.dirname(file);
@@ -369,6 +465,26 @@ export class Files {
       }
     }
     return undefined;
+  }
+  
+  public static updateConfigFile(propertyName: string, propertyValue: any) {
+    const configPath = 'deepunit.config.json';
+    
+    // Check if the config file exists
+    if (!fs.existsSync(configPath)) {
+      console.error(`Config file not found at ${configPath}, creating it now`);
+      this.setup();
+    }
+    
+    // Read the existing configuration
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    
+    // Update the specified property
+    config[propertyName] = propertyValue;
+    
+    // Write the updated configuration back to the file
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log(`Updated ${propertyName} in ${configPath}`);
   }
 
   public static setup() {

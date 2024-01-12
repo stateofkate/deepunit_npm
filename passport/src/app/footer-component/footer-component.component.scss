@@ -1,0 +1,16 @@
+.Footer__footerBar {
+  height: 200px;
+  background-color: #353a3f;
+display: flex;
+  flex-direction: column;  /* make main axis vertical */
+  justify-content: center; /* center items vertically, in this case */
+  align-items: center;     /* center items horizontally, in this case */
+
+}
+.Footer__brandText {
+  text-align: center;
+  font-weight: 700;
+  font-size: 38px;
+  font-family: Poppins, sans-serif;
+  color: white;
+}

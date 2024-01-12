@@ -1,0 +1,14 @@
+<div class="LeftNav__container">
+
+  <div class="LeftNav__toggleAndNameWrapper"><button class="LeftNav__toggleButton" (click)="toggleHamburger()"><img class="LeftNav__toggleSvg" src="assets/svg/hamburgerGPT.svg"></button><div class="LeftNav__name">The Fit Passport</div></div>
+
+    <a class="LeftNav__link" href="{{routes.sendGymInvitePage}}">Send gym invite</a>
+    <a class="LeftNav__link" href="{{routes.listGymInvitesPage}}">List gym invites</a>
+    <a class="LeftNav__link" href="{{routes.listCheckins}}">List Checkin</a>
+    <a class="LeftNav__link" href="app">Create Membership</a>
+    <a class="LeftNav__link" href="app">List Memberships</a>
+  <div class="LeftNav__bottomContainer">
+    <button class="LeftNav__logOut LeftNav__button" (click)="impersonate()">impersonatet</button>
+    <button class="LeftNav__logOut LeftNav__button" (click)="logout()">Log out</button>
+  </div>
+</div>
