@@ -43,6 +43,7 @@ export class Config {
   platform: string = '';
   defaultBranch: string = ''
 
+  
   constructor() {
     this.detectProjectType();
     this.determineDevBuild();
