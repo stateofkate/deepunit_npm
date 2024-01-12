@@ -39,7 +39,7 @@ run-deepunit:
   script:
     - npm install
     - CHANGED_FILES=$(git diff --name-only $CI_MERGE_REQUEST_TARGET_BRANCH_NAME...$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME)
-    - echo "Changed files: $CHANGED_FILES"
+    - echo "Changed files $CHANGED_FILES"
     - npm run start -- --f "$CHANGED_FILES" --json --ff --ap --email "$GITLAB_USER_EMAIL" --meta "$CI_COMMIT_MESSAGE"
   artifacts:
     paths:
