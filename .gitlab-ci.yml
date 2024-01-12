@@ -10,6 +10,7 @@ variables:
 
 stages:
   - prepare
+  - deepunitci
   - verify
   - build
   - publish
@@ -31,6 +32,16 @@ install:
   only:
     - master
     - merge_requests
+
+run-deepunit:
+  stage: deepunitci
+  image: node:18
+  script:
+    - npm install
+    - npm run start -- --f $CI_JOB_ID --json --ff --ap --email "$GITLAB_USER_EMAIL" --meta $CI_COMMIT_MESSAGE
+  artifacts:
+    paths:
+      - deepunit-tests.json
 
 # Runs the test suite.
 test:
