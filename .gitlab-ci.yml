@@ -59,7 +59,6 @@ run-deepunit:
       - deepunit-tests.json
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push"'
 
 # Runs the test suite.
 test:
