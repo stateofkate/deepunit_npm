@@ -1,16 +1,17 @@
 import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
-import { TestingFrameworks } from '../main.consts';
+import {TestingFrameworks} from '../main.consts';
 import {askQuestion, exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage} from './utils';
-import { execSync } from 'child_process';
-import { Color } from './Printer';
+import {execSync} from 'child_process';
+import {Color} from './Printer';
 import {Files} from "./Files";
 
 const devConfig: string = 'deepunit.dev.config.json';
+const userConfig: string = 'deepunit.config.json';
 
 // HARDCODED CONFIG VALUES
-const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
+const configFilePaths = [devConfig, userConfig]; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
@@ -23,7 +24,7 @@ export class Config {
   frontendFramework: string = 'angular';
   frameworkVersion: string = '';
   testSuffix: string = '';
-  testingFramework: TestingFrameworks = TestingFrameworks.jasmine;
+  testingFramework: TestingFrameworks = TestingFrameworks.unknown;
   scriptTarget: string = '';
   doProd: boolean;
   apiHost: string = '';
@@ -51,6 +52,10 @@ export class Config {
     this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
     if (this.testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(this.testingFrameworkOverride)) {
       this.testingFramework = this.testingFrameworkOverride as TestingFrameworks;
+    } else if(!fs.existsSync(userConfig) && this.testingFramework === undefined) {
+      //if the framework is undefined and the user config does exist then we will set to jasmine
+      //the reason for this is there is currently a bug where any unit test with a dependency on API.ts will cause main.ts to be executed because Api imports AUTH from main. This results in JestTester.test.ts instanciating Jasmine tester which causes errors. It would be niice to fix this, but sort of a pain
+      this.testingFramework = TestingFrameworks.jasmine
     }
 
     this.scriptTarget = this.getsConfigTarget() ?? 'unknown';

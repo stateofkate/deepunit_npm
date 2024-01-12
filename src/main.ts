@@ -10,7 +10,6 @@ import {JestTester} from './lib/testers/JestTester';
 import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import {Log} from './lib/Log';
-import {JasmineTester} from "./lib/testers/JasmineTester";
 import fs from "fs";
 
 // global classes
@@ -149,6 +148,7 @@ export async function main() {
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
         } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
+          let JasmineTester = require("./lib/testers/JasmineTester")
           tester = new JasmineTester();
         }else {
           return await exitWithError(`Unable to detect a testing config. If this repo has Jasmine or Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
