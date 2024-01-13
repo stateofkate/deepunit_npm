@@ -58,6 +58,7 @@ run-deepunit:
     - echo "Current directory $(pwd)"
     - echo "Listing files in current directory:"
     - git remote -v
+    - git branch
     - ls -la
     - echo "Listing contents of src/ up to 3 levels deep:"
     - find src/ -maxdepth 3 -type f -print
