@@ -184,8 +184,8 @@ export async function main() {
         //Calls openAI to generate model response
         const response = await tester.generateTest(testInput);
         console.log(response)
-        fs.writeFileSync('deepunit-file.json', JSON.stringify(response, null, 2))//.replace(/\\n/g, '\n'))
-        fs.writeFileSync(sourceFileName+'prototyping-file.md', response.md)
+        //fs.writeFileSync('deepunit-file.json', JSON.stringify(response, null, 2))//.replace(/\\n/g, '\n'))
+        //fs.writeFileSync(sourceFileName+'prototyping-file.md', response.md)
         //this could get abstracted away
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);
