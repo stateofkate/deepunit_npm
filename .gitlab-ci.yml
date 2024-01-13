@@ -57,6 +57,7 @@ run-deepunit:
     - echo "Changed files $CHANGED_FILES"
     - echo "Current directory $(pwd)"
     - echo "Listing files in current directory:"
+    - git remote -v
     - ls -la
     - echo "Listing contents of src/ up to 3 levels deep:"
     - find src/ -maxdepth 3 -type f -print
