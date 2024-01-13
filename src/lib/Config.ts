@@ -15,7 +15,6 @@ const configFilePaths = [devConfig, userConfig]; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
-export const maxFixFailingTestAttempts = 2;
 
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
