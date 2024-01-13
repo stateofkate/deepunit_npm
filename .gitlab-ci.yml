@@ -57,18 +57,6 @@ run-deepunit:
     - CHANGED_FILES="${CHANGED_FILES%,}"
     - echo "Changed files $CHANGED_FILES"
     - echo "Current directory $(pwd)"
-    - echo "Listing files in current directory:"
-    - git remote -v
-    - git branch
-    - echo "Checking branches"
-    - git branch -a
-    - echo "Checking current branch"
-    - git branch --show-current
-    - ls -la
-    - echo "Listing contents of src/ up to 3 levels deep:"
-    - find src/ -maxdepth 3 -type f -print
-    - echo $(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH)
-    - echo "Changed files $CHANGED_FILES"
     - npm run start -- --f "$CHANGED_FILES" --json --ff --y --ap --email "$GITLAB_USER_EMAIL" --meta "$CI_COMMIT_MESSAGE"
   artifacts:
     paths:
