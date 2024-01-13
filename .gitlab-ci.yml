@@ -56,7 +56,6 @@ run-deepunit:
     - CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH | tr '\n' ', ')
     - CHANGED_FILES="${CHANGED_FILES%,}"
     - echo "Changed files $CHANGED_FILES"
-    - echo "Current directory $(pwd)"
     - npm run start -- --f "$CHANGED_FILES" --json --ff --y --ap --email "$GITLAB_USER_EMAIL" --meta "$CI_COMMIT_MESSAGE"
   artifacts:
     paths:
