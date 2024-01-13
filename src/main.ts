@@ -60,8 +60,6 @@ export async function main() {
 
   // Get files that need to be tested
   const filesToTestResult = await Files.getFilesToTest();
-  console.log('thesting these files')
-  console.log(filesToTestResult)
   const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
   const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
 

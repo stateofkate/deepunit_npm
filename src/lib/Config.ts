@@ -42,7 +42,6 @@ export class Config {
   private versionCache: string = this.undefinedVersion;
   platform: string = '';
   defaultBranch: string = ''
-
   
   constructor() {
     this.detectProjectType();
@@ -234,13 +233,11 @@ export class Config {
 
     return [];
   }
-
   
   /**
    * Get an string value from config (even if the value is something else, we convert to string)
    */
   public static getStringFromConfig(configProperty: string, defaultValue?: string): string {
-    console.log(fs.readFileSync(devConfig, 'utf-8'))
     const configVal = Config.getValueFromConfigFile(configProperty);
     if (configVal) {
       return configVal.toString();

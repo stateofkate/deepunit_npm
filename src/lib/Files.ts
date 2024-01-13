@@ -47,8 +47,6 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
-      console.log(filesToFilter)
-      console.log(fs.readFileSync(filesToFilter[1], 'utf-8'))
       const missingFiles = filesToFilter.filter((filePath) => {
         if (!Files.existsSync(filePath)) {
           flagType = 'fileFlag';
