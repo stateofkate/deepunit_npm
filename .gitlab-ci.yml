@@ -21,4 +21,4 @@ deploy_job:
     - echo "Deploying the project..."
     # Add your deployment commands here
   only:
-    - main
+    - dev
