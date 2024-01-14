@@ -60,8 +60,6 @@ run-deepunit:
   artifacts:
     paths:
       - deepunit-tests.json
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   only:
     - merge_requests
 
