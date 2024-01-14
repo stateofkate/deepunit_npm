@@ -6,10 +6,10 @@ dependencies-backend:
   interruptible: true
   artifacts:
     paths:
-      - $CI_PROJECT_DIR/dumper/node_modules
+      - $CI_PROJECT_DIR/
   retry: 1
   before_script:
-    - cd $CI_PROJECT_DIR/dumper
+    - cd $CI_PROJECT_DIR/
   stage: dependencies
   script:
     - npm install --no-progress --no-audit --no-fund --verbose
