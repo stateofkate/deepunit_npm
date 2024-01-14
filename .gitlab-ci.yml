@@ -7,14 +7,18 @@ build_job:
   stage: build
   script:
     - echo "Building the project..."
-  only:
-    - merge_requests
-    - branches
+    # Add your build commands here
 
 test_job:
   stage: test
   script:
     - echo "Running tests..."
+    # Add your test commands here
+
+deploy_job:
+  stage: deploy
+  script:
+    - echo "Deploying the project..."
+    # Add your deployment commands here
   only:
-    - merge_requests
-    - branches
+    - main
