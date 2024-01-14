@@ -1,24 +1,17 @@
 stages:
-  - build
-  - test
-  - deploy
+  - dependencies
 
-build_job:
-  stage: build
+dependencies-backend:
+  image: node:18-alpine
+  interruptible: true
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/dumper/node_modules
+  retry: 1
+  before_script:
+    - cd $CI_PROJECT_DIR/dumper
+  stage: dependencies
   script:
-    - echo "Building the project..."
-    # Add your build commands here
-
-test_job:
-  stage: test
-  script:
-    - echo "Running tests..."
-    # Add your test commands here
-
-deploy_job:
-  stage: deploy
-  script:
-    - echo "Deploying the project..."
-    # Add your deployment commands here
+    - npm install --no-progress --no-audit --no-fund --verbose
   only:
-    - dev
+    - merge_requests
