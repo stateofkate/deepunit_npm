@@ -1,110 +1,20 @@
-# @deprecated as we have moved to github actions
-
-image: node:18
-
-variables:
-  ARTIFACT_DOWNLOAD_ATTEMPTS: 2 # Number of retries for restoring saved artifacts.
-  FORCE_COLOR: '1' # Whether to force colour output in compatible tooling.
-  GET_SOURCES_ATTEMPTS: 2 # Number of retries for git commands.
-  RESTORE_CACHE_ATTEMPTS: 2 # Number of retries for restoring cached files.
-
 stages:
-  - prepare
-  - deepunitci
-  - verify
   - build
-  - publish
+  - test
+  - deploy
 
-# Installs all dependencies.
-install:
-  stage: prepare
-  interruptible: true
-  retry: 1
-  dependencies: []
-  artifacts:
-    name: 'deps_$CI_COMMIT_REF_SLUG'
-    paths:
-      - node_modules/
-    when: on_success
-    expire_in: 12h
-  script:
-    - npm install --no-progress --no-audit --no-fund --verbose
-  only:
-    - master
-    - merge_requests
-
-run-deepunit:
-  stage: deepunitci
-  image: node:18
-  script:
-    - npm install
-    - |
-      if [ -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" ]; then
-        echo "Running in a Merge Request Pipeline"
-        SOURCE_BRANCH=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
-        TARGET_BRANCH=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-      else
-        echo "Running in a Branch Pipeline"
-        SOURCE_BRANCH=$CI_COMMIT_BRANCH
-        TARGET_BRANCH="master" # or your default branch
-      fi
-    - echo "Source branch $SOURCE_BRANCH"
-    - echo "Target branch $TARGET_BRANCH"
-    - git fetch origin $TARGET_BRANCH:$TARGET_BRANCH
-    - git fetch origin $SOURCE_BRANCH:$SOURCE_BRANCH
-    - git checkout $SOURCE_BRANCH
-    - CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH...origin/$SOURCE_BRANCH | tr '\n' ', ')
-    - CHANGED_FILES="${CHANGED_FILES%,}"
-    - echo "Changed files $CHANGED_FILES"
-    - npm run start -- --f "$CHANGED_FILES" --json --ff --y --ap --email "$GITLAB_USER_EMAIL" --meta "$CI_COMMIT_MESSAGE"
-  artifacts:
-    paths:
-      - deepunit-tests.json
-  only:
-    - merge_requests
-
-# Runs the test suite.
-test:
-  stage: verify
-  interruptible: true
-  retry: 1
-  dependencies:
-    - install
-  script:
-    - npm run test:cov
-  only:
-    - master
-    - merge_requests
-
-# generate dist folder
-build:
+build_job:
   stage: build
-  interruptible: true
-  retry: 1
-  artifacts:
-    name: dist_$CI_COMMIT_REF_SLUG'
-    paths:
-      - dist/
-    when: on_success
-    expire_in: 12h
-  dependencies:
-    - install
   script:
-    - npm run build
+    - echo "Building the project..."
   only:
-    - master
+    - merge_requests
+    - branches
 
-# Publishes the package to npm.
-publish:
-  stage: publish
-  interruptible: false
-  retry: 1
-  dependencies:
-    - install
-    - build
+test_job:
+  stage: test
   script:
-    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
-    - npm publish --verbose
-  resource_group: 'deployment-$CI_COMMIT_REF_SLUG'
+    - echo "Running tests..."
   only:
-    - master
+    - merge_requests
+    - branches
