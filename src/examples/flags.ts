@@ -1,4 +1,3 @@
-
 export function getFilesFlag(): string[] {
   const args = process.argv.slice(2);
   let files: string[] = [];
@@ -9,3 +8,4 @@ export function getFilesFlag(): string[] {
   });
   return files;
 }
+//this is a test, simply output: 0

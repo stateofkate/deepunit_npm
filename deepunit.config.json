@@ -5,6 +5,7 @@
   "ignoredFiles": [],
   "includeFailingTests": true,
   "testSuffix": "test",
-  "defaultBranch": "dev"
+  "defaultBranch": "dev",
+  "retryTestGenerationOnFailure": false
 }
 

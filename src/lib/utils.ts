@@ -250,6 +250,10 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Say yes to all prompts about downloading, enables programmatic usage of DeepUnit in CI.',
     })
+    .option('targetBranch', {
+      type: 'string',
+      description: 'Sets the target branch used when pulling the git diff.',
+    })
     .option('ff', {
       alias: ['force-filter'],
       type: 'boolean',
@@ -329,6 +333,10 @@ export function getGenerateAllFilesFlag(): boolean {
   return !!(argv.a || argv.all);
 }
 
+export function getTargetBranchFlagFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.targetBranch as string;
+}
 export function getYesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.y || argv.yes);
