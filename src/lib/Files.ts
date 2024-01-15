@@ -12,7 +12,7 @@ import {
   getGenerateAllFilesFlag,
   getPatternFlag,
   setupYargs,
-  getYesOrNoAnswer, askQuestion
+  getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag
 } from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
@@ -198,8 +198,8 @@ export class Files {
         console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
       }
     }
-    
-    const diffCmd = `git diff origin/HEAD..HEAD -- ${files.join(' ')}`;
+    const targetBranch: string = getTargetBranchFlagFlag()
+    const diffCmd = `git diff origin/${targetBranch}..HEAD -- ${files.join(' ')}`;
     try {
       return execSync(diffCmd)
         .toString()
@@ -214,12 +214,7 @@ export class Files {
         console.log('Attempt to get diffs count: ' + attempt)
         throw error; // Rethrow other errors
       }
-    }/*
-    return execSync(diffCmd)
-      .toString()
-      .split('\n')
-      .filter((line) => !line.trim().startsWith('-'))
-      .join('\n');*/
+    }
   }
   /**
    * Retrieves a list of Git remotes.
