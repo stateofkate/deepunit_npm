@@ -164,6 +164,7 @@ export async function main() {
           }
         }
 
+        
         let sourceFileDiff = '';
         const files = getFilesFlag() ?? [];
         if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
