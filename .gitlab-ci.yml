@@ -59,7 +59,7 @@ run-deepunit:
     - npm run start -- --f "$CHANGED_FILES" --json --ff --y --ap --email "$GITLAB_USER_EMAIL" --meta "$CI_COMMIT_MESSAGE" --targetBranch "$TARGET_BRANCH"
   artifacts:
     paths:
-      - deepunit-tests.json
+      - deepunit-tests.json #path is very important
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
