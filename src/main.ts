@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-import { TestingFrameworks } from './main.consts';
-import { CONFIG } from './lib/Config';
-import { Files } from './lib/Files';
-import { checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate } from './lib/utils';
-import { Color, Printer } from './lib/Printer';
-import { Tester, TestRunResult, GenerateTestOrReportInput } from './lib/testers/Tester';
-import { JestTester } from './lib/testers/JestTester';
-import { Api, ClientCode, StateCode } from './lib/Api';
-import { Auth } from './lib/Auth';
-import { Log } from './lib/Log';
+import {TestingFrameworks} from './main.consts';
+import {CONFIG} from './lib/Config';
+import {Files} from './lib/Files';
+import {checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate} from './lib/utils';
+import {Color, Printer} from './lib/Printer';
+import {GenerateTestOrReportInput, Tester, TestRunResult} from './lib/testers/Tester';
+import {JestTester} from './lib/testers/JestTester';
+import {Api, ClientCode, StateCode} from './lib/Api';
+import {Auth} from './lib/Auth';
+import {Log} from './lib/Log';
+import fs from "fs";
 
 // global classes
 
@@ -37,10 +38,12 @@ export async function main() {
   Files.setup();
 
   let testCasesObj;
-
-  // confirm we have all packages for type of project
-  // is where we code in react18 dependency
-  await CONFIG.confirmAllPackagesNeeded();
+  
+  if(CONFIG.testingFramework === TestingFrameworks.jest) {
+    // confirm we have all packages for type of project
+    // is where we code in react18 dependency
+    await CONFIG.confirmAllPackagesNeeded();
+  }
 
   // check to confirm we still support this version
   if (checkFeedbackFlag()) {
@@ -142,12 +145,13 @@ export async function main() {
         const testFileName = Tester.getTestName(sourceFileName);
 
         let tester: Tester;
-        //check jest config
-        //ky note: wouldn't config for testingFramework be at project level
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
-        } else {
-          return await exitWithError(`Unable failed to detect Jest config. If this repo has Jest installed set "testingFramework": "jest" in deepunit.config.json`);
+        } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
+          let JasmineTester = require("./lib/testers/JasmineTester") //We must do the import here because Api.ts imports AUTH from main. This causes the tests in JestTest.ts to instanciate Main.ts, which then creates main.ts which creates a Jasminetester as Jasmine is the default. We should refactor AUTH to not be part of main, but that's shelved for now.
+          tester = new JasmineTester();
+        }else {
+          return await exitWithError(`Unable to detect a testing config. If this repo has Jasmine or Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
         }
 
         let testFileContent: string = '';
@@ -159,11 +163,13 @@ export async function main() {
             testFileContent = result as string;
           }
         }
-
+        
         let sourceFileDiff = '';
         const files = getFilesFlag() ?? [];
-        if (!CONFIG.generateAllFiles && files.length <= 0 && CONFIG.isGitRepository) {
-          sourceFileDiff = Files.getDiff([sourceFileName]);
+        if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
+          //If they are generating all files then the diff would not be relevant, however if they are not then we want to make sure to include the diff so that we can filter to only functions they have changed
+          await CONFIG.askForDefaultBranch();
+          sourceFileDiff = await Files.getDiff([sourceFileName]);
         }
         const sourceFileContent = Files.getFileContent(sourceFileName);
 
@@ -177,7 +183,6 @@ export async function main() {
 
         //Calls openAI to generate model response
         const response = await tester.generateTest(testInput);
-
         //this could get abstracted away
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);

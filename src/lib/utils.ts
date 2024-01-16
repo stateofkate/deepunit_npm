@@ -135,7 +135,28 @@ export async function validateVersionIsUpToDate(): Promise<void> {
     }
   }
 }
-
+/**
+ * Prompts the user with a question and returns the user's text input. If the Yes flag was used it will use the default answer.
+ * @param {string} prompt - The question to prompt the user with.
+ * @returns {Promise<string>} The user's input as a string or the default answer when the yes flag was used.
+ */
+export async function askQuestion(prompt: string, defaultAnswer: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  
+  return new Promise((resolve) => {
+    if (getYesFlag()) {
+      resolve(defaultAnswer);
+      return;
+    }
+    rl.question(prompt, (answer) => {
+      rl.close(); // It's important to close the readline interface
+      resolve(answer);
+    });
+  });
+}
 export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   const rl = createInterface({
     input: process.stdin,
@@ -229,6 +250,10 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Say yes to all prompts about downloading, enables programmatic usage of DeepUnit in CI.',
     })
+    .option('targetBranch', {
+      type: 'string',
+      description: 'Sets the target branch used when pulling the git diff.',
+    })
     .option('ff', {
       alias: ['force-filter'],
       type: 'boolean',
@@ -308,6 +333,10 @@ export function getGenerateAllFilesFlag(): boolean {
   return !!(argv.a || argv.all);
 }
 
+export function getTargetBranchFlagFlag(): string {
+  const argv = setupYargs().argv as ParsedArgs;
+  return argv.targetBranch as string;
+}
 export function getYesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!(argv.y || argv.yes);

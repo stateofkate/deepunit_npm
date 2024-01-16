@@ -10,6 +10,7 @@ variables:
 
 stages:
   - prepare
+  - deepunitci
   - verify
   - build
   - publish
@@ -31,6 +32,36 @@ install:
   only:
     - master
     - merge_requests
+
+run-deepunit:
+  stage: deepunitci
+  image: node:18
+  script:
+    - npm install
+    - |
+      if [ -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" ]; then
+        echo "Running in a Merge Request Pipeline"
+        SOURCE_BRANCH=$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+        TARGET_BRANCH=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      else
+        echo "Running in a Branch Pipeline"
+        SOURCE_BRANCH=$CI_COMMIT_BRANCH
+        TARGET_BRANCH="master" # or your default branch
+      fi
+    - echo "Source branch $SOURCE_BRANCH"
+    - echo "Target branch $TARGET_BRANCH"
+    - git fetch origin $TARGET_BRANCH:$TARGET_BRANCH
+    - git fetch origin $SOURCE_BRANCH:$SOURCE_BRANCH
+    - git checkout $SOURCE_BRANCH
+    - CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH..origin/$SOURCE_BRANCH | tr '\n' ', ')
+    - CHANGED_FILES="${CHANGED_FILES%,}"
+    - echo "Changed files $CHANGED_FILES"
+    - npm run start -- --f "$CHANGED_FILES" --json --ff --y --ap --email "$GITLAB_USER_EMAIL" --meta "$CI_COMMIT_MESSAGE" --targetBranch "$TARGET_BRANCH"
+  artifacts:
+    paths:
+      - deepunit-tests.json #path is very important
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # Runs the test suite.
 test:

@@ -2,11 +2,23 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
 import { CONFIG } from './Config';
-import {exitWithError, getAbsolutePathsFlag, getBugFileFlag, getBugFlag, getForceFilter,getFilesFlag, getGenerateAllFilesFlag, getPatternFlag, setupYargs} from './utils';
+import {
+  exitWithError,
+  getAbsolutePathsFlag,
+  getBugFileFlag,
+  getBugFlag,
+  getForceFilter,
+  getFilesFlag,
+  getGenerateAllFilesFlag,
+  getPatternFlag,
+  setupYargs,
+  getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag
+} from './utils';
 import * as glob from 'glob';
 import { Color } from './Printer';
 
 export class Files {
+  public static hasFetched = false;
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
 
@@ -173,15 +185,77 @@ export class Files {
     return filteredFiles;
   }
 
-  public static getDiff(files: string[]): string {
-    const diffCmd = `git diff --unified=0 HEAD~1 HEAD -- ${files.join(' ')}`;
-    return execSync(diffCmd)
-      .toString()
-      .split('\n')
-      .filter((line) => !line.trim().startsWith('-'))
-      .join('\n');
+  public static async getDiff(files: string[], attempt = 0): Promise<string> {
+    const remoteName = await this.askForRemote()
+    if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
+      const fetchCommand = `git fetch ${remoteName}`
+      const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
+  
+      if (permission) {
+        execSync(fetchCommand); // Ensure you handle errors here
+        this.hasFetched = true;
+      } else {
+        console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
+      }
+    }
+    const targetBranch: string = getTargetBranchFlagFlag()
+    const diffCmd = `git diff origin/${targetBranch}..HEAD -- ${files.join(' ')}`;
+    try {
+      return execSync(diffCmd)
+        .toString()
+        .split('\n')
+        .filter((line) => !line.trim().startsWith('-'))
+        .join('\n');
+    } catch (error) {
+      if (error.message.includes('bad revision') && attempt < 2) {
+        await Files.setRemoteHead(remoteName); // Call the function to set remote HEAD
+        return this.getDiff(files, attempt+1); // Retry getting the diff
+      } else {
+        console.log('Attempt to get diffs count: ' + attempt)
+        throw error; // Rethrow other errors
+      }
+    }
   }
-
+  /**
+   * Retrieves a list of Git remotes.
+   * @returns {string[]} List of Git remotes.
+   */
+  public static getGitRemotes(): string[] {
+    const remotes = execSync('git remote').toString().trim();
+    return remotes ? remotes.split('\n') : [];
+  }
+  /**
+   * Asks the user to select a Git remote.
+   * @param {string} branch - The branch name for context in the prompt.
+   * @returns {Promise<string>} The selected remote.
+   */
+  public static async askForRemote(): Promise<string> {
+    const remotes = this.getGitRemotes();
+    if (remotes.length === 0) {
+      console.log('No Git remotes found.');
+      return '';
+    }
+    if(remotes.length === 1) {
+      return remotes[0].trim();
+    }
+    
+    const prompt = `What is the name of the remote that we should compare your default branch ${CONFIG.defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
+    return askQuestion(prompt, 'origin');
+  }
+  public static async setRemoteHead(remoteName: string) {
+    
+    const branchName = CONFIG.defaultBranch;
+    
+    const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
+    const permission = getYesOrNoAnswer(`We need to set your local repositories head to track remote. The command we will run is "${setHeadCommand}"`)
+    try {
+      execSync(setHeadCommand);
+      console.log(`\nRemote HEAD set to ${branchName}`);
+    } catch (error) {
+      console.error(`Error setting remote HEAD: ${error.message}`);
+      throw error;
+    }
+  }
   public static getFileContent(file: string | null): string {
     if (file === null) {
       return '';
@@ -387,12 +461,38 @@ export class Files {
     }
     return undefined;
   }
+  
+  public static updateConfigFile(propertyName: string, propertyValue: any) {
+    const configPath = 'deepunit.config.json';
+    
+    // Check if the config file exists
+    if (!fs.existsSync(configPath)) {
+      console.error(`Config file not found at ${configPath}, creating it now`);
+      this.setup();
+    }
+    
+    // Read the existing configuration
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    
+    // Update the specified property
+    config[propertyName] = propertyValue;
+    
+    // Write the updated configuration back to the file
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log(`Updated ${propertyName} in ${configPath}`);
+  }
 
   public static setup() {
     const configPath = 'deepunit.config.json';
     if (!fs.existsSync(configPath)) {
       const configFileContent =
-        '{\n' + '  "ignoredDirectories": ["node_modules"],\n' + '  "ignoredFiles": [],\n' + '  "includeFailingTests": true,\n' + '  "testSuffix": "test"\n' + '}\n';
+        '{\n' +
+        '  "ignoredDirectories": ["node_modules"],\n' +
+        '  "ignoredFiles": [],\n' +
+        '  "includeFailingTests": true,\n' +
+        '  "testSuffix": "test"\n' +
+        '  "defaultBranch": "master"\n' +
+        '}\n';
       fs.writeFileSync(configPath, configFileContent);
     }
     const packagePath = 'package.json';

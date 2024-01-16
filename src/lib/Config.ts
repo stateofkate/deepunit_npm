@@ -1,25 +1,26 @@
 import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
-import { TestingFrameworks } from '../main.consts';
-import { exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage } from './utils';
-import { execSync } from 'child_process';
-import { Color } from './Printer';
+import {TestingFrameworks} from '../main.consts';
+import {askQuestion, exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage} from './utils';
+import {execSync} from 'child_process';
+import {Color} from './Printer';
+import {Files} from "./Files";
 
 const devConfig: string = 'deepunit.dev.config.json';
+const userConfig: string = 'deepunit.config.json';
 
 // HARDCODED CONFIG VALUES
-const configFilePaths = [devConfig, 'deepunit.config.json']; // in order of importance
+const configFilePaths = [devConfig, userConfig]; // in order of importance
 const prodBase = 'https://dumper.adaptable.app';
 const localHostBase = 'http://localhost:8080';
 
-export const maxFixFailingTestAttempts = 2;
 
 /** Automatically Detected Project configs
  * These configs are first pulled from deepunit.config.json, if absent we will try to use the detect*() Function to autodetect
  */
 export class Config {
-  frontendFramework: string = '';
+  frontendFramework: string = 'angular';
   frameworkVersion: string = '';
   testSuffix: string = '';
   testingFramework: TestingFrameworks = TestingFrameworks.unknown;
@@ -39,7 +40,8 @@ export class Config {
   private readonly undefinedVersion = '-1';
   private versionCache: string = this.undefinedVersion;
   platform: string = '';
-
+  defaultBranch: string = ''
+  
   constructor() {
     this.detectProjectType();
     this.determineDevBuild();
@@ -49,6 +51,10 @@ export class Config {
     this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
     if (this.testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(this.testingFrameworkOverride)) {
       this.testingFramework = this.testingFrameworkOverride as TestingFrameworks;
+    } else if(!fs.existsSync(userConfig) && this.testingFramework === undefined) {
+      //if the framework is undefined and the user config does exist then we will set to jasmine
+      //the reason for this is there is currently a bug where any unit test with a dependency on API.ts will cause main.ts to be executed because Api imports AUTH from main. This results in JestTester.test.ts instanciating Jasmine tester which causes errors. It would be niice to fix this, but sort of a pain
+      this.testingFramework = TestingFrameworks.jasmine
     }
 
     this.scriptTarget = this.getsConfigTarget() ?? 'unknown';
@@ -63,6 +69,7 @@ export class Config {
     this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
     this.isGitRepository = this.isInGitRepo();
     this.platform = process.platform;
+    this.defaultBranch = Config.getStringFromConfig('defaultBranch')
   }
 
   /**
@@ -138,12 +145,12 @@ export class Config {
       let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
       let dependencies = packageJson['dependencies'] || {};
       let devDependencies = packageJson['devDependencies'] || {};
-      if ('react' in dependencies || 'react' in devDependencies) {
-        this.frontendFramework = 'react';
-        return;
-      }
       if ('angular/common' in dependencies || 'angular/common' in devDependencies) {
         this.frontendFramework = 'angular';
+        return;
+      }
+      if ('react' in dependencies || 'react' in devDependencies) {
+        this.frontendFramework = 'react';
         return;
       }
     }
@@ -225,14 +232,16 @@ export class Config {
 
     return [];
   }
-
+  
   /**
    * Get an string value from config (even if the value is something else, we convert to string)
    */
-  public static getStringFromConfig(configProperty: string): string {
+  public static getStringFromConfig(configProperty: string, defaultValue?: string): string {
     const configVal = Config.getValueFromConfigFile(configProperty);
     if (configVal) {
       return configVal.toString();
+    } else if(defaultValue) {
+      return defaultValue
     }
 
     return '';
@@ -367,6 +376,14 @@ export class Config {
     }
 
     return null;
+  }
+  
+  public async askForDefaultBranch() {
+    if(!this.defaultBranch) {
+      const branchName = await askQuestion('Please enter the name of your default branch. This is usually main, master or dev but could be anything.', 'master')
+      this.defaultBranch = branchName
+      Files.updateConfigFile('defaultBranch', branchName)
+    }
   }
 }
 

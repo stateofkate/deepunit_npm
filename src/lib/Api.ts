@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { AUTH } from '../main';
+import { AUTH } from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import {
