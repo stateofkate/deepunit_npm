@@ -10,7 +10,6 @@ export class Printer {
   }
 
   public static printIntro() {
-    console.log('heyaaaaa')
     const LINE_DIVIDER = '###################################################';
     console.log(LINE_DIVIDER);
     console.log('##### Generating unit tests with DeepUnit.AI #####');
