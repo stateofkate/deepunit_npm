@@ -380,7 +380,7 @@ export class Config {
   
   public async askForDefaultBranch() {
     if(!this.defaultBranch) {
-      const branchName = await askQuestion('Please enter the name of your default branch. This is usually main, master or dev but could be anything.', 'master')
+      const branchName = await askQuestion('Please enter the name of your default branch. This is usually main, master or dev but could be anything: ', 'master')
       this.defaultBranch = branchName
       Files.updateConfigFile('defaultBranch', branchName)
     }

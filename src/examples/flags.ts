@@ -7,6 +7,5 @@ export function getFilesFlag(): string[] {
       files = files.concat(args[index + 1].split(','));
     }
   });
-  console.log('heya')
   return files;
 }

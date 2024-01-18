@@ -10,7 +10,7 @@ export type ApiBaseData = {
 };
 
 export type GenerateTestData = {
-  sourceFileDiffs: string;
+  sourceFileDiffs: string[];
   sourceFile?: { [key: string]: string };
   testFile?: { [key: string]: string };
   testingLanguageOverride?: string;
@@ -20,7 +20,7 @@ export type GenerateTestData = {
 };
 
 export type GenerateBugReport = {
-  sourceFileDiffs: string;
+  sourceFileDiffs: string[];
   sourceFile?: { [key: string]: string };
   bugReport?: { [key: string]: string};
   testingLanguageOverride?: string;

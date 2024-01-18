@@ -18,7 +18,7 @@ export interface TestRunResult {
 
 
 export interface GenerateTestOrReportInput {
-  sourceFileDiff: string;
+  sourceFileDiff: string[];
   sourceFileName: string | null;
   sourceFileContent: string | null;
   generatedFileName: string;
