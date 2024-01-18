@@ -168,6 +168,7 @@ export class GymSetupComponent implements OnInit {
   }
 
   public dateToTime(dateString: any): string {
+    
     if (!dateString) {
       return dateString;
     }

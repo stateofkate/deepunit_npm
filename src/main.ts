@@ -96,7 +96,7 @@ export async function main() {
           }
         }
 
-        let sourceFileDiff = '';
+        let sourceFileDiff: string[] = [];
         const files = getBugFlag() ?? [];
         const sourceFileContent = Files.getFileContent(sourceFileName);
 
@@ -148,7 +148,7 @@ export async function main() {
         if (CONFIG.testingFramework === TestingFrameworks.jest) {
           tester = new JestTester();
         } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
-          let JasmineTester = require("./lib/testers/JasmineTester") //We must do the import here because Api.ts imports AUTH from main. This causes the tests in JestTest.ts to instanciate Main.ts, which then creates main.ts which creates a Jasminetester as Jasmine is the default. We should refactor AUTH to not be part of main, but that's shelved for now.
+          let {JasmineTester} = require("./lib/testers/JasmineTester") //We must do the import here because Api.ts imports AUTH from main. This causes the tests in JestTest.ts to instanciate Main.ts, which then creates main.ts which creates a Jasminetester as Jasmine is the default. We should refactor AUTH to not be part of main, but that's shelved for now.
           tester = new JasmineTester();
         }else {
           return await exitWithError(`Unable to detect a testing config. If this repo has Jasmine or Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
@@ -164,7 +164,7 @@ export async function main() {
           }
         }
         
-        let sourceFileDiff = '';
+        let sourceFileDiff = [];
         const files = getFilesFlag() ?? [];
         if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
           //If they are generating all files then the diff would not be relevant, however if they are not then we want to make sure to include the diff so that we can filter to only functions they have changed

@@ -184,8 +184,16 @@ export class Files {
     }
     return filteredFiles;
   }
-
-  public static async getDiff(files: string[], attempt = 0): Promise<string> {
+  public static hasUncommittedChanges(files: string[]) {
+    try {
+      const status = execSync(`git status --porcelain -- ${files.join(' ')}`).toString();
+      return status !== '';
+    } catch (error) {
+      console.error('Error checking for uncommitted changes:', error);
+      return false;
+    }
+  }
+  public static async getDiff(files: string[], attempt = 0): Promise<string[]> {
     const remoteName = await this.askForRemote()
     if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
       const fetchCommand = `git fetch ${remoteName}`
@@ -198,20 +206,31 @@ export class Files {
         console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
       }
     }
-    const targetBranch: string = getTargetBranchFlagFlag()
-    const diffCmd = `git diff origin/${targetBranch}..HEAD -- ${files.join(' ')}`;
+    const targetBranchFlag: string = getTargetBranchFlagFlag()
+    const targetBranch = targetBranchFlag ? targetBranchFlag : CONFIG.defaultBranch;
+    let diffCmd = []
+    if(targetBranchFlag) { //handles things for CICD pipelines
+      diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+    } else {
+      if(this.hasUncommittedChanges(files)) {
+        diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`)
+        diffCmd.push(`git diff -U0 -- ${files.join(' ')}`)
+      } else {
+        diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+      }
+      
+    }
     try {
-      return execSync(diffCmd)
-        .toString()
-        .split('\n')
-        .filter((line) => !line.trim().startsWith('-'))
-        .join('\n');
+      let diff: string[] = [];
+      for(const diffCommand of diffCmd) {
+        diff.push(execSync(diffCommand).toString())
+      }
+      return diff;
     } catch (error) {
-      if (error.message.includes('bad revision') && attempt < 2) {
+      if (error.message.includes('bad revision') && attempt < 1) {
         await Files.setRemoteHead(remoteName); // Call the function to set remote HEAD
         return this.getDiff(files, attempt+1); // Retry getting the diff
       } else {
-        console.log('Attempt to get diffs count: ' + attempt)
         throw error; // Rethrow other errors
       }
     }
