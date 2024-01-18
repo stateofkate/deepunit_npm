@@ -213,7 +213,7 @@ export class Files {
       diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
     } else {
       if(this.hasUncommittedChanges(files)) {
-        diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`)
+        //diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`) someday we should support staged changes, but not a priority rn
         diffCmd.push(`git diff -U0 -- ${files.join(' ')}`)
       } else {
         diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
