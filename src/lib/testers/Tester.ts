@@ -3,6 +3,7 @@ import { Api } from '../Api';
 import { Files } from '../Files';
 import { LoadingIndicator, getJsonFlag } from '../utils';
 import console from '../Log';
+import fs from "fs";
 
 export interface TestRunResult {
   passedTests: { [key: string]: string };
@@ -63,8 +64,21 @@ export abstract class Tester {
   public static getTestName(file: string): string {
     const fileParts = file.split('.');
     const fileExt = fileParts[fileParts.length - 1];
-    const testFileName = fileParts.slice(0, -1).join('.') + '.deepunitai.' + CONFIG.testSuffix + '.' + fileExt;
-    return testFileName;
+    const configTestFile = fileParts.slice(0, -1).join('.') + '.' + CONFIG.testSuffix + '.' + fileExt;
+  
+    if(fs.existsSync(configTestFile)) {
+      return configTestFile
+    }
+    const testExtensionFile = fileParts.slice(0, -1).join('.') + '.test.' + fileExt;
+    if(fs.existsSync(testExtensionFile)) {
+      return testExtensionFile
+    }
+    const specExtensionFile = fileParts.slice(0, -1).join('.') + '.spec.' + fileExt;
+    if(fs.existsSync(specExtensionFile)) {
+      return specExtensionFile
+    }
+    const deepunitTestFile = fileParts.slice(0, -1).join('.') + '.deepunitai.' + CONFIG.testSuffix + '.' + fileExt;
+    return deepunitTestFile;
   }
 
   public static getBugReportName(file: string): string {

@@ -7,6 +7,7 @@ Features
 - We now have a defaultBranch config which allows us to compare feature branches against the target branch they will be merged into
 - We now support adding a testCaseGoal in deepunit.config.json that allows you to specify your goals for tests to cover such as happy paths, edgecases, 80% code coverage, bug detection, etc.
 - We now filter out any existing test cases so we only provide cases which are not already covered
+- Improved detection of existing test files regardless of testSuffix
 
 ## 1.8.7
 Features
