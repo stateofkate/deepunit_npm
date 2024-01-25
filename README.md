@@ -67,7 +67,7 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
   "defaultBranch": "main"
   
   // Specify the type/goal of testcases you want to cover. Examples are happy path, edgecase, 80% code coverage, detect bugs, etc.
-  "testCaseGoal": "main"
+  "testCaseGoal": "edge cases"
 }
 ```
 
