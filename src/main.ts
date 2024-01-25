@@ -183,6 +183,7 @@ export async function main() {
 
         //Calls openAI to generate model response
         const response = await tester.generateTest(testInput);
+        fs.writeFileSync(testInput.sourceFileName+'.md', response.md)
         //this could get abstracted away
         if (response.stateCode === StateCode.FileNotSupported) {
           unsupportedFiles.push(sourceFileName);

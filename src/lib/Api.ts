@@ -56,6 +56,7 @@ export class Api {
       frameworkVersion: CONFIG.frameworkVersion,
       testingFramework: CONFIG.testingFramework,
       testCaseGoal: CONFIG.testCaseGoal,
+      testSuffix: CONFIG.testSuffix,
       version: await CONFIG.getVersion(),
       email: AUTH.getEmail(),
       platform: CONFIG.platform,
