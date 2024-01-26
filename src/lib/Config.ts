@@ -41,6 +41,7 @@ export class Config {
   private versionCache: string = this.undefinedVersion;
   platform: string = '';
   defaultBranch: string = ''
+  testCaseGoal: string = '';
   
   constructor() {
     this.detectProjectType();
@@ -70,6 +71,7 @@ export class Config {
     this.isGitRepository = this.isInGitRepo();
     this.platform = process.platform;
     this.defaultBranch = Config.getStringFromConfig('defaultBranch')
+    this.testCaseGoal = Config.getStringFromConfig('testCaseGoal')
   }
 
   /**

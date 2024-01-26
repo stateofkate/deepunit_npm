@@ -1,5 +1,14 @@
 # Release Log
 
+## 1.9.0
+Features
+- Adds support for Jasmine and Angular
+- When possible we now only generate tests for functions which were modified in a diff comparing the feature branch to the target branch
+- We now have a defaultBranch config which allows us to compare feature branches against the target branch they will be merged into
+- We now support adding a testCaseGoal in deepunit.config.json that allows you to specify your goals for tests to cover such as happy paths, edgecases, 80% code coverage, bug detection, etc.
+- We now filter out any existing test cases so we only provide cases which are not already covered
+- Improved detection of existing test files regardless of testSuffix
+
 ## 1.8.7
 Features
 - Improved React 18 support

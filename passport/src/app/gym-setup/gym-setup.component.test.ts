@@ -1,4 +1,4 @@
-/*
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { GymSetupComponent } from './gym-setup.component';
@@ -19,9 +19,13 @@ describe('GymSetupComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
-
+  
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+  it('should return empty string for empty strings', () => {
+    const result = component.dateToTime('')
+    expect(result).toEqual('')
+  });
 });
-*/
+
