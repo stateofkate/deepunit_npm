@@ -14,6 +14,11 @@ import fs from "fs";
 
 // global classes
 
+
+export function checkIfFileExists(filePath: string) {
+  console.log('hello world');
+}
+
 export let AUTH: Auth;
 
 export async function main() {
