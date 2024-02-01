@@ -223,10 +223,7 @@ export class Files {
     try {
       let diff: string[] = [];
       for(const diffCommand of diffCmd) {
-        const diffString = execSync(diffCommand).toString()
-        if(diffString) {
-          diff.push(diffString)
-        }
+        diff.push(execSync(diffCommand).toString())
       }
       return diff;
     } catch (error) {
