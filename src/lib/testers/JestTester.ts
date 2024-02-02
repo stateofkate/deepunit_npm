@@ -47,7 +47,9 @@ export class JestTester extends Tester {
   }
 
   public async getTestResults(files: string[]): Promise<TestRunResult> {
+    console.log('reaching getTestresults');
     const result = await this.runTests(files);
+    console.log('results:', result);
     //func name is key
     let passedTests: { [key: string]: string } = {};
     let failedTests: { [key: string]: string } = {};
