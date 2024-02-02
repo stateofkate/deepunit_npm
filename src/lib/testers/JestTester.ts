@@ -4,6 +4,7 @@ import {Api, ClientCode} from "../Api";
 
 export class JestTester extends Tester {
   public async runTests(relativePathArray: string[]): Promise<JestTestRunResult[]> {
+    console.log('run tests');
     const execPromisified = (command: string): Promise<string> => {
       return new Promise((resolve, reject) => {
         exec(command, (error: ExecException | null, stdout: string, stderr: string) => {
@@ -47,6 +48,7 @@ export class JestTester extends Tester {
   }
 
   public async getTestResults(files: string[]): Promise<TestRunResult> {
+    console.log('files:', files);
     console.log('reaching getTestresults');
     const result = await this.runTests(files);
     console.log('results:', result);

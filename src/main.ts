@@ -67,15 +67,35 @@ export async function setUp() {
   }
 }
 
-export async function deleteTempTestsAndSendResults(recombineFile, testFileName, firstTestResults, retryTestResults, firstTestResponse, retryTestResponse, tests, sourceFileName, sourceFileContent){
+export async function deleteTempTestsAndSendResults(recombineFile, testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent, retryTestResponse?,retryTestResults?){
+  let {passedTests, failedTests, failedTestErrors, failedItBlocks, itBlocksCount } = firstTestResults;
+  let serverDidNotSendTests = firstTestResponse.serverDidNotSendTests
+  let alreadyTestedFiles = firstTestResponse.alreadyTestedFiles
+  let unsupportedFiles = firstTestResponse.unsupportedFiles
+  let finalTempTestNames =
+    [...Object.keys(firstTestResults.passedTests),
+    ...Object.keys(firstTestResults.failedTests)];
+  //Final results array
+  let testsWithErrors: string[] = [];
+  let passingTests: string[] = [];
 
-  let {passedTests, failedTestErrors, failedItBlocks, itBlocksCount } = firstTestResults;
-  passedTests = passedTests.push(retryTestResults.passedTests);
 
-  Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
+  if(retryTestResponse && retryTestResults) {
+    passedTests = passedTests.push(retryTestResults.passedTests);
+    failedTests = failedTests.push(retryTestResults.failedTests);
+    Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
+    finalTempTestNames.push(
+      ...Object.keys(retryTestResults.passedTests),
+      ...Object.keys(retryTestResults.failedTests)
+    );
+    serverDidNotSendTests.concat(retryTestResponse.serverDidNotSendTests);
+    alreadyTestedFiles.concat(retryTestResponse.alreadyTestedFiles);
+    unsupportedFiles.concat(retryTestResponse.unsupportedFiles);
+  } else {
+    Api.sendResults(firstTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
+  }
 
   let completedTestFiles: { path: string; content: string }[] = [];
-
   if (recombineFile) {
     if (getJsonFlag()) {
       // store for later export
@@ -87,13 +107,6 @@ export async function deleteTempTestsAndSendResults(recombineFile, testFileName,
     console.warn('Unable to recombine tests');
   }
 
-  //get test path
-  const finalTempTestNames = [
-    ...Object.keys(retryTestResults.passedTests),
-    ...Object.keys(retryTestResults.failedTests),
-    ...Object.keys(firstTestResults.passedTests),
-    ...Object.keys(firstTestResults.failedTests)
-  ];
   const finalTempTestPaths = finalTempTestNames.map((testName) => {
     return path.dirname(sourceFileName) + '/' + testName;
   });
@@ -101,23 +114,14 @@ export async function deleteTempTestsAndSendResults(recombineFile, testFileName,
   //then we will need to delete all the temp test files.
   Files.deleteTempFiles(finalTempTestPaths);
 
-  //Final results array
-  let testsWithErrors: string[] = [];
-  let passingTests: string[] = [];
-
   if (Object.keys(passedTests).length > 0) {
-    if (CONFIG.includeFailingTests && Object.keys(retryTestResults.failedTests).length > 0) {
+    if (CONFIG.includeFailingTests && Object.keys(failedTests).length > 0) {
       testsWithErrors.push(testFileName);
+      passingTests.push(testFileName);
     } else {
       passingTests.push(testFileName);
     }
-  } else {
-    testsWithErrors.push(testFileName);
   }
-
-  const serverDidNotSendTests = firstTestResponse.serverDidNotSendTests.concat(retryTestResponse.serverDidNotSendTests);
-  const alreadyTestedFiles = firstTestResponse.alreadyTestedFiles.concat(retryTestResponse.alreadyTestFiles);
-  const unsupportedFiles = firstTestResponse.unsupportedFiles.concat(retryTestResponse.unsupportedFiles);
 
   if (getJsonFlag() && completedTestFiles.length > 0) {
     const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
@@ -151,7 +155,15 @@ export async function mainBugReportGeneration(tester, sourceFileName, sourceFile
 
 }
 
-export async function mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, tester, lastTestResults?, testCasesObj?):Promise<{tests, testPaths, serverDidNotSendTests}> {
+export async function mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, lastTestResults?, testCasesObj?):Promise<{tests, testPaths, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles}> {
+  let tester;
+  if (testerType === 'jest') {
+    tester = new JestTester()
+    console.log('type of:', typeof tester)
+  } else if (testerType === 'jasmine') {
+    tester = new JasmineTester()
+    console.log('type of:', typeof tester)
+  }
     //this is for retry
     let unsupportedFiles: (string | null)[] = [];
     //files already tested (enabled by statecode message passback)
@@ -167,7 +179,6 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
       await CONFIG.askForDefaultBranch();
       sourceFileDiff = await Files.getDiff([sourceFileName]);
     }
-
 
     let testInput: GenerateTestOrReportInput;
     // Create object based on testInput interface to pass into GenerateTest
@@ -212,24 +223,25 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
     let testPaths: string[] = Files.writeTestsToFiles(tests, filePathChunk);
     console.log('testPaths:', testPaths);
 
-    return {tests, testPaths, serverDidNotSendTests};
+    return {tests, testPaths, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles};
 
 }
 
-export function createTester() {
-  let tester;
+export function getTester() {
+  let testerType;
   if (CONFIG.testingFramework === TestingFrameworks.jest) {
     // Directly use JestTester if available globally or require it at the top if not
-    tester = new JestTester();
+    testerType = 'jest'
   } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
     // Dynamic import for JasmineTester to handle circular dependency issues
     let { JasmineTester } = require("./lib/testers/JasmineTester");
-    tester = new JasmineTester();
+    testerType = 'jasmine'
+    //tester = new JasmineTester();
   } else {
     // Handle error for unsupported or undefined testing framework
     throw new Error(`Unable to detect a testing config. If this repo has Jasmine or Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
   }
-  return tester; // Return the created tester instance
+  return testerType; // Return the created tester instance
 }
 
 export function getTestContent(testFileName){
@@ -245,63 +257,89 @@ export function getTestContent(testFileName){
   return testFileContent;
 }
 
-export async function mainRecombineTests(firstTestResponse, testFileName, retryTestResponse, tester,  testFileContent, retryTestResults, prettierConfig) {
+export async function mainRecombineTests(firstTestResponse, testFileName, testerType,  testFileContent, prettierConfig, retryTestResponse?, retryTestResults? ) {
+  let tester;
+  if (testerType === 'jest') {
+    tester = new JestTester()
+    console.log('type of:', typeof tester)
+  } else if (testerType === 'jasmine') {
+    tester = new JasmineTester()
+    console.log('type of:', typeof tester)
+  }
   let recombineTests: { [key: string]: string } = {};
-
   recombineTests = firstTestResponse.tests;
-  for (const testPath in retryTestResponse) {
-    recombineTests[testPath] = retryTestResponse.tests[testPath];
-  }
-  const recombineResponse = await tester.recombineTests(recombineTests, testFileName, testFileContent, retryTestResults.failedTests, retryTestResults.failedItBlocks, prettierConfig)
-  if(recombineResponse && recombineResponse.testContent) {
-    Files.writeFileSync(testFileName, recombineResponse.testContent)
-    return recombineResponse.testContent;
-  }
-  return recombineTests;
 
+  if (retryTestResponse && retryTestResults) {
+    for (const testPath in retryTestResponse) {
+      recombineTests[testPath] = retryTestResponse.tests[testPath];
+      const recombineResponse = await tester.recombineTests(recombineTests, testFileName, testFileContent, prettierConfig)
+      if (recombineResponse && recombineResponse.testContent) {
+        Files.writeFileSync(testFileName, recombineResponse.testContent)
+        return recombineResponse.testContent;
+      }
+    }
+    const recombineResponse = await tester.recombineTests(recombineTests, testFileName, testFileContent, prettierConfig)
+    return recombineResponse.TestContent;
+  }
 }
 
-export async function main() {
-  await setUp();
-  let tester = await createTester();
-  const filesToTestResult = await Files.getFilesToTest();
-  console.log('filesToTestResult:', filesToTestResult);
-  const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
-  console.log('filesToTest:', filesToTest);
-  if (filesToTest.length === 0) {
-    console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
-  }
-  const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
-
-  for (const fileToTest of filesToTest) {
-    console.log('fileToTest:', fileToTest);
-    let sourceFileName = fileToTest;
-    console.log('sourceFileName:', sourceFileName);
-    const testFileName = Tester.getTestName(sourceFileName);
-    const testFileContent = getTestContent(testFileName);
-    const sourceFileContent = Files.getFileContent(sourceFileName);
-    console.log('sourceFileContent:', sourceFileContent);
-    const prettierConfig: Object | undefined = Files.getPrettierConfig();
-    if (flagType == 'bugFlag' || flagType == 'bugFileFlag') {
-      await mainBugReportGeneration(tester, sourceFileName, sourceFileContent, testFileContent);
+  export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, prettierConfig, lastTestResults?, testCasesObj?) {
+    let tester;
+    if (testerType === 'jest') {
+      tester = new JestTester()
+      console.log('type of:', typeof tester)
+    } else if (testerType === 'jasmine') {
+      tester = new JasmineTester()
+      console.log('type of:', typeof tester)
     }
 
-    if (flagType != 'bugFlag') {
-      let tests: { [key: string]: string } = {};
-      const firstTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, tester);
-      const firstTestResults = tester.getTestResults(firstTestResponse.testPaths)
-      tests = firstTestResponse.tests;
+    console.log('CONFIG.retryTestGenerationOnFailure:', CONFIG.retryTestGenerationOnFailure);
+    let retryTestGenerationOnFailure = CONFIG.retryTestGenerationOnFailure;
+    let tests: { [key: string]: string } = {};
+    const firstTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType);
+    let testPaths = firstTestResponse.testPaths;
+    const firstTestResults = await tester.getTestResults(testPaths)
+    tests = firstTestResponse.tests;
 
-      let retryTestResponse;
-      if (CONFIG.retryTestGenerationOnFailure && firstTestResults.testResults.failedTests) {
-        retryTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, tester, firstTestResults);
+    console.log('retryTestGenerationOnFailure:', retryTestGenerationOnFailure);
+    console.log('firstTestResults.testResults', firstTestResults.testResults);
+    if (retryTestGenerationOnFailure && firstTestResults.testResults.failedTests) {
+      const retryTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, firstTestResults);
+      const retryTestResults = await tester.getTestResults(retryTestResponse.testPaths);
+      console.log('retryTestResults:', retryTestResults);
+      const retryRecombineFile = await mainRecombineTests(firstTestResponse, testFileName, tester, testFileContent, prettierConfig, retryTestResponse, retryTestResults)
+      deleteTempTestsAndSendResults(retryRecombineFile, testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent, retryTestResponse, retryTestResults)
+    }
+
+    const recombineFile = await mainRecombineTests(firstTestResponse, testFileName, tester, testFileContent, prettierConfig)
+    deleteTempTestsAndSendResults(recombineFile, testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent)
+  }
+
+  export async function main() {
+    await setUp();
+    let testerType = await getTester();
+    const filesToTestResult = await Files.getFilesToTest();
+    const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
+    if (filesToTest.length === 0) {
+      console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
+    }
+    const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
+
+    for (const fileToTest of filesToTest) {
+
+      let sourceFileName = fileToTest;
+
+      const testFileName = Tester.getTestName(sourceFileName);
+      const testFileContent = getTestContent(testFileName);
+      const sourceFileContent = Files.getFileContent(sourceFileName);
+      const prettierConfig: Object | undefined = Files.getPrettierConfig();
+      if (flagType == 'bugFlag' || flagType == 'bugFileFlag') {
+        await mainBugReportGeneration(testerType, sourceFileName, sourceFileContent, testFileContent);
       }
 
-      // run the regenerated test code (try to compile it for user) to get results whether pass/file
-      let retryTestResults: TestRunResult = await tester.getTestResults(retryTestResponse.testPaths);
-      const recombineFile = await mainRecombineTests(firstTestResponse, testFileName, retryTestResponse, tester, testFileContent, retryTestResults, prettierConfig)
-      deleteTempTestsAndSendResults(recombineFile, testFileName, firstTestResults, retryTestResults, firstTestResponse, retryTestResponse, tests, sourceFileName, sourceFileContent);
+      if (flagType != 'bugFlag') {
+        await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, prettierConfig)
+      }
     }
   }
-}
 

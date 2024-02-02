@@ -6,7 +6,7 @@
   "includeFailingTests": true,
   "testSuffix": "test",
   "defaultBranch": "dev",
-  "retryTestGenerationOnFailure": false,
+  "retryTestGenerationOnFailure": true,
   "testingFrameworks": "jest"
 }
 
