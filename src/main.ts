@@ -67,7 +67,7 @@ export async function setUp() {
   }
 }
 
-export async function deleteTempTestsAndSendResults(recombineFile, testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent, retryTestResponse?,retryTestResults?){
+export async function deleteTempTestsAndSendResults(testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent){
   let {passedTests, failedTests, failedTestErrors, failedItBlocks, itBlocksCount } = firstTestResults;
   let serverDidNotSendTests = firstTestResponse.serverDidNotSendTests
   let alreadyTestedFiles = firstTestResponse.alreadyTestedFiles
@@ -79,33 +79,7 @@ export async function deleteTempTestsAndSendResults(recombineFile, testFileName,
   let testsWithErrors: string[] = [];
   let passingTests: string[] = [];
 
-
-  if(retryTestResponse && retryTestResults) {
-    passedTests = passedTests.push(retryTestResults.passedTests);
-    failedTests = failedTests.push(retryTestResults.failedTests);
-    Api.sendResults(retryTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-    finalTempTestNames.push(
-      ...Object.keys(retryTestResults.passedTests),
-      ...Object.keys(retryTestResults.failedTests)
-    );
-    serverDidNotSendTests.concat(retryTestResponse.serverDidNotSendTests);
-    alreadyTestedFiles.concat(retryTestResponse.alreadyTestedFiles);
-    unsupportedFiles.concat(retryTestResponse.unsupportedFiles);
-  } else {
-    Api.sendResults(firstTestResults.failedTests, passedTests, tests, failedTestErrors, sourceFileName, sourceFileContent);
-  }
-
   let completedTestFiles: { path: string; content: string }[] = [];
-  if (recombineFile) {
-    if (getJsonFlag()) {
-      // store for later export
-      completedTestFiles.push({path: testFileName, content: recombineFile});
-    } else {
-      Files.writeFileSync(testFileName, recombineFile);
-    }
-  } else {
-    console.warn('Unable to recombine tests');
-  }
 
   const finalTempTestPaths = finalTempTestNames.map((testName) => {
     return path.dirname(sourceFileName) + '/' + testName;
@@ -164,7 +138,6 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
     tester = new JasmineTester()
     console.log('type of:', typeof tester)
   }
-    //this is for retry
     let unsupportedFiles: (string | null)[] = [];
     //files already tested (enabled by statecode message passback)
     let alreadyTestedFiles: (string | null)[] = [];
@@ -187,11 +160,7 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
     if (testCasesObj) {
       testInput.testCasesObj = testCasesObj;
     } else if (lastTestResults) {
-      // get failed functions to retry
-      const retryFunctions: string[] = Tester.getRetryFunctions(lastTestResults.testResults, lastTestResults.tempTestNames);
-      //modify testInput object to retry only for functions that failed
-      console.log(`Retrying ${retryFunctions.length} functions in a test that failed`);
-      testInput.functionsToTest = retryFunctions;
+      //note to justin: probably where we would put put some fix test flow stuff
     }
 
     //Calls openAI to generate model response
@@ -257,32 +226,6 @@ export function getTestContent(testFileName){
   return testFileContent;
 }
 
-export async function mainRecombineTests(firstTestResponse, testFileName, testerType,  testFileContent, prettierConfig, retryTestResponse?, retryTestResults? ) {
-  let tester;
-  if (testerType === 'jest') {
-    tester = new JestTester()
-    console.log('type of:', typeof tester)
-  } else if (testerType === 'jasmine') {
-    tester = new JasmineTester()
-    console.log('type of:', typeof tester)
-  }
-  let recombineTests: { [key: string]: string } = {};
-  recombineTests = firstTestResponse.tests;
-
-  if (retryTestResponse && retryTestResults) {
-    for (const testPath in retryTestResponse) {
-      recombineTests[testPath] = retryTestResponse.tests[testPath];
-      const recombineResponse = await tester.recombineTests(recombineTests, testFileName, testFileContent, prettierConfig)
-      if (recombineResponse && recombineResponse.testContent) {
-        Files.writeFileSync(testFileName, recombineResponse.testContent)
-        return recombineResponse.testContent;
-      }
-    }
-    const recombineResponse = await tester.recombineTests(recombineTests, testFileName, testFileContent, prettierConfig)
-    return recombineResponse.TestContent;
-  }
-}
-
   export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, prettierConfig, lastTestResults?, testCasesObj?) {
     let tester;
     if (testerType === 'jest') {
@@ -293,26 +236,13 @@ export async function mainRecombineTests(firstTestResponse, testFileName, tester
       console.log('type of:', typeof tester)
     }
 
-    console.log('CONFIG.retryTestGenerationOnFailure:', CONFIG.retryTestGenerationOnFailure);
-    let retryTestGenerationOnFailure = CONFIG.retryTestGenerationOnFailure;
     let tests: { [key: string]: string } = {};
     const firstTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType);
     let testPaths = firstTestResponse.testPaths;
     const firstTestResults = await tester.getTestResults(testPaths)
     tests = firstTestResponse.tests;
 
-    console.log('retryTestGenerationOnFailure:', retryTestGenerationOnFailure);
-    console.log('firstTestResults.testResults', firstTestResults.testResults);
-    if (retryTestGenerationOnFailure && firstTestResults.testResults.failedTests) {
-      const retryTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, firstTestResults);
-      const retryTestResults = await tester.getTestResults(retryTestResponse.testPaths);
-      console.log('retryTestResults:', retryTestResults);
-      const retryRecombineFile = await mainRecombineTests(firstTestResponse, testFileName, tester, testFileContent, prettierConfig, retryTestResponse, retryTestResults)
-      deleteTempTestsAndSendResults(retryRecombineFile, testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent, retryTestResponse, retryTestResults)
-    }
-
-    const recombineFile = await mainRecombineTests(firstTestResponse, testFileName, tester, testFileContent, prettierConfig)
-    deleteTempTestsAndSendResults(recombineFile, testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent)
+    deleteTempTestsAndSendResults( testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent)
   }
 
   export async function main() {
