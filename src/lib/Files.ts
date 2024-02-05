@@ -223,9 +223,13 @@ export class Files {
     try {
       let diff: string[] = [];
       for(const diffCommand of diffCmd) {
-        diff.push(execSync(diffCommand).toString())
+        const diffString = execSync(diffCommand).toString()
+        if(diffString.length>0){
+          diff.push(diffString)
+        }
       }
-      return diff;
+  
+      return diff.length > 0 ? diff : undefined
     } catch (error) {
       if (error.message.includes('bad revision') && attempt < 1) {
         await Files.setRemoteHead(remoteName); // Call the function to set remote HEAD
