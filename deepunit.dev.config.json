@@ -1,5 +1,5 @@
 {
-  "doProd":true,
+  "doProd":false,
   "ignoredDirectories": [],
   "ignoredFiles": ["src/main.consts.ts", "src/utils.ts", "src/Config.ts", "src/lib/Printer.ts", "src/main.ts", "src/lib/testers/JestTester.ts","src/lib/testers/Tester.ts"],
   "includeFailingTests": true,
