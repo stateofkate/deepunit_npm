@@ -1,10 +1,14 @@
 import { CONFIG } from '../Config';
-import { Api } from '../Api';
+import {Api, ClientCode} from '../Api';
 import { Files } from '../Files';
 import { LoadingIndicator, getJsonFlag } from '../utils';
 import console from '../Log';
 import fs from "fs";
 
+export interface SingleTestRunResult {
+  passed: boolean;
+  testFailureStack?: string;
+}
 export interface TestRunResult {
   passedTests: { [key: string]: string };
   failedTests: { [key: string]: string };
@@ -103,34 +107,12 @@ export abstract class Tester {
     }
   }
 
-  public async generateTest(testInput: GenerateTestOrReportInput): Promise<any> {
-    const loadingIndicator = new LoadingIndicator();
-    console.log(`Generating test for ${testInput.sourceFileName}`);
-    console.log('    If your functions are long this could take several minutes...');
-    // TODO: we need to add a timeout, somethings it hangs
-    loadingIndicator.start();
-    const response = await Api.generateTest(testInput);
-    loadingIndicator.stop();
-    return response;
-  }
-
-
-  public async generateBugReport(testInput: GenerateTestOrReportInput): Promise<any> {
-    const loadingIndicator = new LoadingIndicator();
-    console.log(`Generating bug report for ${testInput.sourceFileName}`);
-    console.log('    If your functions are long this could take several minutes...');
-    loadingIndicator.start();
-    const response = await Api.generateBugReport(testInput);
-    if (response) {
-      Files.writeFileSync(testInput.generatedFileName, response.bugReport);
-    }
-    loadingIndicator.stop();
-    return response;
-  }
+  
 
   /**
    * Check if the test works in the framework
    * @param files
    */
   public abstract getTestResults(files: string[]): Promise<TestRunResult>;
+  public abstract runSingleTest(filePath: string): Promise<SingleTestRunResult>;
 }

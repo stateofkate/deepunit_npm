@@ -1,5 +1,5 @@
 import { ExecException, exec, execSync } from 'child_process';
-import { JestTestRunResult, TestRunResult, Tester } from './Tester';
+import {JestTestRunResult, TestRunResult, Tester, SingleTestRunResult} from './Tester';
 import {Api, ClientCode} from "../Api";
 
 export class JestTester extends Tester {
@@ -45,7 +45,28 @@ export class JestTester extends Tester {
     const aggregatedResults = await Promise.all(promises);
     return aggregatedResults;
   }
-
+  public async runSingleTest(filePath: string): Promise<SingleTestRunResult> {
+    const result: JestTestRunResult[] = await this.runTests([filePath]);
+    const testResult = result[0]
+    let testFailureStack;
+    
+    if(testResult.testFailedWithError || !testResult.jestResult || !testResult.jestResult.success) { //the test has failed, lets handle it here
+      const failedTest: SingleTestRunResult = {passed: false, testFailureStack:  testResult.testFailedWithError.stack}
+      return failedTest;
+    } else {
+      if (testResult.jestResult?.testResults[0]?.status == 'passed') {
+        const passedResult: SingleTestRunResult = {
+          passed: true,
+        }
+        return passedResult
+      } else {
+        // the test was a valid script, but failed
+        await Api.sendAnalytics(JSON.stringify(testResult, null, 2), ClientCode.JestTesterResult); //We were having issues with this particular code path, hence the log
+        const failedTest: SingleTestRunResult = {passed: false, testFailureStack:  testResult.jestResult.stack}
+        return failedTest
+      }
+    }
+  }
   public async getTestResults(files: string[]): Promise<TestRunResult> {
     const result = await this.runTests(files);
     //func name is key

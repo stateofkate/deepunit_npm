@@ -1,51 +1,64 @@
 import { ExecException, exec, execSync } from 'child_process';
-import { JestTestRunResult, TestRunResult, Tester } from './Tester';
+import {JestTestRunResult, TestRunResult, Tester, SingleTestRunResult} from './Tester';
 import {Api, ClientCode} from "../Api";
+import Jasmine from 'jasmine';
+class CustomReporter {
+  private testErrors: Array<any> = [];
+  private onCompleteCallback: (passed: boolean, errors: Array<any>) => void;
+  
+  constructor(onCompleteCallback: (passed: boolean, errors: Array<any>) => void) {
+    this.onCompleteCallback = onCompleteCallback;
+  }
+  
+  specDone(result: any): void {
+    if (result.status === 'failed') {
+      this.testErrors = this.testErrors.concat(result.failedExpectations);
+    }
+  }
+  
+  jasmineDone(): void {
+    const passed = this.testErrors.length === 0;
+    this.onCompleteCallback(passed, this.testErrors);
+  }
+}
 
 export class JasmineTester extends Tester {
   public async runTests(relativePathArray: string[]): Promise<JestTestRunResult[]> {
-    const execPromisified = (command: string): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        exec(command, (error: ExecException | null, stdout: string, stderr: string) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(stdout);
-          }
-        });
-      });
-    };
-
-    const promises = relativePathArray.map(async (filePath) => {
-      const testResult: JestTestRunResult = {
-        file: filePath,
-        testFailedWithError: undefined,
-        jestResult: undefined,
-      };
-      try {
-        const result = await execPromisified(`npx jest --json ${filePath} --passWithNoTests --runInBand`);
-        if (result) {
-          const jsonParts = JasmineTester.extractJSONs(result);
-          if (jsonParts.length > 0) {
-            testResult.jestResult = JSON.parse(jsonParts[0]);
-          } else {
-            testResult.jestResult = JSON.parse(result);
-          }
-        } else {
-          // we didn't get result, fail
-          testResult.testFailedWithError = 'Did not get result from jest exec command';
-        }
-      } catch (error) {
-        testResult.testFailedWithError = error as string;
-      }
-
-      return testResult;
-    });
-
-    const aggregatedResults = await Promise.all(promises);
-    return aggregatedResults;
+    return []
   }
-
+  
+  public async runSingleTest(testFilePath: string): Promise<SingleTestRunResult> {
+    console.log('testFilePath')
+    console.log(testFilePath)
+    console.log('testFilePath')
+    return new Promise((resolve, reject) => {
+      const jasmine = new Jasmine();
+    
+      jasmine.loadConfig({
+        spec_files: [
+          testFilePath,
+        ],
+        // other configurations...
+      });
+    
+      const customReporter = new CustomReporter((passed, errors) => {
+        if (passed) {
+          resolve({ passed: true });
+        } else {
+          const testFailureStack = errors.map(error => error.message + '\n' + error.stack).join('\n\n');
+          reject({
+            passed: false,
+            testFailureStack
+          });
+        }
+      });
+    
+      jasmine.env.clearReporters();       // Remove default reporter logs
+      jasmine.env.addReporter(customReporter); // Add custom reporter
+    
+      jasmine.execute();
+    });
+  }
   public async getTestResults(files: string[]): Promise<TestRunResult> {
     const result = await this.runTests(files);
     //func name is key

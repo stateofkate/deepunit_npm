@@ -3,16 +3,36 @@
 import {TestingFrameworks} from './main.consts';
 import {CONFIG} from './lib/Config';
 import {Files} from './lib/Files';
-import {checkFeedbackFlag, exitWithError, getBugFlag, getFilesFlag, getJsonFlag, getMetaFlag, isEmpty, promptUserInput, setupYargs, validateVersionIsUpToDate} from './lib/utils';
+import {
+  checkFeedbackFlag,
+  exitWithError,
+  getBugFlag,
+  getFilesFlag,
+  getJsonFlag,
+  getMetaFlag,
+  isEmpty,
+  LoadingIndicator,
+  promptUserInput,
+  setupYargs,
+  validateVersionIsUpToDate
+} from './lib/utils';
 import {Color, Printer} from './lib/Printer';
 import {GenerateTestOrReportInput, Tester, TestRunResult} from './lib/testers/Tester';
 import {JestTester} from './lib/testers/JestTester';
 import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
-import {Log} from './lib/Log';
+import console, {Log} from './lib/Log';
 import fs from "fs";
 import path from 'path';
 import {JasmineTester} from "./lib/testers/JasmineTester";
+export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
+export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string;}
+export type GenerateJasmineResponse = { testFileArray?: TestCaseWithTestBed[]; generatedTestBed: (string | undefined); testCaseIts: FunctionToTestCaseCode[], md:string, tests?: any[]; stateCode?: StateCode; stateMessage?: string; error?: string };
+export type FunctionToTestCaseCode = {
+  functionName: string;
+  testCases: TestCaseAndCode[]
+}
+export type TestCaseAndCode = {code?: string, testCase: ParsedTestCases, duplicate: boolean}
 
 // global classes
 export let AUTH: Auth;
@@ -67,26 +87,22 @@ export async function setUp() {
   }
 }
 
-export function getTesterType() {
-  let testerType;
+export function getTester() {
   if (CONFIG.testingFramework === TestingFrameworks.jest) {
     // Directly use JestTester if available globally or require it at the top if not
-    testerType = 'jest'
+    return new JestTester()
   } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
     // Dynamic import for JasmineTester to handle circular dependency issues
     let { JasmineTester } = require("./lib/testers/JasmineTester");
-    testerType = 'jasmine'
-    //tester = new JasmineTester();
+    return new JasmineTester()
   } else {
     // Handle error for unsupported or undefined testing framework
     throw new Error(`Unable to detect a testing config. If this repo has Jasmine or Jest installed set "testingFramework": "jasmine" in deepunit.config.json`);
   }
-  return testerType; // Return the created tester instance
 }
 
 export async function main() {
   await setUp();
-  let testerType = await getTesterType();
   const filesToTestResult = await Files.getFilesToTest();
   const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
   if (filesToTest.length === 0) {
@@ -103,40 +119,43 @@ export async function main() {
     const sourceFileContent = Files.getFileContent(sourceFileName);
     const prettierConfig: Object | undefined = Files.getPrettierConfig();
     if (flagType == 'bugFlag' || flagType == 'bugFileFlag') {
-      await mainBugReportGeneration(testerType, sourceFileName, sourceFileContent, testFileContent);
+      await mainBugReportGeneration(sourceFileName, sourceFileContent, testFileContent);
     }
 
     if (flagType != 'bugFlag') {
-      await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, prettierConfig)
+      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response} = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
+      runGeneratedTests(response, sourceFileName)
     }
   }
 }
 
+export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string) {
+  let tester = getTester();
+  const firstTest = response.testFileArray[0].testBed
+  const fileParts = sourceFileName.split('.');
+  const fileExt = fileParts[fileParts.length - 1];
+  const tempTestName = sourceFileName + '.deepunittemptest.' + CONFIG.testSuffix  + '.' + fileExt
+  fs.writeFileSync(tempTestName, firstTest)
+  const firstTestResults = await tester.runSingleTest(tempTestName)
+  console.log('firstTestResults')
+  console.log(firstTestResults)
+  console.log('firstTestResults')
 
-export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, prettierConfig, lastTestResults?, testCasesObj?) {
-  let tester;
-  if (testerType === 'jest') {
-    tester = new JestTester()
-  } else if (testerType === 'jasmine') {
-    tester = new JasmineTester()
-  }
-
-  let tests: { [key: string]: string } = {};
-  const firstTestResponse = await mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType);
-  let testPaths = firstTestResponse.testPaths;
-  const firstTestResults = await tester.getTestResults(testPaths)
-  tests = firstTestResponse.tests;
-
-  deleteTempTestsAndSendResults( testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent)
+  
+  //todo: figure out how to get rid of this function deleteTempTestsAndSendResults(testFileName, firstTestResults, generationResponse, tests, sourceFileName, sourceFileContent)
 }
 
-export async function mainGenerateTest(sourceFileName, sourceFileContent, testFileName, testFileContent, testerType, lastTestResults?, testCasesObj?):Promise<{tests, testPaths, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles}> {
-  let tester;
-  if (testerType === 'jest') {
-    tester = new JestTester()
-  } else if (testerType === 'jasmine') {
-    tester = new JasmineTester()
-  }
+export async function generateTest(testInput: GenerateTestOrReportInput): Promise<any> {
+  const loadingIndicator = new LoadingIndicator();
+  console.log(`Generating test for ${testInput.sourceFileName}`);
+  console.log('    If your functions are long this could take several minutes...');
+  // TODO: we need to add a timeout, somethings it hangs
+  loadingIndicator.start();
+  const response = await Api.generateTest(testInput);
+  loadingIndicator.stop();
+  return response;
+}
+export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, lastTestResults?, testCasesObj?):Promise<{serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response: GenerateJasmineResponse}> {
   let unsupportedFiles: (string | null)[] = [];
   //files already tested (enabled by statecode message passback)
   let alreadyTestedFiles: (string | null)[] = [];
@@ -162,7 +181,10 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
   }
 
   //Calls openAI to generate model response
-  const response = await tester.generateTest(testInput);
+  const response: GenerateJasmineResponse = await generateTest(testInput);
+  console.log('response')
+  console.log(response)
+  console.log('response')
   //fs.writeFileSync(testInput.sourceFileName + '.md', response.md)
   //this could get abstracted away
   if (response.stateCode === StateCode.FileNotSupported) {
@@ -172,7 +194,7 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
     alreadyTestedFiles.push(sourceFileName);
     return undefined;
   } else if (response.stateCode === StateCode.Success) {
-    if (!response?.tests || isEmpty(response.tests)) {
+    if (!response?.testFileArray || isEmpty(response.testFileArray)) {
       serverDidNotSendTests.push(sourceFileName);
       console.error(`We did not receive a response from the server to generate a test for ${sourceFileName}. This should never happen`);
       return undefined;
@@ -183,17 +205,18 @@ export async function mainGenerateTest(sourceFileName, sourceFileContent, testFi
     return undefined;
   }
 
+  /* todo: remove this stuff
   const filePathChunk = path.dirname(sourceFileName) + '/';
 
   let tests: { [key: string]: string } = response.tests;
   // Write the temporary test files, so we can test the generated tests
-  let testPaths: string[] = Files.writeTestsToFiles(tests, filePathChunk);
+  let testPaths: string[] = Files.writeTestsToFiles(tests, filePathChunk);*/
 
-  return {tests, testPaths, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles};
+  return {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response};
 
 }
 
-export async function mainBugReportGeneration(tester, sourceFileName, sourceFileContent, bugReportContent){
+export async function mainBugReportGeneration(sourceFileName, sourceFileContent, bugReportContent){
     let testCasesObj;
 
     const bugReportName = Tester.getBugReportName(sourceFileName);
@@ -207,12 +230,23 @@ export async function mainBugReportGeneration(tester, sourceFileName, sourceFile
       generatedFileName: bugReportName,
       generatedFileContent: bugReportContent,
     };
-    const response = await tester.generateBugReport(bugReportInput);
+    const response = await generateBugReport(bugReportInput);
 
     testCasesObj = response.testCasesObj;
 }
 
-
+export async function generateBugReport(testInput: GenerateTestOrReportInput): Promise<any> {
+  const loadingIndicator = new LoadingIndicator();
+  console.log(`Generating bug report for ${testInput.sourceFileName}`);
+  console.log('    If your functions are long this could take several minutes...');
+  loadingIndicator.start();
+  const response = await Api.generateBugReport(testInput);
+  if (response) {
+    Files.writeFileSync(testInput.generatedFileName, response.bugReport);
+  }
+  loadingIndicator.stop();
+  return response;
+}
 export async function deleteTempTestsAndSendResults(testFileName, firstTestResults, firstTestResponse, tests, sourceFileName, sourceFileContent){
   let {passedTests, failedTests, failedTestErrors, failedItBlocks, itBlocksCount } = firstTestResults;
   let serverDidNotSendTests = firstTestResponse.serverDidNotSendTests

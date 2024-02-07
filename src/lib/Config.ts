@@ -46,7 +46,7 @@ export class Config {
   constructor() {
     this.detectProjectType();
     this.determineDevBuild();
-    this.detectTestSuffix();
+    this.testSuffix = this.detectTestSuffix();
     this.testingFramework = this.getTestFramework();
     this.frameworkVersion = this.getFrameworkVersion();
     this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
@@ -188,12 +188,12 @@ export class Config {
     return testingFramework;
   }
 
-  private detectTestSuffix(): void {
+  private detectTestSuffix(): string {
     let testSuffix = Config.getStringFromConfig('testSuffix');
     if (!testSuffix) {
-      testSuffix = 'test';
+      testSuffix = 'spec';
     }
-    this.testSuffix = testSuffix;
+    return testSuffix;
   }
 
   private getsConfigTarget(): string | undefined {
