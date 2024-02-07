@@ -28,28 +28,36 @@ export class JasmineTester extends Tester {
   }
   
   public async runSingleTest(testFilePath: string): Promise<SingleTestRunResult> {
-    try {
-      // Command to run ng test for a specific component or service
-      // You might need to adjust the command according to your Angular setup
-      if (testFilePath.startsWith('passport/')) {
-        testFilePath = testFilePath.substring('passport/'.length);
-      }
-      const command = `cd passport && ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${testFilePath}`;
-      console.log('command')
-      console.log(command)
-      console.log('command')
-      // Execute the command
-      const output = execSync(command, { encoding: 'utf-8' });
+    console.log('testFilePath')
+    console.log(testFilePath)
+    console.log('testFilePath')
+    return new Promise((resolve, reject) => {
+      const jasmine = new Jasmine();
     
-      console.log(output); // Log the output of the test run
-      return { passed: true }; // If execSync doesn't throw, assume tests passed
-    } catch (error) {
-      console.error('Test failed:', error); // Log the error
-      return {
-        passed: false,
-        testFailureStack: error instanceof Error ? error.stack : undefined
-      };
-    }
+      jasmine.loadConfig({
+        spec_files: [
+          testFilePath,
+        ],
+        // other configurations...
+      });
+    
+      const customReporter = new CustomReporter((passed, errors) => {
+        if (passed) {
+          resolve({ passed: true });
+        } else {
+          const testFailureStack = errors.map(error => error.message + '\n' + error.stack).join('\n\n');
+          reject({
+            passed: false,
+            testFailureStack
+          });
+        }
+      });
+    
+      jasmine.env.clearReporters();       // Remove default reporter logs
+      jasmine.env.addReporter(customReporter); // Add custom reporter
+    
+      jasmine.execute();
+    });
   }
   public async getTestResults(files: string[]): Promise<TestRunResult> {
     const result = await this.runTests(files);
