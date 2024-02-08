@@ -150,9 +150,10 @@ export async function main() {
 
 export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string, testFileName: string): Promise<{ failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[]; completedTestFile: { content: string; path: string }; passingTestFile: { content: string; path: string } }> {
   let tester = getTester();
-  const fileParts = sourceFileName.split('.');
-  const fileExt = fileParts[fileParts.length - 1];
-  const tempTestName = fileParts[0] + '.deepunittemptest.' + CONFIG.testSuffix  + '.' + fileExt
+  const lastDotIndex = sourceFileName.lastIndexOf('.');
+  const fileNameWithoutExt = sourceFileName.substring(0, lastDotIndex);
+  const fileExt = sourceFileName.substring(lastDotIndex + 1);
+  const tempTestName = `${fileNameWithoutExt}.deepunittemptest.${CONFIG.testSuffix}.${fileExt}`;
   let passedTests: TestCaseWithTestBed[] = [];
   let passedTestString = ''
   let failedTestString = ''
@@ -166,17 +167,14 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   while(testsToRun.length>0){
     const currentTest: TestCaseWithTestBed = testsToRun.shift()
     fs.writeFileSync(tempTestName, currentTest.testBed, 'utf-8');
-    const firstTestResults: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
-    console.log('firstTestResults')
-    console.log(firstTestResults)
-    console.log('firstTestResults')
-    if(firstTestResults.passed) {
+    const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
+    if(singleTestRunResult.passed) {
       passedTests.push(currentTest)
       passedTestString += currentTest.code + '\n'
       completedTestFile.content = currentTest.testBed
       passingTestFile.content = currentTest.testBed
     } else {
-      const failedTestCaseWithTestBed: FailedTestCaseWithTestBed = { failureStackTrace: firstTestResults.testFailureStack, ...currentTest}
+      const failedTestCaseWithTestBed: FailedTestCaseWithTestBed = { failureStackTrace: singleTestRunResult.testFailureStack, ...currentTest}
       failedTests.push(failedTestCaseWithTestBed)
       failedTestString += currentTest.code + '\n'
       let ableToFix = false;
@@ -196,12 +194,6 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     const lastTest = response.testFileArray[response.testFileArray.length - 1].testBed
     completedTestFile.content = lastTest
   }
-  console.log('We have passed tests: ' + passedTests.length)
-  console.log(passedTestString)
-  console.log('We have failed tests: ' + failedTests.length)
-  console.log(failedTestString)
-  
-  console.log('there were  ' + response.testFileArray.length)
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
   //todo: figure out how to get rid of this function
   // So basically what the function does is delete the temp tests, collate results and send them to the backend

@@ -21,7 +21,6 @@ export class JasmineTester extends Tester {
       // Execute the command and capture the output
       const output = execSync(command, { encoding: 'utf-8', stdio: 'pipe' });
     
-      console.log(output); // Log the output of the test run
       return { passed: true }; // Return output when tests passed
     } catch (error) {
       const errorToDisplay = error.stdout.split('FAILED')[1] ? error.stdout.split('FAILED')[1] : error.stdout
