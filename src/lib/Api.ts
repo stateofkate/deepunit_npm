@@ -19,7 +19,7 @@ import { CONFIG } from './Config';
 import {GenerateTestOrReportInput, RemoveFailedTestInput} from './testers/Tester';
 
 enum ApiPaths {
-  removeFailedTest = '/generate-test/removeFailedTest',
+  removeFailedTest = '/generate-test/remove-failed-test',
   generate = '/generate-test/new',
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
