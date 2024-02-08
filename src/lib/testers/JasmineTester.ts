@@ -51,9 +51,10 @@ export class JasmineTester extends Tester {
       // Combine stdout and stderr for complete error context
       //let combinedOutput = (errorOutput || '') + (stdError ? '\n' + stdError : '');
     console.log(error.stdout)
+      const errorToDisplay = error.stdout.split('FAILED')[1] ? error.stdout.split('FAILED')[1] : error.stdout
       return {
         passed: false,
-        testFailureStack: error.stdout.split('FAILED')[1]//todo: make sure this is the only type of test failure possible. Off the top of my head we could have a failure due to uncompilable code, or failing assertions and perhaps even more.
+        testFailureStack: errorToDisplay//todo: make sure this is the only type of test failure possible. Off the top of my head we could have a failure due to uncompilable code, or failing assertions and perhaps even more.
       };
     }
   }

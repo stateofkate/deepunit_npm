@@ -45,7 +45,8 @@ export class Printer {
     unsupportedFiles: (string | null)[],
   ): void {
     const LINE_DIVIDER = '#################################################';
-
+console.log(passingTests)
+    console.log(testsWithErrors)
     console.log(LINE_DIVIDER);
     console.log('########## Summary of DeepUnit.AI Run ###########');
     console.log(LINE_DIVIDER);
@@ -70,7 +71,7 @@ export class Printer {
     testsWithErrors: string[],
     passingTests: string[],
     serverNoTests: (string | null)[],
-    alreadyTestedFiles: (string | null)[],
+    alreadyTestedFiles: string[],
     unsupportedFiles: (string | null)[],
   ): string {
     let summary = '### Summary of DeepUnit.AI Generate Test Run\n\n';
