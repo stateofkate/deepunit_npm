@@ -16,9 +16,10 @@ import {
   LogsData,
 } from './ApiTypes';
 import { CONFIG } from './Config';
-import { GenerateTestOrReportInput } from './testers/Tester';
+import {GenerateTestOrReportInput, RemoveFailedTestInput} from './testers/Tester';
 
 enum ApiPaths {
+  removeFailedTest = '/generate-test/removeFailedTest',
   generate = '/generate-test/new',
   fixErrors = '/generate-test/fix-many-errors',
   recombineTests = '/generate-test/recombine-tests',
@@ -79,7 +80,10 @@ export class Api {
       return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
     }
   }
-
+  
+  public static async removeFailedTest(data: RemoveFailedTestInput): Promise<any> {
+    return await this.post(ApiPaths.removeFailedTest, data);
+  }
 
   public static async generateTest(generateTestInput: GenerateTestOrReportInput): Promise<any> {
     if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {

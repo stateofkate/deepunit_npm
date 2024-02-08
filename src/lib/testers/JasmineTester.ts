@@ -29,25 +29,31 @@ export class JasmineTester extends Tester {
   
   public async runSingleTest(testFilePath: string): Promise<SingleTestRunResult> {
     try {
-      // Command to run ng test for a specific component or service
-      // You might need to adjust the command according to your Angular setup
       if (testFilePath.startsWith('passport/')) {
         testFilePath = testFilePath.substring('passport/'.length);
       }
       const command = `cd passport && ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${testFilePath}`;
-      console.log('command')
-      console.log(command)
-      console.log('command')
-      // Execute the command
-      const output = execSync(command, { encoding: 'utf-8' });
+      console.log('Executing command:', command);
+    
+      // Execute the command and capture the output
+      const output = execSync(command, { encoding: 'utf-8', stdio: 'pipe' });
     
       console.log(output); // Log the output of the test run
-      return { passed: true }; // If execSync doesn't throw, assume tests passed
+      return { passed: true }; // Return output when tests passed
     } catch (error) {
-      console.error('Test failed:', error); // Log the error
+      //console.log(error.stdout.split('FAILED')[1])
+      //console.error('Test failed:', error); // Log the error
+    
+      // Check if error is an instance of Error and capture stdout and stderr
+      //let errorOutput = error instanceof Error && error.stdout ? error.stdout : undefined;
+      //let stdError = error instanceof Error && error.stderr ? error.stderr : undefined;
+    
+      // Combine stdout and stderr for complete error context
+      //let combinedOutput = (errorOutput || '') + (stdError ? '\n' + stdError : '');
+    console.log(error.stdout)
       return {
         passed: false,
-        testFailureStack: error instanceof Error ? error.stack : undefined
+        testFailureStack: error.stdout.split('FAILED')[1]//todo: make sure this is the only type of test failure possible. Off the top of my head we could have a failure due to uncompilable code, or failing assertions and perhaps even more.
       };
     }
   }

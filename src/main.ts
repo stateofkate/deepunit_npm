@@ -17,7 +17,7 @@ import {
   validateVersionIsUpToDate
 } from './lib/utils';
 import {Color, Printer} from './lib/Printer';
-import {GenerateTestOrReportInput, Tester, TestRunResult} from './lib/testers/Tester';
+import {GenerateTestOrReportInput, SingleTestRunResult, Tester, TestRunResult} from './lib/testers/Tester';
 import {JestTester} from './lib/testers/JestTester';
 import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
@@ -27,6 +27,7 @@ import path from 'path';
 import {JasmineTester} from "./lib/testers/JasmineTester";
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string;}
+export type FailedTestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; failureStackTrace: string;}
 export type GenerateJasmineResponse = { testFileArray?: TestCaseWithTestBed[]; generatedTestBed: (string | undefined); testCaseIts: FunctionToTestCaseCode[], md:string, tests?: any[]; stateCode?: StateCode; stateMessage?: string; error?: string };
 export type FunctionToTestCaseCode = {
   functionName: string;
@@ -124,23 +125,59 @@ export async function main() {
 
     if (flagType != 'bugFlag') {
       const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response} = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
-      runGeneratedTests(response, sourceFileName)
+      const testResults = runGeneratedTests(response, sourceFileName)
     }
   }
 }
 
-export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string) {
+export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string): Promise<{ failedTests: FailedTestCaseWithTestBed[], passedTests: TestCaseWithTestBed[] }> {
   let tester = getTester();
-  const firstTest = response.testFileArray[0].testBed
   const fileParts = sourceFileName.split('.');
   const fileExt = fileParts[fileParts.length - 1];
   const tempTestName = sourceFileName + '.deepunittemptest.' + CONFIG.testSuffix  + '.' + fileExt
-  fs.writeFileSync(tempTestName, firstTest)
-  const firstTestResults = await tester.runSingleTest(tempTestName)
-  console.log('firstTestResults')
-  console.log(firstTestResults)
-  console.log('firstTestResults')
-
+  let passedTests: TestCaseWithTestBed[] = [];
+  let passedTestString = ''
+  let failedTestString = ''
+  let failedTests: FailedTestCaseWithTestBed[]= []
+  //here we will go thru the tests until we find one that fails.
+  //If it fails we will send the last passing test and the rest of the tests in the response that are un run and have it generate tests that do not include the failing one
+  let testsToRun: TestCaseWithTestBed[] = response.testFileArray
+  let calling = 0
+  while(testsToRun.length>0){
+    const currentTest: TestCaseWithTestBed = testsToRun.shift()
+    fs.writeFileSync(tempTestName, currentTest.testBed, 'utf-8');
+    const firstTestResults: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
+    console.log('firstTestResults')
+    console.log(firstTestResults)
+    console.log('firstTestResults')
+    if(firstTestResults.passed) {
+      passedTests.push(currentTest)
+      passedTestString += currentTest.code + '\n'
+    } else {
+      const lastPassingTest: TestCaseWithTestBed = passedTests[passedTests.length-1];
+      console.log({passedTest: lastPassingTest.testBed, failedtest: currentTest.testBed})
+      const failedTest: TestCaseWithTestBed = currentTest;
+      const failedTestCaseWithTestBed: FailedTestCaseWithTestBed = { failureStackTrace: firstTestResults.testFailureStack, ...currentTest}
+      failedTests.push(failedTestCaseWithTestBed)
+      failedTestString += currentTest.code + '\n'
+      const unfinishedTests: TestCaseWithTestBed[] = testsToRun
+      //exitWithError('oops')
+      const newTests = await Api.removeFailedTest({lastPassingTest, failedTest, unfinishedTests})
+      calling++
+      testsToRun = newTests.fixedTests;
+    }
+    //todo: add back failed tests if the config wants to include failed tests
+    return {passedTests, failedTests}
+  }
+  
+  console.log('We have passed tests: ' + passedTests.length)
+  console.log(passedTestString)
+  console.log('We have failed tests: ' + failedTests.length)
+  console.log(failedTestString)
+  
+  console.log('we called ' + calling)
+  console.log('there were  ' + response.testFileArray.length)
+  process.exit()
   
   //todo: figure out how to get rid of this function deleteTempTestsAndSendResults(testFileName, firstTestResults, generationResponse, tests, sourceFileName, sourceFileContent)
 }

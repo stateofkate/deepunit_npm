@@ -4,6 +4,7 @@ import { Files } from '../Files';
 import { LoadingIndicator, getJsonFlag } from '../utils';
 import console from '../Log';
 import fs from "fs";
+import {TestCaseWithTestBed} from "../../main";
 
 export interface SingleTestRunResult {
   passed: boolean;
@@ -30,6 +31,11 @@ export interface GenerateTestOrReportInput {
   generatedFileContent: string;
   functionsToTest?: string[];
   testCasesObj?: { [key: string]: string };
+}
+export interface RemoveFailedTestInput {
+  failedTest: TestCaseWithTestBed;
+  lastPassingTest: TestCaseWithTestBed;
+  unfinishedTests: TestCaseWithTestBed[]
 }
 
 export type JestTestRunResult = {
