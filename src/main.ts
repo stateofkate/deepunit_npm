@@ -167,13 +167,16 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   while(testsToRun.length>0){
     const currentTest: TestCaseWithTestBed = testsToRun.shift()
     fs.writeFileSync(tempTestName, currentTest.testBed, 'utf-8');
+    console.log('    Checking test case: ' + currentTest.testCase.explanation)
     const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
     if(singleTestRunResult.passed) {
+      console.log('        Passed!')
       passedTests.push(currentTest)
       passedTestString += currentTest.code + '\n'
       completedTestFile.content = currentTest.testBed
       passingTestFile.content = currentTest.testBed
     } else {
+      console.log('        Failed...')
       const failedTestCaseWithTestBed: FailedTestCaseWithTestBed = { failureStackTrace: singleTestRunResult.testFailureStack, ...currentTest}
       failedTests.push(failedTestCaseWithTestBed)
       failedTestString += currentTest.code + '\n'
