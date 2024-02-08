@@ -1,26 +1,6 @@
 import { ExecException, exec, execSync } from 'child_process';
 import {JestTestRunResult, TestRunResult, Tester, SingleTestRunResult} from './Tester';
 import {Api, ClientCode} from "../Api";
-import Jasmine from 'jasmine';
-class CustomReporter {
-  private testErrors: Array<any> = [];
-  private onCompleteCallback: (passed: boolean, errors: Array<any>) => void;
-  
-  constructor(onCompleteCallback: (passed: boolean, errors: Array<any>) => void) {
-    this.onCompleteCallback = onCompleteCallback;
-  }
-  
-  specDone(result: any): void {
-    if (result.status === 'failed') {
-      this.testErrors = this.testErrors.concat(result.failedExpectations);
-    }
-  }
-  
-  jasmineDone(): void {
-    const passed = this.testErrors.length === 0;
-    this.onCompleteCallback(passed, this.testErrors);
-  }
-}
 
 export class JasmineTester extends Tester {
   public async runTests(relativePathArray: string[]): Promise<JestTestRunResult[]> {
