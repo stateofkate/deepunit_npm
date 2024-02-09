@@ -100,40 +100,6 @@ export async function exitWithError(error: string, attempts = 0) {
   }
   process.exit(1);
 }
-export async function dynamicImport(filePath: string, fileContent: string): Promise<any> {
-  return import(filePath);
-  //return Promise.resolve(require(filePath));
-  if (filePath.endsWith('.mjs')) {
-    return import(filePath); // ESM
-  } else if (filePath.endsWith('.cjs')) {
-    return Promise.resolve(require(filePath)); // CommonJS
-  } else if (filePath.endsWith('.js') || filePath.endsWith('.ts')) {
-    if (fileContent) {
-      const hasESM = /\bimport\b/.test(fileContent) || /\bexport\b/.test(fileContent);
-      const hasCJS = /\brequire\b/.test(fileContent);
-      
-      if (hasESM && !hasCJS) {
-        console.log('we went here')
-        return import(filePath);
-      } else if (hasCJS) {
-        console.log(' something over here')
-        return Promise.resolve(require(filePath));
-      } else {
-        console.log('dis one')
-        // If unable to determine, default to ESM or throw an error.
-        // Defaulting to ESM might not always work, especially if the environment does not fully support it.
-        // throw new Error(`Unable to determine module type for ${filePath}`);
-        return import(filePath); // Defaulting to ESM
-      }
-    } else {
-      console.log('oooh')
-      throw new Error(`File content required for analysis but not provided for ${filePath}`);
-    }
-  } else {
-    console.log('smething else')
-    throw new Error(`Unsupported file extension for ${filePath}`);
-  }
-}
 
 export async function validateVersionIsUpToDate(): Promise<void> {
   const { latestVersion } = await Api.getLatestVersion();
