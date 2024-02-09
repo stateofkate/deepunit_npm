@@ -6,7 +6,6 @@ import {Files} from './lib/Files';
 import {
   checkFeedbackFlag,
   exitWithError,
-  getBugFlag,
   getFilesFlag,
   getJsonFlag,
   getMetaFlag,
@@ -17,14 +16,14 @@ import {
   validateVersionIsUpToDate
 } from './lib/utils';
 import {Color, Printer} from './lib/Printer';
-import {GenerateTestOrReportInput, SingleTestRunResult, Tester, TestRunResult} from './lib/testers/Tester';
+import {GenerateTestOrReportInput, SingleTestRunResult, Tester} from './lib/testers/Tester';
 import {JestTester} from './lib/testers/JestTester';
 import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
 import fs from "fs";
-import path from 'path';
 import {JasmineTester} from "./lib/testers/JasmineTester";
+
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; sourceFileName: string}
 export type FailedTestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; failureStackTrace: string; sourceFileName: string;}
@@ -129,20 +128,21 @@ export async function main() {
 
     if (flagType != 'bugFlag') {
       //We will first generate a bunch of unit tests that can be added into the files
-      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response} = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
+      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: { serverDidNotSendTests; alreadyTestedFiles; unsupportedFiles; response: GenerateJasmineResponse } = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
       resultsSummary.serverDidNotSendTests = resultsSummary.serverDidNotSendTests.concat(serverDidNotSendTests)
       resultsSummary.unsupportedFiles = resultsSummary.unsupportedFiles.concat(unsupportedFiles)
       resultsSummary.alreadyTestedFiles = resultsSummary.alreadyTestedFiles.concat(alreadyTestedFiles)
-      
-      //here we will loop thru the tests running each until we know which ones pass
-      const testResults: { failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[], completedTestFile: { content: string, path: string}, passingTestFile: { content: string; path: string }} = await runGeneratedTests(response, sourceFileName, testFileName)
-      //edit flow to go here
-      //update results after the edit flow
-      resultsSummary.passedTests = resultsSummary.passedTests.concat(testResults.passedTests)
-      resultsSummary.failedTests = resultsSummary.failedTests.concat(testResults.failedTests)
-      resultsSummary.completedTestFiles.push(testResults.completedTestFile)
-      
-      writeFinalTestFile(testResults.completedTestFile, testResults.passingTestFile)
+      if(response.stateCode === StateCode.Success) {
+        //here we will loop thru the tests running each until we know which ones pass
+        const testResults: { failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[], completedTestFile: { content: string, path: string }, passingTestFile: { content: string; path: string } } = await runGeneratedTests(response, sourceFileName, testFileName)
+        //edit flow to go here
+        //update results after the edit flow
+        resultsSummary.passedTests = resultsSummary.passedTests.concat(testResults.passedTests)
+        resultsSummary.failedTests = resultsSummary.failedTests.concat(testResults.failedTests)
+        resultsSummary.completedTestFiles.push(testResults.completedTestFile)
+  
+        writeFinalTestFile(testResults.completedTestFile, testResults.passingTestFile)
+      }
     }
   }
   await printResultsAndExit(resultsSummary)
@@ -198,11 +198,6 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     completedTestFile.content = lastTest
   }
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
-  //todo: figure out how to get rid of this function
-  // So basically what the function does is delete the temp tests, collate results and send them to the backend
-  // it also writes the json flag, prints the outro and does the final process.exit and sends the logs
-  // so maybe we dont remove this but make it some other function like printAndExit() where we just print results, write json and exit. Mostly the deleting temp files that needs to move.
-  // deleteTempTestsAndSendResults(testFileName, firstTestResults, generationResponse, tests, sourceFileName, sourceFileContent)
 }
 export function writeFinalTestFile(completedTestFile, passingTestFile) {
   if(CONFIG.includeFailingTests && completedTestFile.content && completedTestFile.path) {
@@ -256,7 +251,7 @@ export async function generateTestFlow(sourceFileName, sourceFileContent, testFi
   //this could get abstracted away
   if (response.stateCode === StateCode.FileNotSupported) {
     unsupportedFiles.push(sourceFileName);
-    return undefined;
+    return {serverDidNotSendTests, unsupportedFiles, response, alreadyTestedFiles};
   } else if (response.stateCode === StateCode.FileFullyTested) {
     alreadyTestedFiles.push(sourceFileName);
     return undefined;
@@ -331,12 +326,6 @@ export async function printResultsAndExit(testResults: ResultSummary){
     const deepunitTests: string = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests}, null, 2)
     Files.writeFileSync('deepunit-tests.json', deepunitTests);
   }
-  const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
-  
-  const jsonTEstData = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests}, null, 2)
-  console.log('jsonTEstData')
-  console.log(jsonTEstData)
-  console.log('jsonTEstData')
 
   Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
   Printer.printOutro();
