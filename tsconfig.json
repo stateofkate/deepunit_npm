@@ -108,7 +108,9 @@
   },
   "exclude": [
     "node_modules",
-    "passport", // or specify the full path if it's not directly in the root
+    "passport",
+    "**/*.test.ts",
+    "**/*.spec.ts",
     // ... any other folders or files to exclude ...
   ]
 }

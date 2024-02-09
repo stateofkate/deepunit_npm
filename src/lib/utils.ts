@@ -364,5 +364,6 @@ export class LoadingIndicator {
       clearInterval(this.interval);
       process.stdout.write('\r \r'); // Clear the line
     }
+    console.log('\n')
   }
 }
