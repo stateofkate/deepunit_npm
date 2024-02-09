@@ -331,6 +331,10 @@ export async function printResultsAndExit(testResults: ResultSummary){
     const deepunitTests: string = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests}, null, 2)
     Files.writeFileSync('deepunit-tests.json', deepunitTests);
   }
+  const jsonTEstData = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests}, null, 2)
+  console.log('jsonTEstData')
+  console.log(jsonTEstData)
+  console.log('jsonTEstData')
 
   Printer.printSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
   Printer.printOutro();
