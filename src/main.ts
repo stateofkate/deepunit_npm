@@ -315,7 +315,7 @@ export async function generateBugReport(testInput: GenerateTestOrReportInput): P
   return response;
 }
 export async function printResultsAndExit(testResults: ResultSummary){
-  let {passedTests, failedTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, completedTestFiles } = testResults;
+  let {passedTests, failedTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, completedTestFiles, testCaseIts } = testResults;
   let testsWithErrors: string[] = []
   let passingTests: string[] = []
   for(const failedTest of failedTests) {
@@ -333,7 +333,7 @@ export async function printResultsAndExit(testResults: ResultSummary){
   
   if (getJsonFlag() && completedTestFiles.length > 0) {
     const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
-    const deepunitTests: string = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests}, null, 2)
+    const deepunitTests: string = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests, testCaseIts}, null, 2)
     Files.writeFileSync('deepunit-tests.json', deepunitTests);
   }
 
