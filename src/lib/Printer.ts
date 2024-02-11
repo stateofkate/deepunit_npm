@@ -45,7 +45,7 @@ export class Printer {
     unsupportedFiles: (string | null)[],
   ): void {
     const LINE_DIVIDER = '#################################################';
-    console.log(LINE_DIVIDER);
+    console.log('\n'+LINE_DIVIDER);
     console.log('########## Summary of DeepUnit.AI Run ###########');
     console.log(LINE_DIVIDER);
 

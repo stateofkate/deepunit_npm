@@ -1,4 +1,6 @@
 import { TestingFrameworks } from '../main.consts';
+import {SingleTestRunResult} from "./testers/Tester";
+import {TestCaseWithTestBed} from "../main";
 
 export type ApiBaseData = {
   frontendFramework: string;
@@ -65,6 +67,15 @@ export type SendResultDataPost = {
   sourceFileName: string;
   sourceFileContent: string;
 };
+export type SendIterativeResults = {
+  testFileName: string;
+  sourceFileName: string;
+  singleTestRunResult: SingleTestRunResult;
+  sourceFileContent: string;
+  lastIterativeresultId?: any;
+  currentTest: TestCaseWithTestBed;
+  testFileContent: string
+}
 export type SendAnalyticsData = {
   logMessage: string;
   scriptTarget: string;

@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { AUTH } from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
+import {AUTH, TestCaseWithTestBed} from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import {
@@ -13,10 +13,10 @@ import {
   SendBugResults,
   SendResultDataPost,
   FeedbackData,
-  LogsData,
+  LogsData, SendIterativeResults,
 } from './ApiTypes';
 import { CONFIG } from './Config';
-import {GenerateTestOrReportInput, RemoveFailedTestInput} from './testers/Tester';
+import {GenerateTestOrReportInput, RemoveFailedTestInput, SingleTestRunResult} from './testers/Tester';
 
 enum ApiPaths {
   removeFailedTest = '/generate-test/remove-failed-test',
@@ -30,6 +30,7 @@ enum ApiPaths {
   logs = '/feedback/logs',
   generateBugReport = '/generate-bug-report/bug-new',
   sendBugResults = '/generate-bug-report/send-bug-results',
+  sendIterativeResults = '/generate-test/send-iterative-results',
 }
 export enum StateCode {
   'Success' = 0,
@@ -81,7 +82,7 @@ export class Api {
     }
   }
   
-  public static async removeFailedTest(data: RemoveFailedTestInput): Promise<any> {
+  public static async removeFailedTest(data: { failedTest: TestCaseWithTestBed; lastPassingTest: TestCaseWithTestBed; unfinishedTests: TestCaseWithTestBed[]; testFileName: string; sourceFileName: string; singleTestRunResult: SingleTestRunResult; sourceFileContent: string; lastIterativeresultId: any; currentTest: TestCaseWithTestBed; testFileContent: string }): Promise<any> {
     return await this.post(ApiPaths.removeFailedTest, data);
   }
 
@@ -205,6 +206,9 @@ export class Api {
       scriptTarget: CONFIG.scriptTarget,
     };
     await this.post(ApiPaths.sendResults, data);
+  }
+  public static async sendIterativeResults(data: SendIterativeResults) {
+    await this.post(ApiPaths.sendIterativeResults, data);
   }
 
   public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {

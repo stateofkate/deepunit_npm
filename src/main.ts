@@ -23,6 +23,7 @@ import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
 import fs from "fs";
 import {JasmineTester} from "./lib/testers/JasmineTester";
+import {SendIterativeResults} from "./lib/ApiTypes";
 
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; sourceFileName: string}
@@ -176,14 +177,16 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     console.log('    Checking test case: ' + currentTest.testCase.explanation)
     const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
     //So the iterative send results owuld need the source file, testfile if any, current case, other cases, failurestack, pass/fail, previous sendResult id, all fields on generate actually
-    
-    
+  
+    console.log('singleTestRunResult')
+    console.log(singleTestRunResult)
+    console.log('singleTestRunResult')
     if(singleTestRunResult.passed) {
       console.log('        Passed!')
       passedTests.push(currentTest)
       completedTestFile.content = currentTest.testBed
       passingTestFile.content = currentTest.testBed
-      lastIterativeresultId = this.sendIterativeResults(currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId)
+      lastIterativeresultId = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
     } else {
       console.log('        Failed...')
       
@@ -198,7 +201,7 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
           testsToRun = newTests.fixedTests;
           lastIterativeresultId = newTests.resultId
       } else {
-        lastIterativeresultId = this.sendIterativeResults(currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId)
+        lastIterativeresultId = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
 
         //todo: add a test fixing flow here. Figure out how to handle tracking a first test that failed but got fixed
       }
@@ -211,8 +214,8 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   }
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
 }
-export function sendIterativeResults() {
-  Api.sendIterativeResults()
+export function sendIterativeResults(data: SendIterativeResults) {
+  Api.sendIterativeResults(data)
 }
 export function writeFinalTestFile(completedTestFile, passingTestFile) {
   if(CONFIG.includeFailingTests && completedTestFile.content && completedTestFile.path) {
