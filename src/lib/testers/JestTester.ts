@@ -7,7 +7,6 @@ import {string} from "yargs";
 export class JestTester extends Tester {
   public async runSingleTest(testFilePath: string): Promise<SingleTestRunResult> {
     const testResult = this.runTest(testFilePath)
-    //console.log(testResult)
   
     if (testResult.testFailedWithError || !testResult.jestResult || !testResult.jestResult.success) {
       // if an error happened when running the test
