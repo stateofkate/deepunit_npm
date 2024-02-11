@@ -186,7 +186,8 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
       passedTests.push(currentTest)
       completedTestFile.content = currentTest.testBed
       passingTestFile.content = currentTest.testBed
-      lastIterativeresultId = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
+      const iterativeResultResponse = await sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
+      lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
     } else {
       console.log('        Failed...')
       
@@ -201,8 +202,8 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
           testsToRun = newTests.fixedTests;
           lastIterativeresultId = newTests.resultId
       } else {
-        lastIterativeresultId = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
-
+        const iterativeResultResponse = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
+        lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
         //todo: add a test fixing flow here. Figure out how to handle tracking a first test that failed but got fixed
       }
     }
@@ -214,8 +215,8 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   }
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
 }
-export function sendIterativeResults(data: SendIterativeResults) {
-  Api.sendIterativeResults(data)
+export async function sendIterativeResults(data: SendIterativeResults): Promise<string | {error: string}> {
+  return await Api.sendIterativeResults(data)
 }
 export function writeFinalTestFile(completedTestFile, passingTestFile) {
   if(CONFIG.includeFailingTests && completedTestFile.content && completedTestFile.path) {

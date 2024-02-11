@@ -209,7 +209,7 @@ export class Api {
     await this.post(ApiPaths.sendResults, data);
   }
   public static async sendIterativeResults(data: SendIterativeResults) {
-    await this.post(ApiPaths.sendIterativeResults, data);
+    return await this.post(ApiPaths.sendIterativeResults, data);
   }
 
   public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {
