@@ -1,6 +1,7 @@
 import { TestingFrameworks } from '../main.consts';
 import {SingleTestRunResult} from "./testers/Tester";
-import {TestCaseWithTestBed} from "../main";
+import {AUTH, TestCaseWithTestBed} from "../main";
+import {CONFIG} from "./Config";
 
 export type ApiBaseData = {
   frontendFramework: string;
@@ -9,6 +10,9 @@ export type ApiBaseData = {
   version: string;
   email: string | null;
   platform: string | null;
+  testCaseGoal?: string;
+  testSuffix: string;
+  useOpenAI: boolean
 };
 
 export type GenerateTestData = {

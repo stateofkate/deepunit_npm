@@ -59,15 +59,15 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
   // What language you want the tests to generate in (forcing it to be a specific language)
   // Options are "javascript" or "typescript" right now
   "testingLanguageOverride": "javascript",
-    
-  // if tests fail on the first generation, try again a second time to generate tests. Almost doubles the time of execution.
-  "retryTestGenerationOnFailure": true
 
   // we use git to get diffs from the default branch. The default is master unless configured here.
   "defaultBranch": "main"
-  
+
   // Specify the type/goal of testcases you want to cover. Examples are happy path, edgecase, 80% code coverage, detect bugs, etc.
   "testCaseGoal": "edge cases"
+  
+  // Choose to use either OpenAIs models or open source models such as Mixtral or LLaMa
+  "useOpenAi": false
 }
 ```
 
