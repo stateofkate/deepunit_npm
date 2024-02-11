@@ -175,12 +175,12 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     const currentTest: TestCaseWithTestBed = testsToRun.shift()
     fs.writeFileSync(tempTestName, currentTest.testBed, 'utf-8');
     console.log('    Checking test case: ' + currentTest.testCase.explanation)
-    const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
+    const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName)
     //So the iterative send results owuld need the source file, testfile if any, current case, other cases, failurestack, pass/fail, previous sendResult id, all fields on generate actually
   
-    console.log('singleTestRunResult')
-    console.log(singleTestRunResult)
-    console.log('singleTestRunResult')
+    console.log('singleTestRunResult.passed')
+    console.log(singleTestRunResult.passed)
+    console.log('singleTestRunResult.passed')
     if(singleTestRunResult.passed) {
       console.log('        Passed!')
       passedTests.push(currentTest)

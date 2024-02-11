@@ -30,9 +30,6 @@ export class JasmineTester extends Tester {
       };
     }
   }
-  public async getTestResults(files: string[]): Promise<TestRunResult> {
-    //this function does nothing, but exists in JestTester so must exist here. You can refer to its implemetation if needed
-    return {failedItBlocks: {}, failedTestErrors: {}, failedTests: {}, itBlocksCount: {}, passedTests: {}};
-  }
+
 
 }
