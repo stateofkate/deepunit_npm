@@ -2,21 +2,50 @@ import { execSync } from 'child_process';
 import { CONFIG } from './Config';
 
 export class Printer {
+  public static readonly defaultWidth: number = 60;
   public static printOutro(): void {
-    const LINE_DIVIDER = '#################################################';
+    const LINE_DIVIDER = '#'.repeat(Printer.defaultWidth);
     console.log(LINE_DIVIDER);
     console.log('\nWe love feedback. Let us know of any suggestions, bugs, issues, or problems so we can make DeepUnit better.');
     console.log('\nTo provide feedback, please run "npm run deepunit -- --feedback"');
   }
 
-  public static printIntro() {
-    const LINE_DIVIDER = '###################################################';
-    console.log(LINE_DIVIDER);
-    console.log('##### Generating unit tests with DeepUnit.AI #####');
-    console.log(LINE_DIVIDER);
+  public static async printIntro() {
+    const version = await CONFIG.getVersion();
+    const message = `Generating unit tests with DeepUnit.AI v${version}`;
+    this.PrintMessageInBox(message)
     console.log('For documentation visit https://deepunit.ai/docs');
   }
-
+  public static PrintMessageInBox(message: string): void {
+    message = ` ${message} `
+    // Maximum length for the message including the padding
+    const maxLength = Printer.defaultWidth;
+    // Minimum padding of '#' on each side
+    const minPadding = 3;
+    let paddedMessage: string;
+    let divider = '';
+    
+    if (message.length + (minPadding * 2) > maxLength) {
+      // If message length exceeds maximum length when considering minimum padding,
+      // adjust the message and apply minimum padding
+      paddedMessage = '#'.repeat(minPadding) + message + '#'.repeat(minPadding);
+    } else {
+      // Calculate the total padding required to make the message length equal to maxLength
+      const totalPadding = maxLength - message.length;
+      // Calculate how much padding to add on each side
+      const paddingPerSide = totalPadding / 2;
+      // Construct the padded message
+      paddedMessage = '#'.repeat(paddingPerSide) + message + '#'.repeat(paddingPerSide);
+    }
+    
+    // Create the divider with '#' characters based on the final message length
+    divider = '#'.repeat(paddedMessage.length);
+    
+    console.log(`${divider}\n${paddedMessage}\n${divider}`);
+  }
+  
+  
+  
   public static printIndented(fileNames: (string | null)[], summaryDescription: string) {
     if (fileNames.length > 0) {
       console.log(summaryDescription);
@@ -44,10 +73,7 @@ export class Printer {
     alreadyTestedFiles: (string | null)[],
     unsupportedFiles: (string | null)[],
   ): void {
-    const LINE_DIVIDER = '#################################################';
-    console.log('\n'+LINE_DIVIDER);
-    console.log('########## Summary of DeepUnit.AI Run ###########');
-    console.log(LINE_DIVIDER);
+    this.PrintMessageInBox('Summary of DeepUnit.AI Run')
 
     this.printIndented(unsupportedFiles, '\nThe following files are not currently supported. Contact support@deepunit.ai so we can add support:');
     this.printIndented(
