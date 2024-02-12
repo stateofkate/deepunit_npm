@@ -1,4 +1,7 @@
 import { TestingFrameworks } from '../main.consts';
+import {SingleTestRunResult} from "./testers/Tester";
+import {AUTH, TestCaseWithTestBed} from "../main";
+import {CONFIG} from "./Config";
 
 export type ApiBaseData = {
   frontendFramework: string;
@@ -7,6 +10,9 @@ export type ApiBaseData = {
   version: string;
   email: string | null;
   platform: string | null;
+  testCaseGoal?: string;
+  testSuffix: string;
+  useOpenAI: boolean
 };
 
 export type GenerateTestData = {
@@ -65,6 +71,15 @@ export type SendResultDataPost = {
   sourceFileName: string;
   sourceFileContent: string;
 };
+export type SendIterativeResults = {
+  testFileName: string;
+  sourceFileName: string;
+  singleTestRunResult: SingleTestRunResult;
+  sourceFileContent: string;
+  lastIterativeresultId?: any;
+  currentTest: TestCaseWithTestBed;
+  testFileContent: string
+}
 export type SendAnalyticsData = {
   logMessage: string;
   scriptTarget: string;

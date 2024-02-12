@@ -513,6 +513,7 @@ export class Files {
         '  "ignoredDirectories": ["node_modules"],\n' +
         '  "ignoredFiles": [],\n' +
         '  "includeFailingTests": true,\n' +
+        '  "useOpenAI": true,\n' +
         '  "testSuffix": "test"\n' +
         '  "defaultBranch": "master"\n' +
         '}\n';

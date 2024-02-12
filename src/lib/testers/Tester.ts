@@ -73,10 +73,5 @@ export abstract class Tester {
     return testFileName;
   }
 
-  /**
-   * Check if the test works in the framework
-   * @param files
-   */
-  public abstract getTestResults(files: string[]): Promise<TestRunResult>;
-  public abstract runSingleTest(filePath: string): Promise<SingleTestRunResult>;
+    public abstract runSingleTest(filePath: string): Promise<SingleTestRunResult>;
 }

@@ -36,12 +36,12 @@ export class Config {
   testingLanguageOverride: string = '';
   testingFrameworkOverride: string = '';
   isGitRepository: boolean = false;
-  retryTestGenerationOnFailure: boolean = true;
   private readonly undefinedVersion = '-1';
   private versionCache: string = this.undefinedVersion;
   platform: string = '';
   defaultBranch: string = ''
   testCaseGoal: string = '';
+  useOpenAi: boolean = false;
   
   constructor() {
     this.detectProjectType();
@@ -65,13 +65,13 @@ export class Config {
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
     this.apiHost = this.doProd ? prodBase : localHostBase;
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
-    this.retryTestGenerationOnFailure = Config.getBoolFromConfig('retryTestGenerationOnFailure', true);
     this.generateAllFiles = getGenerateAllFilesFlag();
     this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
     this.isGitRepository = this.isInGitRepo();
     this.platform = process.platform;
     this.defaultBranch = Config.getStringFromConfig('defaultBranch')
     this.testCaseGoal = Config.getStringFromConfig('testCaseGoal')
+    this.useOpenAi = Config.getBoolFromConfig('useOpenAi', true);
   }
 
   /**

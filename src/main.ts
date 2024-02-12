@@ -23,6 +23,7 @@ import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
 import fs from "fs";
 import {JasmineTester} from "./lib/testers/JasmineTester";
+import {SendIterativeResults} from "./lib/ApiTypes";
 
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; sourceFileName: string}
@@ -31,11 +32,18 @@ export type GenerateJasmineResponse = { testFileArray?: TestCaseWithTestBed[]; g
 export type FunctionToTestCaseCode = {
   functionName: string;
   testCases: TestCaseAndCode[]
+  sourceFileName: string;
+  testFileName:string;
 }
 export type ResultSummary = {
   alreadyTestedFiles: string[];
   unsupportedFiles: string[];
-  passedTests: TestCaseWithTestBed[]; failedTests: FailedTestCaseWithTestBed[], serverDidNotSendTests: string[], completedTestFiles: { path: string; content: string }[] }
+  passedTests: TestCaseWithTestBed[];
+  failedTests: FailedTestCaseWithTestBed[],
+  testCaseIts: FunctionToTestCaseCode[],
+  serverDidNotSendTests: string[],
+  completedTestFiles: { path: string; content: string }[],
+}
 export type TestCaseAndCode = {code?: string, testCase: ParsedTestCases, duplicate: boolean}
 
 // global classes
@@ -113,7 +121,7 @@ export async function main() {
     console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
   }
   const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
-  let resultsSummary: ResultSummary = {completedTestFiles: [], alreadyTestedFiles: [], passedTests:[], failedTests: [], serverDidNotSendTests: [], unsupportedFiles: []}
+  let resultsSummary: ResultSummary = {testCaseIts: [], completedTestFiles: [], alreadyTestedFiles: [], passedTests:[], failedTests: [], serverDidNotSendTests: [], unsupportedFiles: []}
   for (const fileToTest of filesToTest) {
 
     let sourceFileName = fileToTest;
@@ -132,9 +140,10 @@ export async function main() {
       resultsSummary.serverDidNotSendTests = resultsSummary.serverDidNotSendTests.concat(serverDidNotSendTests)
       resultsSummary.unsupportedFiles = resultsSummary.unsupportedFiles.concat(unsupportedFiles)
       resultsSummary.alreadyTestedFiles = resultsSummary.alreadyTestedFiles.concat(alreadyTestedFiles)
+      resultsSummary.testCaseIts = resultsSummary.testCaseIts.concat(response.testCaseIts)
       if(response.stateCode === StateCode.Success) {
         //here we will loop thru the tests running each until we know which ones pass
-        const testResults: { failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[], completedTestFile: { content: string, path: string }, passingTestFile: { content: string; path: string } } = await runGeneratedTests(response, sourceFileName, testFileName)
+        const testResults: { failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[], completedTestFile: { content: string, path: string }, passingTestFile: { content: string; path: string } } = await runGeneratedTests(response, sourceFileName, testFileName, sourceFileContent, testFileContent)
         //edit flow to go here
         //update results after the edit flow
         resultsSummary.passedTests = resultsSummary.passedTests.concat(testResults.passedTests)
@@ -148,46 +157,48 @@ export async function main() {
   await printResultsAndExit(resultsSummary)
 }
 
-export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string, testFileName: string): Promise<{ failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[]; completedTestFile: { content: string; path: string }; passingTestFile: { content: string; path: string } }> {
+export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string, testFileName: string, sourceFileContent: string, testFileContent: string): Promise<{ failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[]; completedTestFile: { content: string; path: string }; passingTestFile: { content: string; path: string } }> {
   let tester = getTester();
   const lastDotIndex = sourceFileName.lastIndexOf('.');
   const fileNameWithoutExt = sourceFileName.substring(0, lastDotIndex);
   const fileExt = sourceFileName.substring(lastDotIndex + 1);
   const tempTestName = `${fileNameWithoutExt}.deepunittemptest.${CONFIG.testSuffix}.${fileExt}`;
   let passedTests: TestCaseWithTestBed[] = [];
-  let passedTestString = ''
-  let failedTestString = ''
   let failedTests: FailedTestCaseWithTestBed[]= []
   let completedTestFile = { content: '', path: testFileName}
   let passingTestFile = { content: '', path: testFileName}
   //here we will go thru the tests until we find one that fails.
   //If it fails we will send the last passing test and the rest of the tests in the response that are un run and have it generate tests that do not include the failing one
   let testsToRun: TestCaseWithTestBed[] = [].concat(response.testFileArray) //create a clone of response.testFileArray so response.testFileArray is not mutated
-  let calling = 0
+  let lastIterativeresultId;
   while(testsToRun.length>0){
     const currentTest: TestCaseWithTestBed = testsToRun.shift()
     fs.writeFileSync(tempTestName, currentTest.testBed, 'utf-8');
     console.log('    Checking test case: ' + currentTest.testCase.explanation)
-    const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName, currentTest.testBed)
+    const singleTestRunResult: SingleTestRunResult = await tester.runSingleTest(tempTestName)
     if(singleTestRunResult.passed) {
       console.log('        Passed!')
       passedTests.push(currentTest)
-      passedTestString += currentTest.code + '\n'
       completedTestFile.content = currentTest.testBed
       passingTestFile.content = currentTest.testBed
+      const iterativeResultResponse = await sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
+      lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
     } else {
       console.log('        Failed...')
+      
       const failedTestCaseWithTestBed: FailedTestCaseWithTestBed = { failureStackTrace: singleTestRunResult.testFailureStack, ...currentTest}
       failedTests.push(failedTestCaseWithTestBed)
-      failedTestString += currentTest.code + '\n'
       let ableToFix = false;
       if(passedTests.length > 0) {
           const lastPassingTest: TestCaseWithTestBed = passedTests[passedTests.length-1];
           const failedTest: TestCaseWithTestBed = currentTest;
           const unfinishedTests: TestCaseWithTestBed[] = testsToRun
-          const newTests = await Api.removeFailedTest({lastPassingTest, failedTest, unfinishedTests})
+          const newTests = await Api.removeFailedTest({lastPassingTest, failedTest, unfinishedTests, currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
           testsToRun = newTests.fixedTests;
+          lastIterativeresultId = newTests.resultId
       } else {
+        const iterativeResultResponse = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
+        lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
         //todo: add a test fixing flow here. Figure out how to handle tracking a first test that failed but got fixed
       }
     }
@@ -198,6 +209,9 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     completedTestFile.content = lastTest
   }
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
+}
+export async function sendIterativeResults(data: SendIterativeResults): Promise<string | {error: string}> {
+  return await Api.sendIterativeResults(data)
 }
 export function writeFinalTestFile(completedTestFile, passingTestFile) {
   if(CONFIG.includeFailingTests && completedTestFile.content && completedTestFile.path) {
@@ -241,14 +255,9 @@ export async function generateTestFlow(sourceFileName, sourceFileContent, testFi
   testInput = { sourceFileDiff, sourceFileName, sourceFileContent, generatedFileName: testFileName, generatedFileContent: testFileContent };
   if (testCasesObj) {
     testInput.testCasesObj = testCasesObj;
-  } else if (lastTestResults) {
-    //note to justin: probably where we would put put some fix test flow stuff
   }
 
-  //Calls openAI to generate model response
   const response: GenerateJasmineResponse = await generateTest(testInput);
-  //fs.writeFileSync(testInput.sourceFileName + '.md', response.md)
-  //this could get abstracted away
   if (response.stateCode === StateCode.FileNotSupported) {
     unsupportedFiles.push(sourceFileName);
     return {serverDidNotSendTests, unsupportedFiles, response, alreadyTestedFiles};
@@ -305,7 +314,7 @@ export async function generateBugReport(testInput: GenerateTestOrReportInput): P
   return response;
 }
 export async function printResultsAndExit(testResults: ResultSummary){
-  let {passedTests, failedTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, completedTestFiles } = testResults;
+  let {passedTests, failedTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, completedTestFiles, testCaseIts } = testResults;
   let testsWithErrors: string[] = []
   let passingTests: string[] = []
   for(const failedTest of failedTests) {
@@ -323,7 +332,7 @@ export async function printResultsAndExit(testResults: ResultSummary){
   
   if (getJsonFlag() && completedTestFiles.length > 0) {
     const summary = Printer.getJSONSummary(testsWithErrors, passingTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles);
-    const deepunitTests: string = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests}, null, 2)
+    const deepunitTests: string = JSON.stringify({results: completedTestFiles, summary, meta: getMetaFlag() ?? '', failedTests, passedTests, testCaseIts}, null, 2)
     Files.writeFileSync('deepunit-tests.json', deepunitTests);
   }
 
