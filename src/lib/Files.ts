@@ -510,12 +510,17 @@ export class Files {
     if (!fs.existsSync(configPath)) {
       const configFileContent =
         '{\n' +
+        '  "documentation": "You can find documentation on these configs at https://www.npmjs.com/package/deepunit",\n' +
+        '  "frontendFramework": "",\n' +
+        '  "testingFramework": "",\n' +
         '  "ignoredDirectories": ["node_modules"],\n' +
         '  "ignoredFiles": [],\n' +
         '  "includeFailingTests": true,\n' +
-        '  "useOpenAI": true,\n' +
-        '  "testSuffix": "test"\n' +
-        '  "defaultBranch": "master"\n' +
+        '  "testSuffix": "",\n' +
+        '  "testingLanguageOverride": "",\n' +
+        '  "defaultBranch": "master",\n' +
+        '  "testCaseGoal": "",\n' +
+        '  "useOpenAI": true\n' +
         '}\n';
       fs.writeFileSync(configPath, configFileContent);
     }

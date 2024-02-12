@@ -1,8 +1,4 @@
 import { CONFIG } from '../Config';
-import {Api, ClientCode} from '../Api';
-import { Files } from '../Files';
-import { LoadingIndicator, getJsonFlag } from '../utils';
-import console from '../Log';
 import fs from "fs";
 import {TestCaseWithTestBed} from "../../main";
 

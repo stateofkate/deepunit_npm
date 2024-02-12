@@ -49,7 +49,7 @@ export class Config {
     this.testSuffix = this.detectTestSuffix();
     this.testingFramework = this.getTestFramework();
     this.frameworkVersion = this.getFrameworkVersion();
-    this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework');
+    this.testingFrameworkOverride = Config.getStringFromConfig('testingFramework').toLowerCase();
     if (this.testingFrameworkOverride && (Object.values(TestingFrameworks) as string[]).includes(this.testingFrameworkOverride)) {
       this.testingFramework = this.testingFrameworkOverride as TestingFrameworks;
     } else if(!fs.existsSync(userConfig) && this.testingFramework === undefined) {
