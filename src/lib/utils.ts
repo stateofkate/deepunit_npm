@@ -259,6 +259,10 @@ export function setupYargs() {
       type: 'boolean',
       description: 'For --f flag to filter for unwanted files.',
     })
+    .option('ci', {
+      type: 'boolean',
+      description: 'Instructs DeepUnit to use the deepunit.config.ci.json file for its config when running in a CI environment.',
+    })
     .option('ab', {
       type: 'boolean',
       description: 'For --f flag to be absolute paths from start of repository',
@@ -311,6 +315,11 @@ export function getPatternFlag(): string[] | undefined {
 export function getJsonFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
   return !!argv.json;
+}
+
+export function getCIFlag(): boolean {
+  const argv = setupYargs().argv as ParsedArgs;
+  return !!argv.ci;
 }
 
 export function getForceFilter(): boolean {

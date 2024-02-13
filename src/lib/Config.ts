@@ -2,12 +2,13 @@ import path from 'path';
 import * as fs from 'fs';
 import ts from 'typescript';
 import {TestingFrameworks} from '../main.consts';
-import {askQuestion, exitWithError, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage} from './utils';
+import {askQuestion, exitWithError, getCIFlag, getGenerateAllFilesFlag, getYesOrNoAnswer, installPackage} from './utils';
 import {execSync} from 'child_process';
 import {Color} from './Printer';
 import {Files} from "./Files";
 
 const devConfig: string = 'deepunit.dev.config.json';
+const ciConfig: string = 'deepunit.ci.config.json';
 const userConfig: string = 'deepunit.config.json';
 
 // HARDCODED CONFIG VALUES
@@ -251,9 +252,11 @@ export class Config {
 
   /**
    * HELPER FUNCTION: Get the json value from config
+   * If the CI flag was used it will use the ciConfig, otherwise it will use the dev config and user config
    */
   private static getValueFromConfigFile(configProperty: string): unknown {
-    for (let configPath of configFilePaths) {
+    let configPaths: string[] = getCIFlag() ? [ciConfig] : configFilePaths
+    for (let configPath of configPaths) {
       if (fs.existsSync(configPath)) {
         let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
