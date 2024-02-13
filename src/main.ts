@@ -195,7 +195,10 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
           const unfinishedTests: TestCaseWithTestBed[] = testsToRun
           const newTests = await Api.removeFailedTest({lastPassingTest, failedTest, unfinishedTests, currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
           testsToRun = newTests.fixedTests;
-          lastIterativeresultId = newTests.resultId
+          if(newTests.resultId && !newTests.resultId.error) {
+            lastIterativeresultId = newTests.resultId
+          }
+          
       } else {
         const iterativeResultResponse = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
         lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
