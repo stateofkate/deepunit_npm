@@ -1,5 +1,9 @@
 # Release Log
 
+## 1.9.1
+Bugs
+- Fixes error handling during the run tests step
+
 ## 1.9.0
 Features
 - Adds support for Jasmine and Angular
