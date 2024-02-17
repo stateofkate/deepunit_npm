@@ -20,7 +20,7 @@ export class CreateGymInviteConfirmationComponent implements OnInit {
   public ngOnInit(): void {
 
    this.activatedRoute.params.pipe(
-     switchMap((data) => { return this.requestService.getInvite(data.id) }),
+     switchMap((data) => { return this.requestService.verifyCode(data.id) }),
      take(1) //take() placement in the observable chain DOES matter or you get memory leaks https://itnext.io/where-to-place-rxjs-operator-take-1-39a8a00f65cb
    ).subscribe((data) => {
      this.inviteData = data
