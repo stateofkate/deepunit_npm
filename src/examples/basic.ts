@@ -1,9 +1,9 @@
 import fs from 'fs';
 import * as path from 'path';
 
-// @deep-unit-ignore-next-line
 export function checkFileIsNotEmpty(filePath: string): boolean {
   try {
+
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     return fileContent.trim() !== ''; // Check if the trimmed content is not empty
   } catch (error) {
@@ -16,10 +16,12 @@ export function confirmFileIsWithinFolder(filePath: string, folderPath: string):
   const doesExist = fs.existsSync(filePath);
   if (!doesExist) {
     return true;
+
   }
 
   // Resolve the absolute path of the file and the folder
   const absoluteFilePath = path.resolve(filePath);
+  console.log('change here');
   const absoluteFolderPath = path.resolve(folderPath);
 
   // Check if the file is within the folder
@@ -34,6 +36,7 @@ export function squareNumber(num: number): number {
 export function factorial(n: number): number {
   if (n < 0) throw new Error('Negative numbers do not have a factorial');
   if (n === 0 || n === 1) return 1;
+  console.log('unstaged commit');
   return n * factorial(n - 1);
 }
 

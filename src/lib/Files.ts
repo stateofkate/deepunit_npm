@@ -193,8 +193,18 @@ export class Files {
       return false;
     }
   }
+
   public static async getDiff(files: string[], attempt = 0): Promise<string[]> {
+
+    /*
+    scenarios:
+    1. we have staged and unstaged changes, we want to get both
+
+     */
+
     const remoteName = await this.askForRemote()
+    console.log('remoteName:', remoteName)
+    console.log('hasFetched:', this.hasFetched);
     if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
       const fetchCommand = `git fetch ${remoteName}`
       const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
@@ -207,16 +217,25 @@ export class Files {
       }
     }
     const targetBranchFlag: string = getTargetBranchFlagFlag()
+    console.log('targetBranchFlag:', targetBranchFlag);
+    console.log('CONFIG.defaultBranch:', CONFIG.defaultBranch)
     const targetBranch = targetBranchFlag ? targetBranchFlag : CONFIG.defaultBranch;
+    console.log('targetBranch:', targetBranch);
     let diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
       diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+      console.log('diffCmd1:', diffCmd);
     } else {
       if(this.hasUncommittedChanges(files)) {
-        //diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`) someday we should support staged changes, but not a priority rn
+        // staged changes
+        diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`)
+        // unstaged changes
         diffCmd.push(`git diff -U0 -- ${files.join(' ')}`)
+        console.log('diffCmd2:', diffCmd);
       } else {
+        // diffs on the specified files between the current branch's HEAD and the tip of the ${targetBranch} on the origin remote
         diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+        console.log('diffCmd3:', diffCmd)
       }
       
     }
@@ -224,6 +243,8 @@ export class Files {
       let diff: string[] = [];
       for(const diffCommand of diffCmd) {
         const diffString = execSync(diffCommand).toString()
+        console.log('diffCommand:', diffCommand)
+        console.log('diffString:', diffString)
         if(diffString.length>0){
           diff.push(diffString)
         }
