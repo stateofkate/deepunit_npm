@@ -6,7 +6,6 @@ export class basic {
 
   public checkFileIsNotEmpty(filePath: string): boolean {
     try {
-
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       return fileContent.trim() !== ''; // Check if the trimmed content is not empty
     } catch (error) {

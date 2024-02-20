@@ -199,8 +199,14 @@ export class Files {
 
     /*
     scenarios:
-    1. we have staged and unstaged changes, we want to get both
+    1. We are in github/gitlab action and want to get diffs of the submitted pull request commit vs the target branch commit, i.e. committed changes against committed changes
+    2. We are in VS code / npm package and want to get diffs of the working file vs the target branch commit, i.e. committed changes of current working file, as well as staged and unstaged changes
 
+    Some notes on git commands:
+    1. git diff (without any arguments): Shows the differences between the working directory and the index (staging area). This means it only shows unstaged changes.
+  	2. git diff --staged or git diff --cached: Shows the differences between the index (staging area) and the last commit (HEAD). This means it only shows staged changes.
+  	3. git diff HEAD: Shows the differences between the working directory (both staged and unstaged changes) and the last commit (HEAD). This is why you're seeing both staged and unstaged changes with this command.
+  	4. git diff origin/dev..HEAD: Compares the state of the repository at origin/dev with HEAD. This command only shows changes that have been committed between these two points. Unstaged and staged (but not yet committed) changes in your working directory are not included in this comparison.
      */
 
     console.log('cwd:', process.cwd());
@@ -225,12 +231,15 @@ export class Files {
     console.log('targetBranch:', targetBranch);
     let diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
+      //github/gitlab action
       diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
       console.log('diffCmd1:', diffCmd);
     } else {
-      // diffs on the specified files between the current branch's HEAD and the tip of the ${targetBranch} on the origin remote
-      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
-
+      // we are in npm package/VS code
+      // this shows committed changes between this branch vs target branch:
+      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -- ${files.join(' ')}`);
+      // this shows unstaged and staged changes
+      diffCmd.push(`git diff HEAD -U0 -- ${files.join(' ')}`)
       console.log('diffCmd3:', diffCmd)
     }
     try {
