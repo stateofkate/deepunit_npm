@@ -314,7 +314,6 @@ export class Files {
   //test
   public static getExistingTestContent(file: string): string | null {
     let testContent: string = '';
-    console.log('random console log here');
     try {
       testContent = fs.readFileSync(file, 'utf-8');
     } catch (error) {
