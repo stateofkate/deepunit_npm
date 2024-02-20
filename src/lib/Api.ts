@@ -62,7 +62,7 @@ export class Api {
       version: await CONFIG.getVersion(),
       email: AUTH.getEmail(),
       platform: CONFIG.platform,
-      useOpenAI: CONFIG.useOpenAi,
+      useOpenAI: CONFIG.useOpenAI,
       ...customData,
     };
 
