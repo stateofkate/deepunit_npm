@@ -21,7 +21,6 @@ export class Files {
   public static hasFetched = false;
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
-
     const filesToDebugAndWriteTests: string[] | undefined = getBugFileFlag();
     // get files to filter with --f arg, returning direct paths
     let filesToFilter: string[] | undefined = getFilesFlag();
@@ -187,7 +186,6 @@ export class Files {
   public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
     try {
       const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
-      console.log('status:', status);
       return status !== '';
     } catch (error) {
       console.error('Error checking for uncommitted changes:', error);
@@ -209,14 +207,11 @@ export class Files {
   	4. git diff origin/dev..HEAD: Compares the state of the repository at origin/dev with HEAD. This command only shows changes that have been committed between these two points. Unstaged and staged (but not yet committed) changes in your working directory are not included in this comparison.
      */
 
-    console.log('cwd:', process.cwd());
     const remoteName = await this.askForRemote()
-    console.log('remoteName:', remoteName)
-    console.log('hasFetched:', this.hasFetched);
     if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
       const fetchCommand = `git fetch ${remoteName}`
       const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
-  
+
       if (permission) {
         execSync(fetchCommand); // Ensure you handle errors here
         this.hasFetched = true;
@@ -225,34 +220,27 @@ export class Files {
       }
     }
     const targetBranchFlag: string = getTargetBranchFlagFlag()
-    console.log('targetBranchFlag:', targetBranchFlag);
-    console.log('CONFIG.defaultBranch:', CONFIG.defaultBranch)
     const targetBranch = targetBranchFlag ? targetBranchFlag : CONFIG.defaultBranch;
-    console.log('targetBranch:', targetBranch);
     let diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
       //github/gitlab action
       diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
-      console.log('diffCmd1:', diffCmd);
     } else {
       // we are in npm package/VS code
       // this shows committed changes between this branch vs target branch:
-      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -- ${files.join(' ')}`);
+      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
       // this shows unstaged and staged changes
       diffCmd.push(`git diff HEAD -U0 -- ${files.join(' ')}`)
-      console.log('diffCmd3:', diffCmd)
     }
     try {
       let diff: string[] = [];
       for(const diffCommand of diffCmd) {
         const diffString = execSync(diffCommand).toString()
-        console.log('diffCommand:', diffCommand)
-        console.log('diffString:', diffString)
         if(diffString.length>0){
           diff.push(diffString)
         }
       }
-  
+
       return diff.length > 0 ? diff : undefined
     } catch (error) {
       if (error.message.includes('bad revision') && attempt < 1) {
@@ -285,14 +273,14 @@ export class Files {
     if(remotes.length === 1) {
       return remotes[0].trim();
     }
-    
+
     const prompt = `What is the name of the remote that we should compare your default branch ${CONFIG.defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
     return askQuestion(prompt, 'origin');
   }
   public static async setRemoteHead(remoteName: string) {
-    
+
     const branchName = CONFIG.defaultBranch;
-    
+
     const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
     const permission = getYesOrNoAnswer(`We need to set your local repositories head to track remote. The command we will run is "${setHeadCommand}"`)
     try {
@@ -326,6 +314,7 @@ export class Files {
   //test
   public static getExistingTestContent(file: string): string | null {
     let testContent: string = '';
+    console.log('random console log here');
     try {
       testContent = fs.readFileSync(file, 'utf-8');
     } catch (error) {
@@ -508,22 +497,22 @@ export class Files {
     }
     return undefined;
   }
-  
+
   public static updateConfigFile(propertyName: string, propertyValue: any) {
     const configPath = 'deepunit.config.json';
-    
+
     // Check if the config file exists
     if (!fs.existsSync(configPath)) {
       console.error(`Config file not found at ${configPath}, creating it now`);
       this.setup();
     }
-    
+
     // Read the existing configuration
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    
+
     // Update the specified property
     config[propertyName] = propertyValue;
-    
+
     // Write the updated configuration back to the file
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log(`Updated ${propertyName} in ${configPath}`);

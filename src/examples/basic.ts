@@ -1,7 +1,6 @@
 import fs from 'fs';
 import * as path from 'path';
 
-
 export class basic {
 
   public checkFileIsNotEmpty(filePath: string): boolean {

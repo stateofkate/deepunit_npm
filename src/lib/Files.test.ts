@@ -20,10 +20,15 @@ import { Color } from './Printer';
 
 
 describe('getDiff', () => {
-  it('should parse diffs', async() => {
-    const result = await Files.getDiff(['/Users/kateyeh/DeepUnit/captain-hook/src/examples/basic.ts']);
+  fit('should parse diffs', async() => {
+    const result = await Files.getDiff(['/Users/kateyeh/DeepUnit/captain-hook/src/lib/Files.ts']);
     console.log('result:', result);
   });
+  it('should get latest file content', () => {
+    const sourceFileName = '/Users/kateyeh/DeepUnit/captain-hook/src/lib/Files.ts';
+    const sourceFileContent = Files.getFileContent(sourceFileName);
+    console.log('sourceFileContent:', sourceFileContent);
+  })
   //
 
 })
