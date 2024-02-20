@@ -41,7 +41,7 @@ export class Config {
   platform: string = '';
   defaultBranch: string = ''
   testCaseGoal: string = '';
-  useOpenAi: boolean = false;
+  useOpenAI: boolean = false;
   
   constructor() {
     this.detectProjectType();
@@ -71,7 +71,7 @@ export class Config {
     this.platform = process.platform;
     this.defaultBranch = Config.getStringFromConfig('defaultBranch')
     this.testCaseGoal = Config.getStringFromConfig('testCaseGoal')
-    this.useOpenAi = Config.getBoolFromConfig('useOpenAi', true);
+    this.useOpenAI = Config.getBoolFromConfig('useOpenAI', true);
   }
 
   /**

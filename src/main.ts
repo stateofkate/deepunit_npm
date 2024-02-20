@@ -200,7 +200,7 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
           }
           
       } else {
-        const iterativeResultResponse = sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
+        const iterativeResultResponse = await sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
         lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
         //todo: add a test fixing flow here. Figure out how to handle tracking a first test that failed but got fixed
       }
