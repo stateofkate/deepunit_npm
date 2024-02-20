@@ -184,9 +184,10 @@ export class Files {
     }
     return filteredFiles;
   }
-  public static hasUncommittedChanges(files: string[]) {
+  public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
     try {
-      const status = execSync(`git status --porcelain -- ${files.join(' ')}`).toString();
+      const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
+      console.log('status:', status);
       return status !== '';
     } catch (error) {
       console.error('Error checking for uncommitted changes:', error);
@@ -202,6 +203,7 @@ export class Files {
 
      */
 
+    console.log('cwd:', process.cwd());
     const remoteName = await this.askForRemote()
     console.log('remoteName:', remoteName)
     console.log('hasFetched:', this.hasFetched);
@@ -223,21 +225,13 @@ export class Files {
     console.log('targetBranch:', targetBranch);
     let diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
-      diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
       console.log('diffCmd1:', diffCmd);
     } else {
-      if(this.hasUncommittedChanges(files)) {
-        // staged changes
-        diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`)
-        // unstaged changes
-        diffCmd.push(`git diff -U0 -- ${files.join(' ')}`)
-        console.log('diffCmd2:', diffCmd);
-      } else {
-        // diffs on the specified files between the current branch's HEAD and the tip of the ${targetBranch} on the origin remote
-        diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
-        console.log('diffCmd3:', diffCmd)
-      }
-      
+      // diffs on the specified files between the current branch's HEAD and the tip of the ${targetBranch} on the origin remote
+      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+
+      console.log('diffCmd3:', diffCmd)
     }
     try {
       let diff: string[] = [];
