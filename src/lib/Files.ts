@@ -21,7 +21,6 @@ export class Files {
   public static hasFetched = false;
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
-
     const filesToDebugAndWriteTests: string[] | undefined = getBugFileFlag();
     // get files to filter with --f arg, returning direct paths
     let filesToFilter: string[] | undefined = getFilesFlag();
@@ -184,21 +183,35 @@ export class Files {
     }
     return filteredFiles;
   }
-  public static hasUncommittedChanges(files: string[]) {
+  public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
     try {
-      const status = execSync(`git status --porcelain -- ${files.join(' ')}`).toString();
+      const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
       return status !== '';
     } catch (error) {
       console.error('Error checking for uncommitted changes:', error);
       return false;
     }
   }
+
   public static async getDiff(files: string[], attempt = 0): Promise<string[]> {
+
+    /*
+    scenarios:
+    1. We are in github/gitlab action and want to get diffs of the submitted pull request commit vs the target branch commit, i.e. committed changes against committed changes
+    2. We are in VS code / npm package and want to get diffs of the working file vs the target branch commit, i.e. committed changes of current working file, as well as staged and unstaged changes
+
+    Some notes on git commands:
+    1. git diff (without any arguments): Shows the differences between the working directory and the index (staging area). This means it only shows unstaged changes.
+  	2. git diff --staged or git diff --cached: Shows the differences between the index (staging area) and the last commit (HEAD). This means it only shows staged changes.
+  	3. git diff HEAD: Shows the differences between the working directory (both staged and unstaged changes) and the last commit (HEAD). This is why you're seeing both staged and unstaged changes with this command.
+  	4. git diff origin/dev..HEAD: Compares the state of the repository at origin/dev with HEAD. This command only shows changes that have been committed between these two points. Unstaged and staged (but not yet committed) changes in your working directory are not included in this comparison.
+     */
+
     const remoteName = await this.askForRemote()
     if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
       const fetchCommand = `git fetch ${remoteName}`
       const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
-  
+
       if (permission) {
         execSync(fetchCommand); // Ensure you handle errors here
         this.hasFetched = true;
@@ -210,15 +223,14 @@ export class Files {
     const targetBranch = targetBranchFlag ? targetBranchFlag : CONFIG.defaultBranch;
     let diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
-      diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+      //github/gitlab action
+      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
     } else {
-      if(this.hasUncommittedChanges(files)) {
-        //diffCmd.push(`git diff -U0 --staged -- ${files.join(' ')}`) someday we should support staged changes, but not a priority rn
-        diffCmd.push(`git diff -U0 -- ${files.join(' ')}`)
-      } else {
-        diffCmd.push(`git diff origin/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
-      }
-      
+      // we are in npm package/VS code
+      // this shows committed changes between this branch vs target branch:
+      diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
+      // this shows unstaged and staged changes
+      diffCmd.push(`git diff HEAD -U0 -- ${files.join(' ')}`)
     }
     try {
       let diff: string[] = [];
@@ -228,7 +240,7 @@ export class Files {
           diff.push(diffString)
         }
       }
-  
+
       return diff.length > 0 ? diff : undefined
     } catch (error) {
       if (error.message.includes('bad revision') && attempt < 1) {
@@ -261,14 +273,14 @@ export class Files {
     if(remotes.length === 1) {
       return remotes[0].trim();
     }
-    
+
     const prompt = `What is the name of the remote that we should compare your default branch ${CONFIG.defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
     return askQuestion(prompt, 'origin');
   }
   public static async setRemoteHead(remoteName: string) {
-    
+
     const branchName = CONFIG.defaultBranch;
-    
+
     const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
     const permission = getYesOrNoAnswer(`We need to set your local repositories head to track remote. The command we will run is "${setHeadCommand}"`)
     try {
@@ -484,22 +496,22 @@ export class Files {
     }
     return undefined;
   }
-  
+
   public static updateConfigFile(propertyName: string, propertyValue: any) {
     const configPath = 'deepunit.config.json';
-    
+
     // Check if the config file exists
     if (!fs.existsSync(configPath)) {
       console.error(`Config file not found at ${configPath}, creating it now`);
       this.setup();
     }
-    
+
     // Read the existing configuration
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    
+
     // Update the specified property
     config[propertyName] = propertyValue;
-    
+
     // Write the updated configuration back to the file
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log(`Updated ${propertyName} in ${configPath}`);
