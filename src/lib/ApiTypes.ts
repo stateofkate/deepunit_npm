@@ -1,9 +1,9 @@
 import { TestingFrameworks } from '../main.consts';
 import {SingleTestRunResult} from "./testers/Tester";
-import {AUTH, TestCaseWithTestBed} from "../main";
-import {CONFIG} from "./Config";
+import {TestCaseWithTestBed} from "../main";
 
 export type ApiBaseData = {
+  scriptTarget?: string;
   frontendFramework: string;
   frameworkVersion?: string;
   testingFramework: TestingFrameworks;
@@ -58,7 +58,6 @@ export type RecombineTestData = {
   failedItBlocks: { [key: string]: string[] };
   failedTests: { [key: string]: string }
   includeFailingTests: boolean;
-  scriptTarget: string;
 };
 
 
@@ -67,7 +66,6 @@ export type SendResultDataPost = {
   passedTests: { [key: string]: string },
   tests: { [key: string]: string };
   failedTestErrors: { [key: string]: string };
-  scriptTarget: string;
   sourceFileName: string;
   sourceFileContent: string;
 };
@@ -82,7 +80,6 @@ export type SendIterativeResults = {
 }
 export type SendAnalyticsData = {
   logMessage: string;
-  scriptTarget: string;
   vscode?: boolean;
 };
 
@@ -96,5 +93,4 @@ export type SendBugResults = {
   bugReportName: string;
   sourceFileName: string;
   sourceFileContent: string;
-  scriptTarget: string;
 }

@@ -1,18 +1,20 @@
-import { CONFIG } from '../lib/Config';
 import { Api, ClientCode } from '../lib/Api';
 import { createInterface } from 'readline';
-import { Color, Printer } from '../lib/Printer';
+import { Printer } from '../lib/Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Arguments } from 'yargs';
 import { Log } from '../lib/Log';
+import Config from "../lib/Config";
+import {Color} from "../lib/Color";
 
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
  * @param truthyVal - any value we expect to be truthy
  */
 export function expect(truthyVal: any): any {
+  const CONFIG = new Config();
   if (CONFIG.doProd && !truthyVal) {
     type FalsyTypeKeys = 'boolean' | 'number' | 'string' | 'object' | 'undefined' | 'NaN';
     const falsyTypes: Record<FalsyTypeKeys, string> = {
@@ -47,6 +49,7 @@ export function expectNot(falsyVal: any): any {
  * @param input
  */
 export function debugMsg(...input: any) {
+  const CONFIG = new Config();
   if (!CONFIG.doProd && !CONFIG.prodTesting) {
     console.log(input);
   }
@@ -103,6 +106,7 @@ export async function validateVersionIsUpToDate(): Promise<void> {
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
+  const CONFIG = new Config();
   if (versionRegex.test(latestVersion.trim()) && versionRegex.test((await CONFIG.getVersion()).trim())) {
     const latestVersionNumbers = latestVersion.split('.');
     const versionNumbers = (await CONFIG.getVersion()).split('.');

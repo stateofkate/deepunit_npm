@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import {TestingFrameworks} from './main.consts';
-import {CONFIG} from './lib/Config';
+import {checkAndCreateConfig} from './lib/Config';
 import {Files} from './lib/Files';
 import {
   checkFeedbackFlag,
@@ -15,15 +15,16 @@ import {
   setupYargs,
   validateVersionIsUpToDate
 } from './lib/utils';
-import {Color, Printer} from './lib/Printer';
+import {Printer} from './lib/Printer';
 import {GenerateTestOrReportInput, SingleTestRunResult, Tester} from './lib/testers/Tester';
 import {JestTester} from './lib/testers/JestTester';
 import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
-import fs from "fs";
+import fs, {FileSystem} from "./lib/vsfs";
 import {JasmineTester} from "./lib/testers/JasmineTester";
 import {SendIterativeResults} from "./lib/ApiTypes";
+import {Color} from "./lib/Color";
 
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; sourceFileName: string}
@@ -47,8 +48,7 @@ export type ResultSummary = {
 export type TestCaseAndCode = {code?: string, testCase: ParsedTestCases, duplicate: boolean}
 
 // global classes
-export let AUTH: Auth;
-
+let CONFIG;
 if (require.main === module) {
   main();
 
@@ -72,13 +72,13 @@ export async function setUp() {
     );
   }
   // setup the auth channel and see if they are logged in or not
-  AUTH = await Auth.init();
+  let auth: Auth = await Auth.init();
 
   // check to confirm we still support this version
   await validateVersionIsUpToDate();
 
   //set up config
-  Files.setup();
+  CONFIG = await checkAndCreateConfig();
 
   if(CONFIG.testingFramework === TestingFrameworks.jest) {
     // confirm we have all packages for type of project
@@ -136,7 +136,7 @@ export async function main() {
 
     if (flagType != 'bugFlag') {
       //We will first generate a bunch of unit tests that can be added into the files
-      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: { serverDidNotSendTests; alreadyTestedFiles; unsupportedFiles; response: GenerateJasmineResponse } = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
+      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: { serverDidNotSendTests: string[]; alreadyTestedFiles: (string | null)[]; unsupportedFiles: (string | null)[]; response: GenerateJasmineResponse } = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
       resultsSummary.serverDidNotSendTests = resultsSummary.serverDidNotSendTests.concat(serverDidNotSendTests)
       resultsSummary.unsupportedFiles = resultsSummary.unsupportedFiles.concat(unsupportedFiles)
       resultsSummary.alreadyTestedFiles = resultsSummary.alreadyTestedFiles.concat(alreadyTestedFiles)
@@ -237,7 +237,7 @@ export async function generateTest(testInput: GenerateTestOrReportInput): Promis
   loadingIndicator.stop();
   return response;
 }
-export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, lastTestResults?, testCasesObj?):Promise<{serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response: GenerateJasmineResponse}> {
+export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, lastTestResults?, testCasesObj?):Promise<{serverDidNotSendTests: string[], alreadyTestedFiles: (string | null)[], unsupportedFiles: (string | null)[], response: GenerateJasmineResponse}> {
   let unsupportedFiles: (string | null)[] = [];
   //files already tested (enabled by statecode message passback)
   let alreadyTestedFiles: (string | null)[] = [];
@@ -347,7 +347,7 @@ export async function printResultsAndExit(testResults: ResultSummary){
 
 export function getTestContent(testFileName){
   let testFileContent: string = '';
-  if (Files.existsSync(testFileName)) {
+  if (fs.existsSync(testFileName)) {
     const result: string | null = Files.getExistingTestContent(testFileName);
     if (testFileContent === null) {
       return undefined;

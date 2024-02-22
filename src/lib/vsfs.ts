@@ -1,4 +1,7 @@
-import nodefs, {MakeDirectoryOptions, NoParamCallback, PathOrFileDescriptor, WriteFileOptions} from "fs";
+import {MakeDirectoryOptions, NoParamCallback, WriteFileOptions} from "fs";
+import * as nodefs from "fs";
+import path from "path";
+import {isVsCode} from "./utils";
 
 // creates a log class singleton that has fs functions. It should perform fs function but also ensure that when running in a vs code context it creates a VS code friendly path.
 const originalFs = {
@@ -9,11 +12,10 @@ const originalFs = {
   unlinkSync: nodefs.unlinkSync,
   rm: nodefs.rm,
 };
-export type PathLike = nodefs.PathLike;
-
+export type PathLike = string | Buffer; //This type omits the URL class from fs because once we build captain-hook the version of fs does not export the types or class. Realistically we would probably never work with URLs in our application, so this should be fine hopefully
+export type PathOrFileDescriptor = PathLike | number;
 export class FileSystem {
   private static instance: FileSystem;
-  public PathLike
   
   private constructor() {}
 
@@ -23,41 +25,40 @@ export class FileSystem {
     }
     return FileSystem.instance;
   }
-  public handlePathLikeForVSCode(path: PathLike): PathLike {
-    console.log('type of PathLike: ' + typeof path)
+  public handlePathLikeForVSCode(filePath: PathLike): PathLike {
   
-    if(typeof path !== 'string') {
-      console.log('not a string: ' + typeof path)
-      return path;
+    if(typeof filePath !== 'string') {
+      console.log(`not a string: ` + typeof filePath)
+      console.log(filePath)
+      return filePath;
     }
     // Check if the code is running within VS Code by looking for VS Code specific environment variables
-    if (process.env.VSCODE_CWD) {
+    if (isVsCode()) {
       try {
         // Dynamically import the 'vscode' module
         const vscode = require('vscode');
-        
         // If there's an active workspace, make the path relative to the workspace root
         if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-          const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
-          const relativePath = vscode.workspace.asRelativePath(path, true);
-          console.log(`Path converted to relative: ${relativePath}`);
-          return relativePath;
+          const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath; // Get the path of the first workspace folder
+          const fullPath = path.join(workspaceRoot, filePath);
+          //console.log(`${filePath}: Path converted to vs code workspace: ${fullPath}`);
+          return fullPath
         } else {
           // If no workspace is open, log and return the path as is
-          console.log('No workspace detected. Returning original path.');
-          return path;
+          //console.log(`${filePath}: No workspace detected. Returning original path.`);
+          return filePath;
         }
       } catch (e) {
-        console.log('error caught, returning path')
-        return path;
+        //console.log(`${filePath}: error caught, returning path` + e)
+        return filePath;
       }
     }
-    console.log('no environemnt variable, returning path')
-    return path;
+    //console.log(`${filePath}: no environemnt variable, returning path`)
+    return filePath;
   }
   
   public handlePathForVSCode(path: PathOrFileDescriptor): PathOrFileDescriptor {
-    console.log('type of PathOrFileDescriptor: ' + typeof path)
+    //console.log('type of PathOrFileDescriptor: ' + typeof path)
     if(typeof path === 'string') {
       return this.handlePathLikeForVSCode(path as PathLike) as PathOrFileDescriptor
     }
@@ -65,6 +66,7 @@ export class FileSystem {
   }
   public writeFileSync(file: PathOrFileDescriptor, data: string | NodeJS.ArrayBufferView, options?: WriteFileOptions): void {
     file = this.handlePathForVSCode(file)
+    console.log({file})
     originalFs.writeFileSync(file, data, options);
   }
   

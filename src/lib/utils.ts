@@ -1,18 +1,22 @@
-import { CONFIG } from './Config';
 import { Api, ClientCode } from './Api';
 import { createInterface } from 'readline';
-import { Color, Printer } from './Printer';
+import { Printer } from './Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Arguments } from 'yargs';
 import { Log } from './Log';
-
+import Config from "./Config";
+import {Color} from "./Color";
+export function isVsCode(): boolean {
+  return !!process.env.VSCODE_CWD
+}
 /**
  * Throw error when a value is not truthy (ie. undefined, null, 0, ''), when we are not in production
  * @param truthyVal - any value we expect to be truthy
  */
 export function expect(truthyVal: any): any {
+  const CONFIG = new Config();
   if (CONFIG.doProd && !truthyVal) {
     type FalsyTypeKeys = 'boolean' | 'number' | 'string' | 'object' | 'undefined' | 'NaN';
     const falsyTypes: Record<FalsyTypeKeys, string> = {
@@ -46,7 +50,7 @@ export function expectNot(falsyVal: any): any {
  * console.log only when we are not in production
  * @param input
  */
-export function debugMsg(...input: any) {
+export function debugMsg(CONFIG: any, ...input: any) {
   if (!CONFIG.doProd && !CONFIG.prodTesting) {
     console.log(input);
   }
@@ -105,6 +109,7 @@ export async function validateVersionIsUpToDate(): Promise<void> {
   const { latestVersion } = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
+  const CONFIG = new Config();
   if (versionRegex.test(latestVersion.trim()) && versionRegex.test((await CONFIG.getVersion()).trim())) {
     const latestVersionNumbers = latestVersion.split('.');
     const versionNumbers = (await CONFIG.getVersion()).split('.');
@@ -148,8 +153,8 @@ export async function askQuestion(prompt: string, defaultAnswer: string): Promis
   
   return new Promise((resolve) => {
     if (getYesFlag()) {
+      rl.close()
       resolve(defaultAnswer);
-      return;
     }
     rl.question(prompt, (answer) => {
       rl.close(); // It's important to close the readline interface
@@ -167,15 +172,13 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   return new Promise((resolve) => {
     // if we have a get yes flag, then we are assuming the user is going to say yes
     if (getYesFlag()) {
+      rl.close()
       resolve(true);
-      return;
     }
     rl.question(prompt + ' (type y/n):', (answer) => {
-      if (yesAnswers.includes(answer.trim().toLowerCase())) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
+      const booleanAnswer: boolean = yesAnswers.includes(answer.trim().toLowerCase())
+      rl.close();
+      resolve(booleanAnswer);
     });
   });
 }

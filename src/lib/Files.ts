@@ -1,7 +1,8 @@
 import { execSync } from 'child_process';
-import * as fs from 'fs';
+import fs, {FileSystem, PathLike} from "./vsfs";
+//import fs from 'fs';
 import path from 'path';
-import { CONFIG } from './Config';
+import Config, {checkAndCreateConfig} from './Config';
 import {
   exitWithError,
   getAbsolutePathsFlag,
@@ -15,7 +16,8 @@ import {
   getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag
 } from './utils';
 import * as glob from 'glob';
-import { Color } from './Printer';
+import { Color } from './Color';
+import {check} from "yargs";
 
 export class Files {
   public static hasFetched = false;
@@ -42,12 +44,12 @@ export class Files {
     let flagType = '';
 
     const src = 'src';
-    const workingDir = Files.existsSync(src) ? src + '/' : '';
+    const workingDir = fs.existsSync(src) ? src + '/' : '';
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
       const missingFiles = filesToFilter.filter((filePath) => {
-        if (!Files.existsSync(filePath)) {
+        if (!fs.existsSync(filePath)) {
           flagType = 'fileFlag';
           return true;
         }
@@ -77,6 +79,7 @@ export class Files {
       filesToWriteTestsFor = glob.sync(filesToDebugAndWriteTests,{});
     } else {
       console.log('Finding all changed files in your repository');
+      const CONFIG = new Config();
       if (!CONFIG.isGitRepository) {
         await exitWithError(`You are not in a git repository.\nFor complete documentation visit https://deepunit.ai/docs`);
       } else {
@@ -220,7 +223,7 @@ export class Files {
       }
     }
     const targetBranchFlag: string = getTargetBranchFlagFlag()
-    const targetBranch = targetBranchFlag ? targetBranchFlag : CONFIG.defaultBranch;
+    const targetBranch = targetBranchFlag ? targetBranchFlag : new Config().defaultBranch;
     let diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
       //github/gitlab action
@@ -274,11 +277,11 @@ export class Files {
       return remotes[0].trim();
     }
 
-    const prompt = `What is the name of the remote that we should compare your default branch ${CONFIG.defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
+    const prompt = `What is the name of the remote that we should compare your default branch ${new Config().defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
     return askQuestion(prompt, 'origin');
   }
   public static async setRemoteHead(remoteName: string) {
-
+    const CONFIG = new Config();
     const branchName = CONFIG.defaultBranch;
 
     const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
@@ -327,7 +330,7 @@ export class Files {
   public static createFile(filename: string): void {
     // Create a new file
     Files.writeFileSync(filename, '');
-
+    const CONFIG = new Config();
     if (CONFIG.isGitRepository) {
       // Run git add on the file
       try {
@@ -355,6 +358,7 @@ export class Files {
     const ignoredFiles: string[] = [];
 
     for (const file of filesWithValidExtensions) {
+      const CONFIG = new Config();
       if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
       } else {
@@ -423,17 +427,9 @@ export class Files {
     return filesByDirectory;
   }
 
-  public static existsSync(path: fs.PathLike) {
-    return fs.existsSync(path);
-  }
-
-  public static readFileSync(path: fs.PathLike) {
-    return fs.readFileSync(path);
-  }
-
-  public static readJsonFile(path: fs.PathLike): Object | undefined {
-    if (Files.existsSync(path)) {
-      const fileContent = Files.readFileSync(path).toString();
+  public static readJsonFile(path: PathLike): Object | undefined {
+    if (fs.existsSync(path)) {
+      const fileContent = fs.readFileSync(path).toString();
       if (fileContent) {
         return JSON.parse(fileContent);
       }
@@ -460,6 +456,7 @@ export class Files {
     ];
 
     let directoriesToCheck = [process.cwd()];
+    const CONFIG = new Config();
     if (CONFIG.isGitRepository) {
       const rootDirectory = this.getGitRootDirectory();
       if (rootDirectory) {
@@ -497,62 +494,23 @@ export class Files {
     return undefined;
   }
 
-  public static updateConfigFile(propertyName: string, propertyValue: any) {
+  public static async updateConfigFile(propertyName: string, propertyValue: any) {
     const configPath = 'deepunit.config.json';
-
+  
     // Check if the config file exists
     if (!fs.existsSync(configPath)) {
       console.error(`Config file not found at ${configPath}, creating it now`);
-      this.setup();
+      await checkAndCreateConfig();
     }
-
+  
     // Read the existing configuration
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-
+  
     // Update the specified property
     config[propertyName] = propertyValue;
-
+  
     // Write the updated configuration back to the file
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log(`Updated ${propertyName} in ${configPath}`);
-  }
-
-  public static setup() {
-    const configPath = 'deepunit.config.json';
-    if (!fs.existsSync(configPath)) {
-      const configFileContent =
-        '{\n' +
-        '  "documentation": "You can find documentation on these configs at https://www.npmjs.com/package/deepunit",\n' +
-        '  "frontendFramework": "",\n' +
-        '  "testingFramework": "",\n' +
-        '  "ignoredDirectories": ["node_modules"],\n' +
-        '  "ignoredFiles": [],\n' +
-        '  "includeFailingTests": true,\n' +
-        '  "testSuffix": "",\n' +
-        '  "testingLanguageOverride": "",\n' +
-        '  "defaultBranch": "master",\n' +
-        '  "testCaseGoal": "",\n' +
-        '  "useOpenAI": true\n' +
-        '}\n';
-      fs.writeFileSync(configPath, configFileContent);
-    }
-    const packagePath = 'package.json';
-    if (fs.existsSync(packagePath)) {
-      // Read package.json
-      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-
-      // only add the script if it doesn't exist
-      if (packageJson.scripts?.deepunit) {
-        return;
-      }
-      packageJson.scripts = packageJson.scripts || {};
-      packageJson.scripts.deepunit = 'deepunit';
-
-      // Write package.json
-      fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
-    } else {
-      console.log("No package.json found! That's gonna be a problem. DeepUnit probably will not be successful at running.");
-      console.log(`Current working directory is ${process.cwd()}`);
-    }
   }
 }

@@ -1,7 +1,8 @@
 import { execSync } from 'child_process';
-import { CONFIG } from './Config';
+import Config from "./Config";
 
 export class Printer {
+  public static CONFIG = new Config();
   public static readonly defaultWidth: number = 60;
   public static printOutro(): void {
     const LINE_DIVIDER = '#'.repeat(Printer.defaultWidth);
@@ -11,7 +12,7 @@ export class Printer {
   }
 
   public static async printIntro() {
-    const version = await CONFIG.getVersion();
+    const version = await this.CONFIG.getVersion();
     const message = `Generating unit tests with DeepUnit.AI v${version}`;
     this.PrintMessageInBox(message)
     console.log('For documentation visit https://deepunit.ai/docs');
@@ -80,7 +81,7 @@ export class Printer {
       alreadyTestedFiles,
       '\nThe following files were already fully tested so we did not attempt to write any more. Contact support@deepunit.ai if you need help with this:',
     );
-    const errorTestsMessage = CONFIG.includeFailingTests
+    const errorTestsMessage = this.CONFIG.includeFailingTests
       ? '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:'
       : '\nThe following tests were generated but deleted. Run DeepUnit again or set includeFailingTests true in deepunit.config.json to keep failing test';
     this.printIndented(testsWithErrors, errorTestsMessage);
@@ -88,7 +89,7 @@ export class Printer {
     this.printIndented(serverNoTests, '\nWe did not get a test back from the server for the following files, please inform support@deepunit.ai so we can fix this for you:');
 
     //Never write unit tests for the following line. Simply acknowledge that it is untestable.
-    console.log(CONFIG.isDevBuild ? '\n' + execSync('npm run summary').toString() : '');
+    console.log(this.CONFIG.isDevBuild ? '\n' + execSync('npm run summary').toString() : '');
   }
 
   public static getJSONSummary(
@@ -105,7 +106,7 @@ export class Printer {
       alreadyTestedFiles,
       '\nThe following files were already fully tested so we did not attempt to write any more. Contact support@deepunit.ai if you need help with this:',
     );
-    const errorTestsMessage = CONFIG.includeFailingTests
+    const errorTestsMessage = this.CONFIG.includeFailingTests
       ? '\nWe generated tests for the following files but could not fix some errors in them, please manually resolve them:'
       : '\nThe following tests were generated but deleted. Run DeepUnit again or set includeFailingTests true in deepunit.config.json to keep failing test';
     summary += this.getIndented(testsWithErrors, errorTestsMessage);
@@ -124,43 +125,5 @@ export class Printer {
   }
 }
 
-// ANSI color escape sequences
-enum COLORS {
-  reset = '\x1b[0m',
-  red = '\x1b[31m',
-  yellow = '\x1b[33m',
-  blue = '\x1b[34m',
-  lightBlue = '\x1b[96m',
-  green = '\x1b[32m',
-  white = '\x1b[37m',
-}
 
-export class Color {
-  static colorize(text: string, color: COLORS) {
-    return color + text + COLORS.reset;
-  }
 
-  static red(text: string) {
-    return Color.colorize(text, COLORS.red);
-  }
-
-  static yellow(text: string) {
-    return Color.colorize(text, COLORS.yellow);
-  }
-
-  static blue(text: string) {
-    return Color.colorize(text, COLORS.blue);
-  }
-
-  static lightBlue(text: string) {
-    return Color.colorize(text, COLORS.lightBlue);
-  }
-
-  static green(text: string) {
-    return Color.colorize(text, COLORS.green);
-  }
-
-  static white(text: string) {
-    return Color.colorize(text, COLORS.white);
-  }
-}

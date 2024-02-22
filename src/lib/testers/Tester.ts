@@ -1,6 +1,6 @@
-import { CONFIG } from '../Config';
 import fs from "fs";
 import {TestCaseWithTestBed} from "../../main";
+import Config from "../Config";
 
 export interface SingleTestRunResult {
   passed: boolean;
@@ -43,6 +43,7 @@ export type JestTestRunResult = {
 
 export abstract class Tester {
   public static getTestName(file: string): string {
+    const CONFIG = new Config();
     const fileParts = file.split('.');
     const fileExt = fileParts[fileParts.length - 1];
     const configTestFile = fileParts.slice(0, -1).join('.') + '.' + CONFIG.testSuffix + '.' + fileExt;
@@ -63,6 +64,7 @@ export abstract class Tester {
   }
 
   public static getBugReportName(file: string): string {
+    const CONFIG = new Config();
     const fileParts = file.split('.');
     const fileExt = 'md';
     const testFileName = fileParts.slice(0, -1).join('.') + '.deepunit_bugreport.' + CONFIG.testSuffix + '.' + fileExt;
