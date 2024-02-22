@@ -16,12 +16,13 @@ import {
   getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag
 } from './utils';
 import * as glob from 'glob';
-export const anchor = fs.anchor;
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 import { Color } from './Color';
 
 export class Files {
+  public anchor = fs.anchor();
+  
   public static hasFetched = false;
   public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];

@@ -8,7 +8,6 @@ import { Arguments } from 'yargs';
 import Config from "./Config";
 import {Color} from "./Color";
 import fs from "./vsfs";
-export const anchor = fs.anchor;
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 export function isVsCode(): boolean {
@@ -19,6 +18,7 @@ export function isVsCode(): boolean {
  * @param truthyVal - any value we expect to be truthy
  */
 export function expect(truthyVal: any): any {
+const anchor = fs.anchor();
   const CONFIG = new Config();
   if (CONFIG.doProd && !truthyVal) {
     type FalsyTypeKeys = 'boolean' | 'number' | 'string' | 'object' | 'undefined' | 'NaN';

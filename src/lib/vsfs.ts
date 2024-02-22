@@ -18,7 +18,6 @@ const originalFs = {
 export type PathLike = string | Buffer; //This type omits the URL class from fs because once we build captain-hook the version of fs does not export the types or class. Realistically we would probably never work with URLs in our application, so this should be fine hopefully
 export type PathOrFileDescriptor = PathLike | number;
 export class FileSystem {
-  public anchor = 'anchor;'
   private static instance: FileSystem;
   
   private constructor() {}
@@ -112,6 +111,7 @@ export class FileSystem {
     path = this.handlePathLikeForVSCode(path)
     originalFs.rm(path, callback)
   }
+  public anchor(): void{}
 }
 
 const FILESYSTEM = FileSystem.getInstance();
@@ -122,9 +122,9 @@ let fs: {
   readFileSync: typeof FILESYSTEM.readFileSync;
   existsSync: typeof FILESYSTEM.existsSync;
   mkdirSync: typeof FILESYSTEM.mkdirSync;
-  unlinkSync: typeof FILESYSTEM.unlinkSync
-  rm: typeof FILESYSTEM.rm
-  anchor: 'anchor' //ensures that we have the wrapper fs in the every file
+  unlinkSync: typeof FILESYSTEM.unlinkSync;
+  rm: typeof FILESYSTEM.rm;
+  anchor: typeof FILESYSTEM.anchor; //ensures that we have the wrapper fs in the every file
 };
 
 fs = {
@@ -133,5 +133,6 @@ fs = {
   existsSync: FILESYSTEM.existsSync.bind(FILESYSTEM),
   mkdirSync: FILESYSTEM.mkdirSync.bind(FILESYSTEM),
   unlinkSync: FILESYSTEM.unlinkSync.bind(FILESYSTEM),
-  rm: FILESYSTEM.rm.bind(FILESYSTEM)
+  rm: FILESYSTEM.rm.bind(FILESYSTEM),
+  anchor: FILESYSTEM.anchor.bind(FILESYSTEM)
 };

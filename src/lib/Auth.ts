@@ -3,11 +3,11 @@ import { createInterface } from 'readline';
 import { Files } from './Files';
 import {exitWithError, getEmailFlag, isVsCode} from './utils';
 import fs, {FileSystem, PathLike} from "./vsfs";
-export const anchor = fs.anchor;
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 
 export class Auth {
+  public anchor = fs.anchor();
   private email: string | null = null;
   private readonly FILE_PATH: string = `${os.homedir()}/.deepunit`;
   

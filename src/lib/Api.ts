@@ -19,7 +19,6 @@ import {GenerateTestOrReportInput, RemoveFailedTestInput, SingleTestRunResult} f
 import {Auth} from "./Auth";
 import Config from "./Config";
 import fs from "./vsfs";
-export const anchor = fs.anchor;
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 
@@ -54,7 +53,6 @@ export enum ClientCode {
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  
   public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0) {
     const headers = { 'Content-Type': 'application/json' };
 

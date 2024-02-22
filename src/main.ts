@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import {TestingFrameworks} from './main.consts';
-import {checkAndCreateConfig} from './lib/Config';
+import Config, {checkAndCreateConfig} from './lib/Config';
 import {Files} from './lib/Files';
 import {
   checkFeedbackFlag,
@@ -22,7 +22,8 @@ import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
 import fs, {FileSystem} from "./lib/vsfs";
-export const anchor = fs.anchor;
+export const anchor = fs.anchor();
+const ex = fs.existsSync('')
 export const logAnchor = console.anchor
 import {JasmineTester} from "./lib/testers/JasmineTester";
 import {SendIterativeResults} from "./lib/ApiTypes";
@@ -99,12 +100,17 @@ export async function setUp() {
     process.exit(0);
   }
 }
-
+export function getConfig(): Config {
+  if(CONFIG) {
+    return CONFIG;
+  }
+  return new Config();
+}
 export function getTester() {
-  if (CONFIG.testingFramework === TestingFrameworks.jest) {
+  if (getConfig().testingFramework === TestingFrameworks.jest) {
     // Directly use JestTester if available globally or require it at the top if not
     return new JestTester()
-  } else if (CONFIG.testingFramework === TestingFrameworks.jasmine) {
+  } else if (getConfig().testingFramework === TestingFrameworks.jasmine) {
     // Dynamic import for JasmineTester to handle circular dependency issues
     let { JasmineTester } = require("./lib/testers/JasmineTester");
     return new JasmineTester()
@@ -163,7 +169,7 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   const lastDotIndex = sourceFileName.lastIndexOf('.');
   const fileNameWithoutExt = sourceFileName.substring(0, lastDotIndex);
   const fileExt = sourceFileName.substring(lastDotIndex + 1);
-  const tempTestName = `${fileNameWithoutExt}.deepunittemptest.${CONFIG.testSuffix}.${fileExt}`;
+  const tempTestName = `${fileNameWithoutExt}.deepunittemptest.${getConfig().testSuffix}.${fileExt}`;
   let passedTests: TestCaseWithTestBed[] = [];
   let failedTests: FailedTestCaseWithTestBed[]= []
   let completedTestFile = { content: '', path: testFileName}
@@ -208,7 +214,7 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     }
     fs.rm(tempTestName, ()=>{});//removing the file can be async for slightly better performance
   }
-  if(CONFIG.includeFailingTests) {
+  if(getConfig().includeFailingTests) {
     const lastTest = response.testFileArray[response.testFileArray.length - 1].testBed
     completedTestFile.content = lastTest
   }
@@ -218,7 +224,7 @@ export async function sendIterativeResults(data: SendIterativeResults): Promise<
   return await Api.sendIterativeResults(data)
 }
 export function writeFinalTestFile(completedTestFile, passingTestFile) {
-  if(CONFIG.includeFailingTests && completedTestFile.content && completedTestFile.path) {
+  if(getConfig().includeFailingTests && completedTestFile.content && completedTestFile.path) {
     fs.writeFileSync(completedTestFile.path, completedTestFile.content, 'utf-8');
   } else {
     if(passingTestFile.content && passingTestFile.path) {
@@ -247,9 +253,9 @@ export async function generateTestFlow(sourceFileName, sourceFileContent, testFi
 
   let sourceFileDiff = [];
   const files = getFilesFlag() ?? [];
-  if (!CONFIG.generateAllFiles && CONFIG.isGitRepository) {
+  if (!getConfig().generateAllFiles && getConfig().isGitRepository) {
     //If they are generating all files then the diff would not be relevant, however if they are not then we want to make sure to include the diff so that we can filter to only functions they have changed
-    await CONFIG.askForDefaultBranch();
+    await getConfig().askForDefaultBranch();
     sourceFileDiff = await Files.getDiff([sourceFileName]);
   }
 
@@ -278,7 +284,7 @@ export async function generateTestFlow(sourceFileName, sourceFileContent, testFi
     }
     // else we successfully got a test back from the server, now we should test them
   } else {
-    console.log(CONFIG.isDevBuild ? 'Invalid stateCode received from the backend' : 'DeepUnit is out of date, please run "npm install deepunit@latest --save-dev"');
+    console.log(getConfig().isDevBuild ? 'Invalid stateCode received from the backend' : 'DeepUnit is out of date, please run "npm install deepunit@latest --save-dev"');
     return undefined;
   }
 
