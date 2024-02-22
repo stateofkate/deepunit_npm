@@ -1,3 +1,5 @@
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
 // ANSI color escape sequences
 enum COLORS {
   reset = '\x1b[0m',

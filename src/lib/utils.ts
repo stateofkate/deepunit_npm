@@ -5,9 +5,12 @@ import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { Arguments } from 'yargs';
-import { Log } from './Log';
 import Config from "./Config";
 import {Color} from "./Color";
+import fs from "./vsfs";
+export const anchor = fs.anchor;
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
 export function isVsCode(): boolean {
   return !!process.env.VSCODE_CWD
 }

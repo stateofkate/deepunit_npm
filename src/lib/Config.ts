@@ -15,7 +15,9 @@ import {
 import {execSync} from 'child_process';
 import {Color} from './Color';
 import {Files} from "./Files";
-
+export const anchor = fs.anchor;
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
 const devConfig: string = 'deepunit.dev.config.json';
 const ciConfig: string = 'deepunit.ci.config.json';
 const userConfig: string = 'deepunit.config.json';

@@ -22,6 +22,8 @@ import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
 import fs, {FileSystem} from "./lib/vsfs";
+export const anchor = fs.anchor;
+export const logAnchor = console.anchor
 import {JasmineTester} from "./lib/testers/JasmineTester";
 import {SendIterativeResults} from "./lib/ApiTypes";
 import {Color} from "./lib/Color";
@@ -46,7 +48,6 @@ export type ResultSummary = {
   completedTestFiles: { path: string; content: string }[],
 }
 export type TestCaseAndCode = {code?: string, testCase: ParsedTestCases, duplicate: boolean}
-
 // global classes
 let CONFIG;
 if (require.main === module) {

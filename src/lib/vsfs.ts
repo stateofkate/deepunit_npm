@@ -2,6 +2,9 @@ import {MakeDirectoryOptions, NoParamCallback, WriteFileOptions} from "fs";
 import * as nodefs from "fs";
 import path from "path";
 import {isVsCode} from "./utils";
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
+
 
 // creates a log class singleton that has fs functions. It should perform fs function but also ensure that when running in a vs code context it creates a VS code friendly path.
 const originalFs = {
@@ -15,6 +18,7 @@ const originalFs = {
 export type PathLike = string | Buffer; //This type omits the URL class from fs because once we build captain-hook the version of fs does not export the types or class. Realistically we would probably never work with URLs in our application, so this should be fine hopefully
 export type PathOrFileDescriptor = PathLike | number;
 export class FileSystem {
+  public anchor = 'anchor;'
   private static instance: FileSystem;
   
   private constructor() {}
@@ -120,7 +124,7 @@ let fs: {
   mkdirSync: typeof FILESYSTEM.mkdirSync;
   unlinkSync: typeof FILESYSTEM.unlinkSync
   rm: typeof FILESYSTEM.rm
-  
+  anchor: 'anchor' //ensures that we have the wrapper fs in the every file
 };
 
 fs = {

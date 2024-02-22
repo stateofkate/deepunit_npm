@@ -16,8 +16,10 @@ import {
   getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag
 } from './utils';
 import * as glob from 'glob';
+export const anchor = fs.anchor;
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
 import { Color } from './Color';
-import {check} from "yargs";
 
 export class Files {
   public static hasFetched = false;

@@ -2,9 +2,13 @@ import { ExecException, exec, execSync } from 'child_process';
 import {JestTestRunResult, TestRunResult, Tester, SingleTestRunResult} from './Tester';
 import {Api, ClientCode} from "../Api";
 import Config from "../Config";
+import fs from "../vsfs";
+export const anchor = fs.anchor;
+import console, {Log} from '../Log';
+export const logAnchor = console.anchor
+
 
 export class JasmineTester extends Tester {
-  public CONFIG = new Config;
   public async runTests(relativePathArray: string[]): Promise<JestTestRunResult[]> {
     return []
   }
@@ -15,7 +19,8 @@ export class JasmineTester extends Tester {
         testFilePath = testFilePath.substring('passport/'.length);
       }
       let command = `ng test --browsers=ChromeHeadless --no-watch --no-progress --include=${testFilePath}`;
-      if(this.CONFIG.prodTesting) {
+      const CONFIG = new Config()
+      if(CONFIG.prodTesting) {
         command = `cd passport && ` + command
       }
     

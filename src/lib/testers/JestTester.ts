@@ -3,6 +3,11 @@ import {JestTestRunResult, TestRunResult, Tester, SingleTestRunResult} from './T
 import {Api, ClientCode} from "../Api";
 import {exitWithError} from "../utils";
 import {string} from "yargs";
+import fs from "../vsfs";
+export const anchor = fs.anchor;
+import console, {Log} from '../Log';
+export const logAnchor = console.anchor
+
 
 export class JestTester extends Tester {
   public async runSingleTest(testFilePath: string): Promise<SingleTestRunResult> {

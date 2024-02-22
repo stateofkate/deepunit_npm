@@ -3,7 +3,9 @@ import { createInterface } from 'readline';
 import { Files } from './Files';
 import {exitWithError, getEmailFlag, isVsCode} from './utils';
 import fs, {FileSystem, PathLike} from "./vsfs";
-import {ExtensionContext} from "vscode";
+export const anchor = fs.anchor;
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
 
 export class Auth {
   private email: string | null = null;
@@ -51,7 +53,7 @@ export class Auth {
    * @param {string} email The email to save
    * @param {vscode.ExtensionContext} context The extension context
    */
-  public static saveUserEmailToVSCode(email: string, context: ExtensionContext) {
+  public static saveUserEmailToVSCode(email: string, context: any) {
     if (isVsCode()) {
       let vscode = require('vscode')
       try {

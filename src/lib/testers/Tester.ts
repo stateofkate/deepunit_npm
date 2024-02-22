@@ -1,6 +1,9 @@
-import fs from "fs";
 import {TestCaseWithTestBed} from "../../main";
 import Config from "../Config";
+import fs from "../vsfs";
+export const anchor = fs.anchor;
+import console, {Log} from '../Log';
+export const logAnchor = console.anchor
 
 export interface SingleTestRunResult {
   passed: boolean;

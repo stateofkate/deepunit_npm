@@ -1,6 +1,9 @@
 import { execSync } from 'child_process';
 import Config from "./Config";
-
+import fs from "./vsfs";
+export const anchor = fs.anchor;
+import console, {Log} from './Log';
+export const logAnchor = console.anchor
 export class Printer {
   public static CONFIG = new Config();
   public static readonly defaultWidth: number = 60;
