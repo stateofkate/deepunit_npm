@@ -69,7 +69,6 @@ export class FileSystem {
   }
   public writeFileSync(file: PathOrFileDescriptor, data: string | NodeJS.ArrayBufferView, options?: WriteFileOptions): void {
     file = this.handlePathForVSCode(file)
-    console.log({file})
     originalFs.writeFileSync(file, data, options);
   }
   

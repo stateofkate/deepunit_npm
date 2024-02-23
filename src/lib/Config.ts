@@ -70,7 +70,6 @@ async function promptVSCodeForConfig(config: ConfigField, vscode: any): Promise<
       placeHolder: config.defaultValue ? config.defaultValue : "", // Placeholder in the input field to show an example or hint
       ignoreFocusOut: true, // Set to true to keep the input box open even when losing focus
       validateInput: (text: string) => {
-        console.log('in valiation!!!')
         if (config.required && !text) {
           return `This field is required. Please enter a value.\n${config.description}`;
         }
@@ -88,10 +87,7 @@ async function promptVSCodeForConfig(config: ConfigField, vscode: any): Promise<
         return null;
       }
     };
-    console.log('about to show the box')
     const value = await vscode.window.showInputBox(options)
-      console.log('in the box then')
-      console.log(value)
       // value is the user input as a string or undefined
       if (value) {
         vscode.window.showInformationMessage(`Your entry: ${value}`);
@@ -102,7 +98,6 @@ async function promptVSCodeForConfig(config: ConfigField, vscode: any): Promise<
         } else {
           config.value = value
         }
-        console.log({config})
         return config;
       } else {
         vscode.window.showInformationMessage('Nothing entered.');
@@ -182,11 +177,9 @@ export async function checkAndCreateConfig() {
       vscode.window.showQuickPick()
     }
     let finalConfig: ConfigField[] = [{ description: '', type: 'string', required: true, value:'You can find documentation on these configs at https://www.npmjs.com/package/deepunit', name:'documentation'}];
-    console.log(userConfigurableFields)
     for (let i = 0; i<userConfigurableFields.length; i++) {
       const config = userConfigurableFields[i]
-      console.log(i)
-      console.log(config)
+
       if (isVSCode) {
         let userConfigValue = await promptVSCodeForConfig(config, vscode)
         finalConfig.push(userConfigValue)
@@ -195,11 +188,8 @@ export async function checkAndCreateConfig() {
         finalConfig.push(userConfigValue)
       }
     }
-    console.log(finalConfig)
     const configJson = buildConfigJsonFromArray(finalConfig);
-    console.log('got the config')
     fs.writeFileSync(userConfig, configJson, 'utf-8')
-    console.log('wrote the config')
   }
   const config = new Config()
   return config;
