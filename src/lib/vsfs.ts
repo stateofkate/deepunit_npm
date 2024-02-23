@@ -31,8 +31,6 @@ export class FileSystem {
   public handlePathLikeForVSCode(filePath: PathLike): PathLike {
   
     if(typeof filePath !== 'string') {
-      console.log(`not a string: ` + typeof filePath)
-      console.log(filePath)
       return filePath;
     }
     // Check if the code is running within VS Code by looking for VS Code specific environment variables
@@ -44,24 +42,18 @@ export class FileSystem {
         if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
           const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath; // Get the path of the first workspace folder
           const fullPath = path.join(workspaceRoot, filePath);
-          //console.log(`${filePath}: Path converted to vs code workspace: ${fullPath}`);
           return fullPath
         } else {
-          // If no workspace is open, log and return the path as is
-          //console.log(`${filePath}: No workspace detected. Returning original path.`);
           return filePath;
         }
       } catch (e) {
-        //console.log(`${filePath}: error caught, returning path` + e)
         return filePath;
       }
     }
-    //console.log(`${filePath}: no environemnt variable, returning path`)
     return filePath;
   }
   
   public handlePathForVSCode(path: PathOrFileDescriptor): PathOrFileDescriptor {
-    //console.log('type of PathOrFileDescriptor: ' + typeof path)
     if(typeof path === 'string') {
       return this.handlePathLikeForVSCode(path as PathLike) as PathOrFileDescriptor
     }
