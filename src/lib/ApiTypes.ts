@@ -51,15 +51,6 @@ export type FixErrorsData = {
   tsFileContent: string;
 };
 
-export type RecombineTestData = {
-  testFiles: { [key: string]: string };
-  prettierConfig?: Object;
-  testFileContent: string;
-  failedItBlocks: { [key: string]: string[] };
-  failedTests: { [key: string]: string }
-  includeFailingTests: boolean;
-};
-
 
 export type SendResultDataPost = {
   failedTests: { [key: string]: string },

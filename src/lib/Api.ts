@@ -8,7 +8,6 @@ import {
   FixErrorsData,
   GenerateBugReport,
   GenerateTestData,
-  RecombineTestData,
   SendAnalyticsData,
   SendBugResults,
   SendResultDataPost,
@@ -53,10 +52,10 @@ export enum ClientCode {
 let mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0) {
+  public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0, auth?: Auth) {
     const headers = { 'Content-Type': 'application/json' };
 
-    let AUTH: Auth = await Auth.checkForAuthFlagOrFile();
+    let AUTH: Auth = auth ? auth : await Auth.checkForAuthFlagOrFile();
     const CONFIG = new Config();
     let data: ApiBaseData = {
       scriptTarget: CONFIG.scriptTarget,
@@ -93,7 +92,7 @@ export class Api {
     return await this.post(ApiPaths.removeFailedTest, data);
   }
 
-  public static async generateTest(generateTestInput: GenerateTestOrReportInput): Promise<any> {
+  public static async generateTest(generateTestInput: GenerateTestOrReportInput, auth): Promise<any> {
     if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
@@ -117,7 +116,7 @@ export class Api {
       data.functionsToTest = generateTestInput.functionsToTest;
     }
 
-    return await this.post(ApiPaths.generate, data);
+    return await this.post(ApiPaths.generate, data, 0, auth);
   }
 
   public static async generateBugReport(generateTestInput: GenerateTestOrReportInput): Promise<any> {
@@ -154,29 +153,6 @@ export class Api {
     };
 
     return await this.post(ApiPaths.fixErrors, data);
-  }
-
-  public static async recombineTests(
-    tempTests: { [key: string]: string },
-    testFileContent: string,
-    failedTests: { [key: string]: string },
-    failedItBlocks: { [key: string]: string[] },
-    prettierConfig: Object | undefined,
-  ) {
-    const CONFIG = new Config();
-    let data: RecombineTestData = {
-      testFiles: tempTests,
-      testFileContent: testFileContent,
-      failedItBlocks,
-      failedTests,
-      includeFailingTests: CONFIG.includeFailingTests,
-    };
-
-    if (prettierConfig) {
-      data['prettierConfig'] = prettierConfig;
-    }
-
-    return await this.post(ApiPaths.recombineTests, data);
   }
 
   public static async sendBugResults(

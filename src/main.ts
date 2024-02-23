@@ -32,13 +32,23 @@ import {Color} from "./lib/Color";
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; sourceFileName: string}
 export type FailedTestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; failureStackTrace: string; sourceFileName: string;}
-export type GenerateJasmineResponse = { testFileArray?: TestCaseWithTestBed[]; generatedTestBed: (string | undefined); testCaseIts: FunctionToTestCaseCode[], md:string, tests?: any[]; stateCode?: StateCode; stateMessage?: string; error?: string };
+export type GenerateJasmineResponse = { testFileArray?: TestCaseWithTestBed[]; generatedTestBed: (string | undefined); testCaseIts: FunctionToTestCaseCode[], tests?: any[]; functionAnalytics: FunctionAnalytics[]; stateCode?: StateCode; stateMessage?: string; error?: string};
+interface FunctionAnalytics {
+  flowId: string,
+  function: string,
+  totalTestGenerationTime: number,
+  totalFixTestTime?: number,
+  totalTestFlowTime?: number,
+  fixTestAttempts?: number,
+}
 export type FunctionToTestCaseCode = {
   functionName: string;
   testCases: TestCaseAndCode[]
+  functionSourceCode: string;
   sourceFileName: string;
   testFileName:string;
 }
+export type GenerateTestFlowData = {serverDidNotSendTests: string[], alreadyTestedFiles: (string | null)[], unsupportedFiles: (string | null)[], response: GenerateJasmineResponse}
 export type ResultSummary = {
   alreadyTestedFiles: string[];
   unsupportedFiles: string[];
@@ -99,6 +109,7 @@ export async function setUp() {
     await Api.Feedback(feedback, subject);
     process.exit(0);
   }
+  return  auth
 }
 export function getConfig(): Config {
   if(CONFIG) {
@@ -121,7 +132,7 @@ export function getTester() {
 }
 
 export async function main() {
-  await setUp();
+  const auth = await setUp();
   const filesToTestResult = await Files.getFilesToTest();
   const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
   if (filesToTest.length === 0) {
@@ -137,13 +148,14 @@ export async function main() {
     const testFileContent = getTestContent(testFileName);
     const sourceFileContent = Files.getFileContent(sourceFileName);
     const prettierConfig: Object | undefined = Files.getPrettierConfig();
+    let testCasesObject
     if (flagType == 'bugFlag' || flagType == 'bugFileFlag') {
-      await mainBugReportGeneration(sourceFileName, sourceFileContent, testFileContent);
+      testCasesObject = await mainBugReportGeneration(sourceFileName, sourceFileContent, testFileContent);
     }
 
     if (flagType != 'bugFlag') {
       //We will first generate a bunch of unit tests that can be added into the files
-      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: { serverDidNotSendTests: string[]; alreadyTestedFiles: (string | null)[]; unsupportedFiles: (string | null)[]; response: GenerateJasmineResponse } = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, prettierConfig)
+      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: { serverDidNotSendTests: string[]; alreadyTestedFiles: (string | null)[]; unsupportedFiles: (string | null)[]; response: GenerateJasmineResponse } = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, auth, prettierConfig, testCasesObject)
       resultsSummary.serverDidNotSendTests = resultsSummary.serverDidNotSendTests.concat(serverDidNotSendTests)
       resultsSummary.unsupportedFiles = resultsSummary.unsupportedFiles.concat(unsupportedFiles)
       resultsSummary.alreadyTestedFiles = resultsSummary.alreadyTestedFiles.concat(alreadyTestedFiles)
@@ -234,17 +246,17 @@ export function writeFinalTestFile(completedTestFile, passingTestFile) {
     }
   }
 }
-export async function generateTest(testInput: GenerateTestOrReportInput): Promise<any> {
+export async function generateTest(testInput: GenerateTestOrReportInput, auth: Auth): Promise<any> {
   const loadingIndicator = new LoadingIndicator();
   console.log(`Generating test for ${testInput.sourceFileName}`);
   console.log('    If your functions are long this could take several minutes...');
   // TODO: we need to add a timeout, somethings it hangs
   loadingIndicator.start();
-  const response = await Api.generateTest(testInput);
+  const response = await Api.generateTest(testInput, auth);
   loadingIndicator.stop();
   return response;
 }
-export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, lastTestResults?, testCasesObj?):Promise<{serverDidNotSendTests: string[], alreadyTestedFiles: (string | null)[], unsupportedFiles: (string | null)[], response: GenerateJasmineResponse}> {
+export async function generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, auth, prettierConfig?, testCasesObj?):Promise<GenerateTestFlowData> {
   let unsupportedFiles: (string | null)[] = [];
   //files already tested (enabled by statecode message passback)
   let alreadyTestedFiles: (string | null)[] = [];
@@ -267,7 +279,7 @@ export async function generateTestFlow(sourceFileName, sourceFileContent, testFi
     testInput.testCasesObj = testCasesObj;
   }
 
-  const response: GenerateJasmineResponse = await generateTest(testInput);
+  const response: GenerateJasmineResponse = await generateTest(testInput, auth);
   if (response.stateCode === StateCode.FileNotSupported) {
     unsupportedFiles.push(sourceFileName);
     return {serverDidNotSendTests, unsupportedFiles, response, alreadyTestedFiles};
@@ -309,6 +321,7 @@ export async function mainBugReportGeneration(sourceFileName, sourceFileContent,
     const response = await generateBugReport(bugReportInput);
 
     testCasesObj = response.testCasesObj;
+    return testCasesObj
 }
 
 export async function generateBugReport(testInput: GenerateTestOrReportInput): Promise<any> {

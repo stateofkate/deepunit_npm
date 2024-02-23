@@ -10,7 +10,11 @@ export class Auth {
   public anchor = fs.anchor();
   private email: string | null = null;
   private readonly FILE_PATH: string = `${os.homedir()}/.deepunit`;
-  
+  constructor(email?: string) {
+    if(email) {
+      this.email = email;
+    }
+  }
   /**
    * Currently the auth is done all at once in this function. Given that Vs code will expose a UI to do this we need to breakout the check for auth step into its own. The new flow will look like
    * 1. Check for Auth
@@ -53,12 +57,13 @@ export class Auth {
    * @param {string} email The email to save
    * @param {vscode.ExtensionContext} context The extension context
    */
-  public static saveUserEmailToVSCode(email: string, context: any) {
+  public static async saveUserEmailToVSCode(email: string, context: any) {
     if (isVsCode()) {
       let vscode = require('vscode')
       try {
-        context.globalState.update('userEmail', email);
+        await context.globalState.update('userEmail', email);
         vscode.window.showInformationMessage('Email saved successfully.');
+        return new Auth(email)
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to save email: ${error}`);
       }
@@ -71,17 +76,19 @@ export class Auth {
    * @param {vscode.ExtensionContext} context The extension context
    * @returns {string|null} The saved email or null if not found
    */
-  public static getUserEmailFromVSCodeStorage(context): string | null {
+  public static async getUserEmailFromVSCodeStorage(context): Promise<Auth | null> {
     if (isVsCode()) {
       const vscode = require('vscode')
       try {
-        const email = context.globalState.get('userEmail', null);
+        const email = await context.globalState.get('userEmail', null);
         if (email) {
           vscode.window.showInformationMessage(`Retrieved email: ${email}`);
+          let auth = new Auth(email)
+          return auth;
         } else {
           vscode.window.showInformationMessage(`No email found in storage.`);
         }
-        return email;
+        return null;
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to retrieve email: ${error}`);
         return null;
@@ -91,6 +98,7 @@ export class Auth {
       return null;
     }
   }
+  
 
   private isValidEmail(email: string): boolean {
     const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
