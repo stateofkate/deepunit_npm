@@ -1,0 +1,13 @@
+{
+  "ignoredDirectories": [
+    "node_modules"
+  ],
+  "ignoredFiles": [],
+  "includeFailingTests": true,
+  "testSuffix": "test",
+  "defaultBranch": "dev",
+  "retryTestGenerationOnFailure": true,
+  "testingFrameworks": "jest",
+  "backend": "https://stage.adaptable.app"
+}
+
