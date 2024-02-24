@@ -251,7 +251,7 @@ export class Files {
           execSync(fetchCommand); // Ensure you handle errors here
           this.hasFetched = true;
         } catch(e) {
-          console.log(error)
+          console.log(e)
         }
       } else {
         console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
