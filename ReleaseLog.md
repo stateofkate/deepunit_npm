@@ -1,8 +1,14 @@
 # Release Log
 
+## 1.9.2
+Features
+- Add a deepunit.ci.config.json file which will store CI options for when run in a CI context with the --ci flag
+
 ## 1.9.1
 Bugs
 - Fixes error handling during the run tests step
+- Refactors to support VS Code extension changes
+- 
 
 ## 1.9.0
 Features
