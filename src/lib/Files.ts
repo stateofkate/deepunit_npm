@@ -26,7 +26,6 @@ export class Files {
   public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData) {
     const testFileName = Tester.getTestName(sourceFileName);
     if (testFileName && fs.existsSync(testFileName)) {
-      //vscode.window.showErrorMessage('Since the file exists already we wont modify it.');
       if(isVsCode()) {
         console.log('Since the file exists already we wont modify it.')
       }
@@ -70,8 +69,13 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
+      let existingFiles: string[] = [];
       const missingFiles = filesToFilter.filter((filePath) => {
-        if (!fs.existsSync(filePath)) {
+        const fileExists = fs.existsSync(filePath)
+        if(fileExists) {
+          existingFiles.push(filePath)
+        }
+        if (!fileExists && !getCIFlag()) {//when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
           flagType = 'fileFlag';
           return true;
         }
@@ -79,16 +83,10 @@ export class Files {
         return false;
       });
 
-      if (missingFiles.length > 0) {
-        if(getCIFlag()) { //when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
-          filesToFilter = filesToFilter.filter((filePath) => !missingFiles.includes(filePath));
-          console.log('filesToFilter')
-          console.log(filesToFilter)
-          console.log('filesToFilter')
-        }
+      if (missingFiles.length > 0 && !getCIFlag()) {
         await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.`);
       }
-      filesToWriteTestsFor = filesToFilter;
+      filesToWriteTestsFor = getCIFlag() ? filesToFilter : existingFiles;//when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
     } else if (patternToFilter) {
       console.log('Finding files that match the --pattern flag');
       flagType = 'patternFlag';
