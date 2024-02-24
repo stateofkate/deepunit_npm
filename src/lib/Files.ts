@@ -33,6 +33,7 @@ export class Files {
     } else if (testFileName && data.response.testFileArray && data.response.testFileArray[0] && data.response.testFileArray[0].testBed) {
       fs.writeFileSync(testFileName, data.response.testFileArray[0].testBed)
       if(isVsCode()) {
+        console.log('test')
         const vscode = require('vscode');
         vscode.window.showInformationMessage('DeepUnit has created the test file ' + testFileName);
         // Open the created test file
