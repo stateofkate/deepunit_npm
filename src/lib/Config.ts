@@ -241,7 +241,7 @@ export default class Config {
     this.doProd = Config.getBoolFromConfig('doProd', true);
     this.ignoredDirectories = Config.getArrayFromConfig('ignoredDirectories');
     this.ignoredFiles = Config.getArrayFromConfig('ignoredFiles');
-    this.apiHost = this.doProd ? prodBase : localHostBase;
+    this.apiHost = Config.getUrl()
     this.includeFailingTests = Config.getBoolFromConfig('includeFailingTests', true);
     this.generateAllFiles = getGenerateAllFilesFlag();
     this.testingLanguageOverride = Config.getStringFromConfig('testingLanguageOverride');
@@ -250,6 +250,14 @@ export default class Config {
     this.defaultBranch = Config.getStringFromConfig('defaultBranch')
     this.testCaseGoal = Config.getStringFromConfig('testCaseGoal')
     this.useOpenAI = Config.getBoolFromConfig('useOpenAI', true);
+  }
+  
+  public static getUrl(): string {
+    const backendValue = this.getStringFromConfig('backend')
+    if(backendValue && backendValue.length>0) {
+      return backendValue
+    }
+    return this.getBoolFromConfig('doProd', true) ? prodBase : localHostBase;
   }
 
   /**
