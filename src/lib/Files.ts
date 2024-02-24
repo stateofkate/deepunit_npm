@@ -22,7 +22,6 @@ import {Tester} from "./testers/Tester";
 import {GenerateTestFlowData} from "../main";
 
 export class Files {
-  
   public static hasFetched = false;
   public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData) {
     const testFileName = Tester.getTestName(sourceFileName);
