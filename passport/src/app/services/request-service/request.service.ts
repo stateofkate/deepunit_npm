@@ -46,7 +46,7 @@ export class RequestService {
     return this.post(apiPath, data)
   }
 
-  public getInvite(id: string) {
+  public verifyCode(id: string) {
     const apiPath = 'gym-invite/' + id
     return this.get(apiPath)
   }

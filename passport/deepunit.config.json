@@ -1,6 +1,9 @@
 {
   "ignoredDirectories": ["node_modules"],
   "ignoredFiles": [],
-  "includeFailingTests": false,
-  "testSuffix": "test"
+  "includeFailingTests": true,
+  "testSuffix": "it",
+  "defaultBranch": "dev",
+  "useOpenAI": false,
+  "doProd": false
 }
