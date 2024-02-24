@@ -82,6 +82,9 @@ export class Files {
       if (missingFiles.length > 0) {
         if(getCIFlag()) { //when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
           filesToFilter = filesToFilter.filter((filePath) => !missingFiles.includes(filePath));
+          console.log('filesToFilter')
+          console.log(filesToFilter)
+          console.log('filesToFilter')
         }
         await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.`);
       }
