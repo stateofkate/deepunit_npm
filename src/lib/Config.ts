@@ -166,7 +166,8 @@ export async function checkAndCreateConfig() {
       exitWithError('You must configure a deepunit.ci.config.json. You may reference our documentation at https://www.npmjs.com/package/deepunit or reach out to support@deepunit.ai for assistance. See the example config printed above.')
     } else {
       const config = new Config()
-      return config;    }
+      return config;
+    }
   }
   if (!fs.existsSync(userConfig)) {
     const isVSCode = isVsCode();
