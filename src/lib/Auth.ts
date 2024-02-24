@@ -23,11 +23,6 @@ export class Auth {
    * Each step in the flow will be its own function. The init function can still be used in captainhook to do all trhee steps, but in the VS code we will call each step individually.
    */
   public static async init(): Promise<Auth> {
-    /*const auth = new Auth();
-    await auth.loadEmail();
-    if (getEmailFlag()) {
-      auth.email = getEmailFlag();
-    }*/
     const auth = await this.checkForAuthFlagOrFile();
 
     if (!auth.email) {
