@@ -30,7 +30,7 @@ jobs:
         run: npm install
 
       - name: Run DeepUnit
-        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta ${{ github.event.inputs.meta }} --ci
+        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta ${{ github.event.inputs.meta }} --ci --y
 
 
       - name: Store as Artifact

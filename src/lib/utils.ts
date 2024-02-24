@@ -354,7 +354,7 @@ export function getTargetBranchFlagFlag(): string {
 }
 export function getYesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
-  return !!(argv.y || argv.yes);
+  return !!(argv.y || argv.yes || argv.ci);
 }
 
 export function getAbsolutePathsFlag(): boolean {
