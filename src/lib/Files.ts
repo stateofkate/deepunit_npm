@@ -18,7 +18,6 @@ import * as glob from 'glob';
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 import { Color } from './Color';
-import vscode from "vscode";
 import {Tester} from "./testers/Tester";
 import {GenerateTestFlowData} from "../main";
 
@@ -35,6 +34,7 @@ export class Files {
     } else if (testFileName && data.response.testFileArray && data.response.testFileArray[0] && data.response.testFileArray[0].testBed) {
       fs.writeFileSync(testFileName, data.response.testFileArray[0].testBed)
       if(isVsCode()) {
+        const vscode = require('vscode');
         vscode.window.showInformationMessage('DeepUnit has created the test file ' + testFileName);
         // Open the created test file
         const VsCodePath = fs.handlePathLikeForVSCode(testFileName) as string;
