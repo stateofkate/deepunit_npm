@@ -22,7 +22,6 @@ import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
 import fs, {FileSystem} from "./lib/vsfs";
-export const anchor = fs.anchor();
 const ex = fs.existsSync('')
 export const logAnchor = console.anchor
 import {JasmineTester} from "./lib/testers/JasmineTester";

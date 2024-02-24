@@ -7,7 +7,6 @@ import console, {Log} from './Log';
 export const logAnchor = console.anchor
 
 export class Auth {
-  public anchor = fs.anchor();
   private email: string | null = null;
   private readonly FILE_PATH: string = `${os.homedir()}/.deepunit`;
   constructor(email?: string) {
@@ -82,12 +81,10 @@ export class Auth {
       try {
         const email = await context.globalState.get('userEmail', null);
         if (email) {
-          vscode.window.showInformationMessage(`Retrieved email: ${email}`);
           let auth = new Auth(email)
           return auth;
-        } else {
-          vscode.window.showInformationMessage(`No email found in storage.`);
         }
+        console.log("DeepUnit was unable to find the users email, lets ask for it.")
         return null;
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to retrieve email: ${error}`);

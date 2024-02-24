@@ -7,6 +7,8 @@ Features
 ## 1.9.1
 Bugs
 - Fixes error handling during the run tests step
+- Refactors to support VS Code extension changes
+- 
 
 ## 1.9.0
 Features

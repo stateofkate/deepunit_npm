@@ -15,7 +15,6 @@ import {
 import {execSync} from 'child_process';
 import {Color} from './Color';
 import {Files} from "./Files";
-export const anchor = fs.anchor;
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 const devConfig: string = 'deepunit.dev.config.json';
@@ -62,7 +61,7 @@ async function promptVSCodeForConfig(config: ConfigField, vscode: any): Promise<
       }
       return config;
     } else if (config.required) {
-      vscode.window.showInformationMessage('This field is required. Please make a selection. call this function again if it doesnt automatically keep the field open');
+      vscode.window.showInformationMessage('This field is required. Please make a selection.');
     }
   } else {
     const options = {
