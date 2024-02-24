@@ -144,6 +144,7 @@ export class Files {
   }
 
   public static getChangedFiles(): string[] {
+    console.log('git rev-parse --show-toplevel')
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
     const currentDir = process.cwd();
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
@@ -153,6 +154,7 @@ export class Files {
 
     while (getChangedFileCmds.length > 0) {
       const currentCommand = getChangedFileCmds.pop() + ` -- ${relativePath ? relativePath + '/' : ''}`;
+      console.log(currentCommand)
       const output = execSync(currentCommand).toString();
       changedFiles = output.split('\n').filter(Boolean); // filter out empty strings
       if (changedFiles.length > 0) {
@@ -171,6 +173,7 @@ export class Files {
 
   public static async mapGitPathsToCurrentDirectory(relativePaths: string[]): Promise<string[]> {
     try {
+      console.log('git rev-parse --show-toplevel')
       const rootGitDirectory = execSync('git rev-parse --show-toplevel').toString().trim();
       const currentWorkingDirectory = process.cwd();
 
@@ -214,6 +217,7 @@ export class Files {
   }
   public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
     try {
+      console.log(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`)
       const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
       return status !== '';
     } catch (error) {
@@ -242,8 +246,13 @@ export class Files {
       const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
 
       if (permission) {
-        execSync(fetchCommand); // Ensure you handle errors here
-        this.hasFetched = true;
+        try {
+          console.log(fetchCommand)
+          execSync(fetchCommand); // Ensure you handle errors here
+          this.hasFetched = true;
+        } catch(e) {
+          console.log(error)
+        }
       } else {
         console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
       }
@@ -264,6 +273,7 @@ export class Files {
     try {
       let diff: string[] = [];
       for(const diffCommand of diffCmd) {
+        console.log(diffCommand)
         const diffString = execSync(diffCommand).toString()
         if(diffString.length>0){
           diff.push(diffString)
@@ -285,6 +295,7 @@ export class Files {
    * @returns {string[]} List of Git remotes.
    */
   public static getGitRemotes(): string[] {
+    console.log('git remote')
     const remotes = execSync('git remote').toString().trim();
     return remotes ? remotes.split('\n') : [];
   }
@@ -313,6 +324,7 @@ export class Files {
     const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
     const permission = getYesOrNoAnswer(`We need to set your local repositories head to track remote. The command we will run is "${setHeadCommand}"`)
     try {
+      console.log(setHeadCommand)
       execSync(setHeadCommand);
       console.log(`\nRemote HEAD set to ${branchName}`);
     } catch (error) {
@@ -360,6 +372,7 @@ export class Files {
     if (CONFIG.isGitRepository) {
       // Run git add on the file
       try {
+        console.log(`git add ${filename}`)
         execSync(`git add ${filename}`);
       } catch (error) {
         console.error(filename);
@@ -465,6 +478,7 @@ export class Files {
 
   static getGitRootDirectory(): string | undefined {
     try {
+      console.log('git rev-parse --show-toplevel')
       const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
       return gitRoot;
     } catch (error) {
