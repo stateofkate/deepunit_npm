@@ -12,7 +12,7 @@ import {
   getGenerateAllFilesFlag,
   getPatternFlag,
   setupYargs,
-  getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag, isVsCode
+  getYesOrNoAnswer, askQuestion, getTargetBranchFlagFlag, isVsCode, getCIFlag
 } from './utils';
 import * as glob from 'glob';
 import console, {Log} from './Log';
@@ -80,6 +80,9 @@ export class Files {
       });
 
       if (missingFiles.length > 0) {
+        if(getCIFlag()) { //when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
+          filesToFilter = filesToFilter.filter((filePath) => !missingFiles.includes(filePath));
+        }
         await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.`);
       }
       filesToWriteTestsFor = filesToFilter;
