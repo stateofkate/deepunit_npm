@@ -3,7 +3,7 @@
     "node_modules"
   ],
   "ignoredFiles": [],
-  "includeFailingTests": true,
+  "includeFailingTests": false,
   "testSuffix": "test",
   "defaultBranch": "dev",
   "retryTestGenerationOnFailure": true,
