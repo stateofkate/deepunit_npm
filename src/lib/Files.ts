@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync as unwrapped } from 'child_process';
 import fs, {FileSystem, PathLike} from "./vsfs";
 import path from 'path';
 import Config, {checkAndCreateConfig} from './Config';
@@ -21,6 +21,19 @@ import { Color } from './Color';
 import {Tester} from "./testers/Tester";
 import {GenerateTestFlowData} from "../main";
 
+/**
+ * This function just wraps execSync to console.log the command if we have an error then rethrow the error for proper handling
+ * @param command
+ * @param options
+ */
+export function execSync(command: string, options?: any) {
+  try {
+    return unwrapped(command, options)
+  } catch (e) {
+    console.log(command + ': ' + {options})
+    throw e
+  }
+}
 export class Files {
   public static hasFetched = false;
   public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData) {
@@ -144,7 +157,6 @@ export class Files {
   }
 
   public static getChangedFiles(): string[] {
-    console.log('git rev-parse --show-toplevel')
     const gitRoot = execSync('git rev-parse --show-toplevel').toString().trim();
     const currentDir = process.cwd();
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
@@ -154,7 +166,6 @@ export class Files {
 
     while (getChangedFileCmds.length > 0) {
       const currentCommand = getChangedFileCmds.pop() + ` -- ${relativePath ? relativePath + '/' : ''}`;
-      console.log(currentCommand)
       const output = execSync(currentCommand).toString();
       changedFiles = output.split('\n').filter(Boolean); // filter out empty strings
       if (changedFiles.length > 0) {
@@ -217,7 +228,6 @@ export class Files {
   }
   public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
     try {
-      console.log(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`)
       const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
       return status !== '';
     } catch (error) {
@@ -246,13 +256,8 @@ export class Files {
       const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
 
       if (permission) {
-        try {
-          console.log(fetchCommand)
-          execSync(fetchCommand); // Ensure you handle errors here
-          this.hasFetched = true;
-        } catch(e) {
-          console.log(e)
-        }
+        execSync(fetchCommand); // Ensure you handle errors here
+        this.hasFetched = true;
       } else {
         console.error("DeepUnit was unable to get user permission to fetch remote. If the default branch is outdated we might have an outdated diff.")
       }
@@ -273,7 +278,6 @@ export class Files {
     try {
       let diff: string[] = [];
       for(const diffCommand of diffCmd) {
-        console.log(diffCommand)
         const diffString = execSync(diffCommand).toString()
         if(diffString.length>0){
           diff.push(diffString)
@@ -295,7 +299,6 @@ export class Files {
    * @returns {string[]} List of Git remotes.
    */
   public static getGitRemotes(): string[] {
-    console.log('git remote')
     const remotes = execSync('git remote').toString().trim();
     return remotes ? remotes.split('\n') : [];
   }
@@ -324,7 +327,6 @@ export class Files {
     const setHeadCommand = `git remote set-head ${remoteName} ${branchName}`;
     const permission = getYesOrNoAnswer(`We need to set your local repositories head to track remote. The command we will run is "${setHeadCommand}"`)
     try {
-      console.log(setHeadCommand)
       execSync(setHeadCommand);
       console.log(`\nRemote HEAD set to ${branchName}`);
     } catch (error) {
@@ -363,23 +365,6 @@ export class Files {
       return null;
     }
     return testContent;
-  }
-
-  public static createFile(filename: string): void {
-    // Create a new file
-    Files.writeFileSync(filename, '');
-    const CONFIG = new Config();
-    if (CONFIG.isGitRepository) {
-      // Run git add on the file
-      try {
-        console.log(`git add ${filename}`)
-        execSync(`git add ${filename}`);
-      } catch (error) {
-        console.error(filename);
-        console.error(error);
-        console.error(`Error running git add: `);
-      }
-    }
   }
 
   /**
@@ -437,34 +422,7 @@ export class Files {
       console.error(`Unable to write file: ${file}`);
     }
   }
-
-  public static deleteTempFiles(tempTestPaths: string[]) {
-    tempTestPaths.forEach((filePath) => {
-      try {
-        // delete the file
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error(`Error deleting file: ${filePath}`);
-        console.error(err);
-      }
-    });
-  }
-
-  public static groupFilesByDirectory(changedFiles: string[]): { [key:string]:string[] } {
-    const filesByDirectory: { [key: string]: string[] } = {};
-
-    for (const file of changedFiles) {
-      const directory = path.dirname(file);
-
-      if (!filesByDirectory[directory]) {
-        filesByDirectory[directory] = [];
-      }
-
-      filesByDirectory[directory].push(file);
-    }
-
-    return filesByDirectory;
-  }
+  
 
   public static readJsonFile(path: PathLike): Object | undefined {
     if (fs.existsSync(path)) {
@@ -478,7 +436,6 @@ export class Files {
 
   static getGitRootDirectory(): string | undefined {
     try {
-      console.log('git rev-parse --show-toplevel')
       const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
       return gitRoot;
     } catch (error) {
