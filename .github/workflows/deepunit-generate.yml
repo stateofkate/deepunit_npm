@@ -26,8 +26,12 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Get Committer Email
+        id: get-committer-email
+        run: echo "COMMITTER_EMAIL=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
+
       - name: Run DeepUnit
-        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta ${{ github.event.inputs.meta }} --ci --y
+        run: npm run start -- --f ${{ github.event.inputs.paths }} --json --ff --ap --email ${{ env.COMMITTER_EMAIL }} --meta ${{ github.event.inputs.meta }} --ci --y
 
 
       - name: Store as Artifact

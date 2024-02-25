@@ -9,17 +9,12 @@ variables:
   RESTORE_CACHE_ATTEMPTS: 2 # Number of retries for restoring cached files.
 
 stages:
-  - Test Stuff
   - prepare
   - deepunitci
   - verify
   - build
   - publish
 
-Test Stuff:
-  stage: Test Stuff
-  script:
-  - echo "$GITLAB_USER_EMAIL"
 
 # Installs all dependencies.
 install:
