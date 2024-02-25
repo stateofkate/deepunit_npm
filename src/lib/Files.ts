@@ -184,7 +184,6 @@ export class Files {
 
   public static async mapGitPathsToCurrentDirectory(relativePaths: string[]): Promise<string[]> {
     try {
-      console.log('git rev-parse --show-toplevel')
       const rootGitDirectory = execSync('git rev-parse --show-toplevel').toString().trim();
       const currentWorkingDirectory = process.cwd();
 
