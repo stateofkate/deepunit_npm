@@ -17,6 +17,7 @@ stages:
   - publish
 
 Test Stuff:
+  stage: Test Stuff
   script:
   - echo "$GITLAB_USER_EMAIL"
 
