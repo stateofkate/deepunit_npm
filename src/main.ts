@@ -154,7 +154,7 @@ export async function main() {
 
     if (flagType != 'bugFlag') {
       //We will first generate a bunch of unit tests that can be added into the files
-      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: { serverDidNotSendTests: string[]; alreadyTestedFiles: (string | null)[]; unsupportedFiles: (string | null)[]; response: GenerateJasmineResponse } = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, auth, prettierConfig, testCasesObject)
+      const {serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, response}: GenerateTestFlowData = await generateTestFlow(sourceFileName, sourceFileContent, testFileName, testFileContent, auth, prettierConfig, testCasesObject)
       resultsSummary.serverDidNotSendTests = resultsSummary.serverDidNotSendTests.concat(serverDidNotSendTests)
       resultsSummary.unsupportedFiles = resultsSummary.unsupportedFiles.concat(unsupportedFiles)
       resultsSummary.alreadyTestedFiles = resultsSummary.alreadyTestedFiles.concat(alreadyTestedFiles)
@@ -181,6 +181,11 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   const fileNameWithoutExt = sourceFileName.substring(0, lastDotIndex);
   const fileExt = sourceFileName.substring(lastDotIndex + 1);
   const tempTestName = `${fileNameWithoutExt}.deepunittemptest.${getConfig().testSuffix}.${fileExt}`;
+  const tempTestExists = fs.existsSync(tempTestName)
+  let tempTestContent;
+  if(tempTestExists) {
+    tempTestContent = fs.readFileSync(tempTestName, 'utf-8')
+  }
   let passedTests: TestCaseWithTestBed[] = [];
   let failedTests: FailedTestCaseWithTestBed[]= []
   let completedTestFile = { content: '', path: testFileName}
@@ -223,7 +228,9 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
         //todo: add a test fixing flow here. Figure out how to handle tracking a first test that failed but got fixed
       }
     }
-    fs.rm(tempTestName, ()=>{});//removing the file can be async for slightly better performance
+  }
+  if(tempTestExists && tempTestContent) {
+    fs.writeFileSync(tempTestName, tempTestContent, 'utf-8')
   }
   if(getConfig().includeFailingTests) {
     const lastTest = response.testFileArray[response.testFileArray.length - 1].testBed
