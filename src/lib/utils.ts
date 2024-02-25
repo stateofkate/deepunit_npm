@@ -241,8 +241,7 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Return JSON object instead of writing files to disk, enables programmatic usage of DeepUnit in CI',
     })
-    .option('m', {
-      alias: ['meta'],
+    .option('meta', {
       type: 'string',
       description: 'Meta Data to be saved in the json file, enables programmatic usage of DeepUnit in CI',
     })
@@ -320,7 +319,7 @@ export function getPatternFlag(): string[] | undefined {
 
 export function getJsonFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
-  return !!argv.json;
+  return !!(argv.json || argv.j);
 }
 
 export function getCIFlag(): boolean {

@@ -8,6 +8,6 @@
   "defaultBranch": "dev",
   "retryTestGenerationOnFailure": true,
   "testingFrameworks": "jest",
-  "backend": "https://stage.adaptable.app"
+  "backend": "https://dumper.adaptable.app"
 }
 
