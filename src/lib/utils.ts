@@ -4,7 +4,7 @@ import { Printer } from './Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-import { Arguments } from 'yargs';
+import {Arguments, Argv} from 'yargs';
 import Config from "./Config";
 import {Color} from "./Color";
 import fs from "./vsfs";
@@ -53,7 +53,7 @@ export function expectNot(falsyVal: any): any {
  * console.log only when we are not in production
  * @param input
  */
-export function debugMsg(CONFIG: any, ...input: any) {
+export function debugMsg(CONFIG: any, ...input: any): void {
   if (!CONFIG.doProd && !CONFIG.prodTesting) {
     console.log(input);
   }
@@ -64,7 +64,7 @@ export function debugMsg(CONFIG: any, ...input: any) {
  * @param obj
  * @returns
  */
-export function isEmpty(obj: Object) {
+export function isEmpty(obj: Object): boolean {
   for (const prop in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, prop)) {
       return false;
@@ -97,7 +97,7 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
   });
 }
 
-export async function exitWithError(error: string, attempts = 0) {
+export async function exitWithError(error: string, attempts = 0): Promise<void> {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
   attempts += 1;
@@ -172,13 +172,13 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
   });
   const yesAnswers = ['y', 'yes'];
 
-  return new Promise((resolve) => {
+  return new Promise((resolve: any) => {
     // if we have a get yes flag, then we are assuming the user is going to say yes
     if (getYesFlag()) {
       rl.close()
       resolve(true);
     }
-    rl.question(prompt + ' (type y/n):', (answer) => {
+    rl.question(prompt + ' (type y/n):', (answer: string) => {
       const booleanAnswer: boolean = yesAnswers.includes(answer.trim().toLowerCase())
       rl.close();
       resolve(booleanAnswer);
@@ -206,7 +206,7 @@ interface ParsedArgs extends Arguments {
   all?: boolean;
 }
 
-export function setupYargs() {
+export function setupYargs(): Argv<{}> {
   return yargs(hideBin(process.argv))
     .usage(
       'For complete documentation visit https://deepunit.ai/docs\nUsage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.',
@@ -241,8 +241,7 @@ export function setupYargs() {
       type: 'boolean',
       description: 'Return JSON object instead of writing files to disk, enables programmatic usage of DeepUnit in CI',
     })
-    .option('m', {
-      alias: ['meta'],
+    .option('meta', {
       type: 'string',
       description: 'Meta Data to be saved in the json file, enables programmatic usage of DeepUnit in CI',
     })
@@ -320,7 +319,7 @@ export function getPatternFlag(): string[] | undefined {
 
 export function getJsonFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
-  return !!argv.json;
+  return !!(argv.json || argv.j);
 }
 
 export function getCIFlag(): boolean {
@@ -354,7 +353,7 @@ export function getTargetBranchFlagFlag(): string {
 }
 export function getYesFlag(): boolean {
   const argv = setupYargs().argv as ParsedArgs;
-  return !!(argv.y || argv.yes);
+  return !!(argv.y || argv.yes || argv.ci);
 }
 
 export function getAbsolutePathsFlag(): boolean {

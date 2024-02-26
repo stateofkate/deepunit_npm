@@ -68,7 +68,7 @@ async function promptVSCodeForConfig(config: ConfigField, vscode: any): Promise<
       prompt: config.description, // The prompt text to display
       placeHolder: config.defaultValue ? config.defaultValue : "", // Placeholder in the input field to show an example or hint
       ignoreFocusOut: true, // Set to true to keep the input box open even when losing focus
-      validateInput: (text: string) => {
+      validateInput: (text: string): string | undefined => {
         if (config.required && !text) {
           return `This field is required. Please enter a value.\n${config.description}`;
         }
@@ -145,7 +145,7 @@ function buildConfigJsonFromArray(configs: ConfigField[]): string {
   // Convert the config object to a JSON string with indentation for readability
   return JSON.stringify(configObject, null, 2);
 }
-export async function checkAndCreateConfig() {
+export async function checkAndCreateConfig(): Promise<Config> {
   if (getCIFlag()) {
     const exampleConfig =
       '{\n' +
@@ -176,12 +176,12 @@ export async function checkAndCreateConfig() {
       vscode = require('vscode')
       vscode.window.showQuickPick()
     }
-    let finalConfig: ConfigField[] = [{ description: '', type: 'string', required: true, value:'You can find documentation on these configs at https://www.npmjs.com/package/deepunit', name:'documentation'}];
+    const finalConfig: ConfigField[] = [{ description: '', type: 'string', required: true, value:'You can find documentation on these configs at https://www.npmjs.com/package/deepunit', name:'documentation'}];
     for (let i = 0; i<userConfigurableFields.length; i++) {
       const config = userConfigurableFields[i]
 
       if (isVSCode) {
-        let userConfigValue = await promptVSCodeForConfig(config, vscode)
+        const userConfigValue = await promptVSCodeForConfig(config, vscode)
         finalConfig.push(userConfigValue)
       } else {
         const userConfigValue = await promptCLIForConfig(config)
@@ -285,7 +285,7 @@ export default class Config {
   }
 
   private getFrameworkVersion(): string {
-    let frameworkVersion = this.getPackageVersionIfInstalled(this.frontendFramework);
+    const frameworkVersion = this.getPackageVersionIfInstalled(this.frontendFramework);
     if(frameworkVersion) {
       return frameworkVersion;
     } else {
@@ -298,7 +298,7 @@ export default class Config {
     if (this.testingLanguageOverride) {
       return this.testingLanguageOverride;
     }
-    let fileContent = fs.readFileSync('package.json', 'utf8');
+    const fileContent = fs.readFileSync('package.json', 'utf8');
     if (!fileContent.includes('typescript')) {
       return 'javascript';
     }
@@ -324,16 +324,16 @@ export default class Config {
       this.frontendFramework = configValue;
       return;
     }
-    let angularJsonPath = 'angular.json';
-    let packageJsonPath = 'package.json';
+    const angularJsonPath = 'angular.json';
+    const packageJsonPath = 'package.json';
 
     if (fs.existsSync(angularJsonPath)) {
       this.frontendFramework = 'angular';
       return;
     } else if (fs.existsSync(packageJsonPath)) {
-      let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      let dependencies = packageJson['dependencies'] || {};
-      let devDependencies = packageJson['devDependencies'] || {};
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const dependencies = packageJson['dependencies'] || {};
+      const devDependencies = packageJson['devDependencies'] || {};
       if ('angular/common' in dependencies || 'angular/common' in devDependencies) {
         this.frontendFramework = 'angular';
         return;
@@ -346,7 +346,7 @@ export default class Config {
     this.frontendFramework = '';
   }
 
-  private determineDevBuild() {
+  private determineDevBuild(): void {
     if (fs.existsSync(devConfig) && !this.prodTesting) {
       this.isDevBuild = true;
     } else if (fs.existsSync(devConfig) && this.prodTesting) {
@@ -355,16 +355,16 @@ export default class Config {
   }
 
   private getTestFramework(): TestingFrameworks {
-    let jestConfigPath = 'jest.config.js';
-    let karmaConfigPath = 'karma.conf.js';
-    let packageJsonPath = 'package.json';
+    const jestConfigPath = 'jest.config.js';
+    const karmaConfigPath = 'karma.conf.js';
+    const packageJsonPath = 'package.json';
     let testingFramework = TestingFrameworks.unknown;
     if (fs.existsSync(jestConfigPath)) {
       testingFramework = TestingFrameworks.jest;
     } else if (fs.existsSync(karmaConfigPath)) {
       testingFramework = TestingFrameworks.jasmine;
     } else if (fs.existsSync(packageJsonPath)) {
-      let fileContent = fs.readFileSync(packageJsonPath, 'utf8');
+      const fileContent = fs.readFileSync(packageJsonPath, 'utf8');
       if (fileContent.includes('jest')) {
         testingFramework = TestingFrameworks.jest;
       } else if (fileContent.includes('jasmine-core')) {
@@ -388,9 +388,9 @@ export default class Config {
 
     while (tsconfigPath) {
       if (fs.existsSync(tsconfigPath)) {
-        let contents: string = fs.readFileSync(tsconfigPath, 'utf8');
+        const contents: string = fs.readFileSync(tsconfigPath, 'utf8');
         try {
-          let tsconfigJson = ts.parseConfigFileTextToJson('', contents);
+          const tsconfigJson = ts.parseConfigFileTextToJson('', contents);
           const scriptTarget = tsconfigJson.config?.compilerOptions?.target;
           if (scriptTarget) {
             return scriptTarget;
@@ -441,20 +441,20 @@ export default class Config {
    * If the CI flag was used it will use the ciConfig, otherwise it will use the dev config and user config
    */
   private static getValueFromConfigFile(configProperty: string): unknown {
-    let configPaths: string[] = getCIFlag() ? [ciConfig] : configFilePaths
-    for (let configPath of configPaths) {
+    const configPaths: string[] = getCIFlag() ? [ciConfig] : configFilePaths
+    for (const configPath of configPaths) {
       if (fs.existsSync(configPath)) {
-        let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
         if (configProperty in config) {
-          let configValue = config[configProperty];
+          const configValue = config[configProperty];
           return configValue;
         }
       }
     }
   }
 
-  public async confirmAllPackagesNeeded() {
+  public async confirmAllPackagesNeeded(): Promise<void> {
     await this.confirmJestExists();
     if (this.frontendFramework == 'react') {
 
@@ -462,14 +462,14 @@ export default class Config {
     }
   }
 
-  private async confirmJestExists() {
+  private async confirmJestExists(): Promise<void> {
     // we overwrote the framework, ignore the checks
     if (this.testingLanguageOverride) {
       console.log('Using test language override of' + this.testingLanguageOverride);
       return;
     }
 
-    let fileContent = fs.readFileSync('package.json', 'utf8');
+    const fileContent = fs.readFileSync('package.json', 'utf8');
     if (!fileContent.includes('jest')) {
       const wantsToUseJest = await getYesOrNoAnswer('Jest is not installed, would you like to install it? (it is required to generate tests)');
       if (!wantsToUseJest) {
@@ -496,7 +496,7 @@ export default class Config {
     }
   }
 
-  private async confirmReactPackages() {
+  private async confirmReactPackages(): Promise<void> {
 
 
 
@@ -506,8 +506,8 @@ export default class Config {
       { name: 'react-router-dom', installVersion: 'classic' },
     ];
 
-    let neededPackages = [];
-    for (let requiredPackage of requiredPackaged) {
+    const neededPackages = [];
+    for (const requiredPackage of requiredPackaged) {
       if (!this.getPackageVersionIfInstalled(requiredPackage.name)) {
         neededPackages.push(requiredPackage);
       }
@@ -552,12 +552,12 @@ export default class Config {
   }
 
   public getPackageVersionIfInstalled(requiredPackaged: string): string | null {
-    let packageJsonPath = 'package.json';
+    const packageJsonPath = 'package.json';
 
     if (fs.existsSync(packageJsonPath)) {
-      let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      let dependencies = packageJson['dependencies'] || {};
-      let devDependencies = packageJson['devDependencies'] || {};
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const dependencies = packageJson['dependencies'] || {};
+      const devDependencies = packageJson['devDependencies'] || {};
       if (requiredPackaged in dependencies) {
         return dependencies[requiredPackaged];
       }
@@ -569,7 +569,7 @@ export default class Config {
     return null;
   }
   
-  public async askForDefaultBranch() {
+  public async askForDefaultBranch(): Promise<void> {
     if(!this.defaultBranch) {
       const branchName = await askQuestion('Please enter the name of your default branch. This is usually main, master or dev but could be anything: ', 'master')
       this.defaultBranch = branchName

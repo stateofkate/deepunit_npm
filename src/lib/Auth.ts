@@ -51,9 +51,9 @@ export class Auth {
    * @param {string} email The email to save
    * @param {vscode.ExtensionContext} context The extension context
    */
-  public static async saveUserEmailToVSCode(email: string, context: any) {
+  public static async saveUserEmailToVSCode(email: string, context: any): Promise<Auth> {
     if (isVsCode()) {
-      let vscode = require('vscode')
+      const vscode = require('vscode')
       try {
         await context.globalState.update('userEmail', email);
         vscode.window.showInformationMessage('Email saved successfully.');
@@ -76,7 +76,7 @@ export class Auth {
       try {
         const email = await context.globalState.get('userEmail', null);
         if (email) {
-          let auth = new Auth(email)
+          const auth = new Auth(email)
           return auth;
         }
         console.log("DeepUnit was unable to find the users email, lets ask for it.")
@@ -104,7 +104,7 @@ export class Auth {
     });
 
     return new Promise((resolve) => {
-      const ask = () => {
+      const ask = (): void => {
         rl.question('Please enter a valid email: ', (answer) => {
           if (this.isValidEmail(answer)) {
             this.email = answer;
@@ -130,7 +130,7 @@ export class Auth {
   }
 
   private async loadEmail(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve: () => any) => {
       if (fs.existsSync(this.FILE_PATH)) {
         const content = fs.readFileSync(this.FILE_PATH).toString();
         const matches = content.match(/EMAIL=(.+)/);

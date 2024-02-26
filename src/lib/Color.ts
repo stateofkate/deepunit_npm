@@ -1,5 +1,4 @@
 import console, {Log} from './Log';
-export const logAnchor = console.anchor
 // ANSI color escape sequences
 enum COLORS {
   reset = '\x1b[0m',
@@ -11,31 +10,31 @@ enum COLORS {
   white = '\x1b[37m',
 }
 export class Color {
-  static colorize(text: string, color: COLORS) {
+  static colorize(text: string, color: COLORS): string {
     return color + text + COLORS.reset;
   }
   
-  static red(text: string) {
+  static red(text: string): string {
     return Color.colorize(text, COLORS.red);
   }
   
-  static yellow(text: string) {
+  static yellow(text: string): string {
     return Color.colorize(text, COLORS.yellow);
   }
   
-  static blue(text: string) {
+  static blue(text: string): string {
     return Color.colorize(text, COLORS.blue);
   }
   
-  static lightBlue(text: string) {
+  static lightBlue(text: string): string {
     return Color.colorize(text, COLORS.lightBlue);
   }
   
-  static green(text: string) {
+  static green(text: string): string {
     return Color.colorize(text, COLORS.green);
   }
   
-  static white(text: string) {
+  static white(text: string): string {
     return Color.colorize(text, COLORS.white);
   }
 }

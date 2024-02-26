@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync as unwrapped } from 'child_process';
 import fs, {FileSystem, PathLike} from "./vsfs";
 import path from 'path';
 import Config, {checkAndCreateConfig} from './Config';
@@ -21,12 +21,24 @@ import { Color } from './Color';
 import {Tester} from "./testers/Tester";
 import {GenerateTestFlowData} from "../main";
 
+/**
+ * This function just wraps execSync to console.log the command if we have an error then rethrow the error for proper handling
+ * @param command
+ * @param options
+ */
+export function execSync(command: string, options?: any): string {
+  try {
+    return unwrapped(command, options)
+  } catch (e) {
+    console.log(command + ': ' + {options})
+    throw e
+  }
+}
 export class Files {
   public static hasFetched = false;
-  public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData) {
+  public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData): Promise<void> {
     const testFileName = Tester.getTestName(sourceFileName);
     if (testFileName && fs.existsSync(testFileName)) {
-      //vscode.window.showErrorMessage('Since the file exists already we wont modify it.');
       if(isVsCode()) {
         console.log('Since the file exists already we wont modify it.')
       }
@@ -70,8 +82,13 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
+      const existingFiles: string[] = [];
       const missingFiles = filesToFilter.filter((filePath) => {
-        if (!fs.existsSync(filePath)) {
+        const fileExists = fs.existsSync(filePath)
+        if(fileExists) {
+          existingFiles.push(filePath)
+        }
+        if (!fileExists && !getCIFlag()) {//when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
           flagType = 'fileFlag';
           return true;
         }
@@ -79,13 +96,10 @@ export class Files {
         return false;
       });
 
-      if (missingFiles.length > 0) {
-        if(getCIFlag()) { //when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
-          filesToFilter = filesToFilter.filter((filePath) => !missingFiles.includes(filePath));
-        }
+      if (missingFiles.length > 0 && !getCIFlag()) {
         await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.`);
       }
-      filesToWriteTestsFor = filesToFilter;
+      filesToWriteTestsFor = getCIFlag() ? filesToFilter : existingFiles;//when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
     } else if (patternToFilter) {
       console.log('Finding files that match the --pattern flag');
       flagType = 'patternFlag';
@@ -148,7 +162,7 @@ export class Files {
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
 
     let changedFiles: string[] = [];
-    let getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`];
+    const getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`];
 
     while (getChangedFileCmds.length > 0) {
       const currentCommand = getChangedFileCmds.pop() + ` -- ${relativePath ? relativePath + '/' : ''}`;
@@ -186,7 +200,7 @@ export class Files {
   }
 
   public static filterExtensions(files: string[]): string[] {
-    let filteredFiles: string[] = [];
+    const filteredFiles: string[] = [];
     for (const file of files) {
       const excludedSuffixes = [
         '.test.ts',
@@ -205,13 +219,13 @@ export class Files {
 
       const includedExtensions = ['.ts', '.js', '.tsx'];
 
-      if (includedExtensions.some((ext) => file.endsWith(ext)) && !excludedSuffixes.some((suffix) => file.endsWith(suffix))) {
+      if (includedExtensions.some((ext: string) => file.endsWith(ext)) && !excludedSuffixes.some((suffix: string) => file.endsWith(suffix))) {
         filteredFiles.push(file);
       }
     }
     return filteredFiles;
   }
-  public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
+  public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string): boolean {
     try {
       const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
       return status !== '';
@@ -236,7 +250,7 @@ export class Files {
      */
 
     const remoteName = await this.askForRemote()
-    if(this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
+    if(!this.hasFetched) { //Its important that we not fetch multiple times as if the remote branch receives new commits in between some diffs could be outdated while others aren't, which sounds confusing
       const fetchCommand = `git fetch ${remoteName}`
       const permission = await getYesOrNoAnswer(`Can DeepUnit fetch your remote? The command we will run is "${fetchCommand}"`)
 
@@ -249,7 +263,7 @@ export class Files {
     }
     const targetBranchFlag: string = getTargetBranchFlagFlag()
     const targetBranch = targetBranchFlag ? targetBranchFlag : new Config().defaultBranch;
-    let diffCmd = []
+    const diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
       //github/gitlab action
       diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
@@ -261,7 +275,7 @@ export class Files {
       diffCmd.push(`git diff HEAD -U0 -- ${files.join(' ')}`)
     }
     try {
-      let diff: string[] = [];
+      const diff: string[] = [];
       for(const diffCommand of diffCmd) {
         const diffString = execSync(diffCommand).toString()
         if(diffString.length>0){
@@ -305,7 +319,7 @@ export class Files {
     const prompt = `What is the name of the remote that we should compare your default branch ${new Config().defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
     return askQuestion(prompt, 'origin');
   }
-  public static async setRemoteHead(remoteName: string) {
+  public static async setRemoteHead(remoteName: string): Promise<void> {
     const CONFIG = new Config();
     const branchName = CONFIG.defaultBranch;
 
@@ -352,22 +366,6 @@ export class Files {
     return testContent;
   }
 
-  public static createFile(filename: string): void {
-    // Create a new file
-    Files.writeFileSync(filename, '');
-    const CONFIG = new Config();
-    if (CONFIG.isGitRepository) {
-      // Run git add on the file
-      try {
-        execSync(`git add ${filename}`);
-      } catch (error) {
-        console.error(filename);
-        console.error(error);
-        console.error(`Error running git add: `);
-      }
-    }
-  }
-
   /**
    * Filter out files that are within certain directories or match certain filenames.
    *
@@ -384,7 +382,7 @@ export class Files {
 
     for (const file of filesWithValidExtensions) {
       const CONFIG = new Config();
-      if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
+      if (!CONFIG.ignoredDirectories.some((ignoreDir: string) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
       } else {
         ignoredFiles;
@@ -393,13 +391,13 @@ export class Files {
     return { filteredFiles, ignoredFiles };
   }
 
-  public static isParentAncestorOfChild(parent: string, child: string) {
+  public static isParentAncestorOfChild(parent: string, child: string): boolean {
     const rel = path.relative(parent, child);
     return !rel.startsWith('../') && rel !== '..';
   }
 
   public static writeTestsToFiles(tests: { [key: string]: string }, filePathChunk: string): string[] {
-    let testPaths: string[] = [];
+    const testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {
         if (!fs.existsSync(testFilePath)) {
@@ -415,7 +413,7 @@ export class Files {
     return testPaths;
   }
 
-  public static writeFileSync(file: string, data: string, options?: any) {
+  public static writeFileSync(file: string, data: string, options?: any): void {
     try {
       fs.writeFileSync(file, data, options);
     } catch (e) {
@@ -423,34 +421,7 @@ export class Files {
       console.error(`Unable to write file: ${file}`);
     }
   }
-
-  public static deleteTempFiles(tempTestPaths: string[]) {
-    tempTestPaths.forEach((filePath) => {
-      try {
-        // delete the file
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error(`Error deleting file: ${filePath}`);
-        console.error(err);
-      }
-    });
-  }
-
-  public static groupFilesByDirectory(changedFiles: string[]): { [key:string]:string[] } {
-    const filesByDirectory: { [key: string]: string[] } = {};
-
-    for (const file of changedFiles) {
-      const directory = path.dirname(file);
-
-      if (!filesByDirectory[directory]) {
-        filesByDirectory[directory] = [];
-      }
-
-      filesByDirectory[directory].push(file);
-    }
-
-    return filesByDirectory;
-  }
+  
 
   public static readJsonFile(path: PathLike): Object | undefined {
     if (fs.existsSync(path)) {
@@ -480,7 +451,7 @@ export class Files {
       '.prettierrc.json',
     ];
 
-    let directoriesToCheck = [process.cwd()];
+    const directoriesToCheck = [process.cwd()];
     const CONFIG = new Config();
     if (CONFIG.isGitRepository) {
       const rootDirectory = this.getGitRootDirectory();
@@ -519,7 +490,7 @@ export class Files {
     return undefined;
   }
 
-  public static async updateConfigFile(propertyName: string, propertyValue: any) {
+  public static async updateConfigFile(propertyName: string, propertyValue: any): Promise<void> {
     const configPath = 'deepunit.config.json';
   
     // Check if the config file exists

@@ -4,7 +4,7 @@ import { Printer } from '../lib/Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-import { Arguments } from 'yargs';
+import {Arguments, Argv} from 'yargs';
 import { Log } from '../lib/Log';
 import Config from "../lib/Config";
 import {Color} from "../lib/Color";
@@ -48,7 +48,7 @@ export function expectNot(falsyVal: any): any {
  * console.log only when we are not in production
  * @param input
  */
-export function debugMsg(...input: any) {
+export function debugMsg(...input: any): void {
   const CONFIG = new Config();
   if (!CONFIG.doProd && !CONFIG.prodTesting) {
     console.log(input);
@@ -60,7 +60,7 @@ export function debugMsg(...input: any) {
  * @param obj
  * @returns
  */
-export function isEmpty(obj: Object) {
+export function isEmpty(obj: Object): boolean {
   for (const prop in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, prop)) {
       return false;
@@ -93,7 +93,7 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
   });
 }
 
-export async function exitWithError(error: string) {
+export async function exitWithError(error: string): Promise<void> {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
   await Api.sendAnalytics('Client Errored: ' + error, ClientCode.ClientErrored);
@@ -175,7 +175,7 @@ interface ParsedArgs extends Arguments {
   all?: boolean;
 }
 
-export function setupYargs() {
+export function setupYargs(): Argv<{}> {
   return yargs(hideBin(process.argv))
     .usage(
       'For complete documentation visit https://deepunit.ai/docs\nUsage: $0 [options]\n\nWithout any flags, it will find all files with changes in it starting with unstaged files, and then staged files.',
