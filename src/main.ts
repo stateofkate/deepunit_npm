@@ -57,6 +57,8 @@ export type ResultSummary = {
   serverDidNotSendTests: string[],
   completedTestFiles: { path: string; content: string }[],
 }
+export type PathAndContent = { content: string, path: string}
+
 export type TestCaseAndCode = {code?: string, testCase: ParsedTestCases, duplicate: boolean}
 // global classes
 let CONFIG;
@@ -161,7 +163,7 @@ export async function main() {
       resultsSummary.testCaseIts = resultsSummary.testCaseIts.concat(response.testCaseIts)
       if(response.stateCode === StateCode.Success) {
         //here we will loop thru the tests running each until we know which ones pass
-        const testResults: { failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[], completedTestFile: { content: string, path: string }, passingTestFile: { content: string; path: string } } = await runGeneratedTests(response, sourceFileName, testFileName, sourceFileContent, testFileContent)
+        const testResults: RunGeneratedTestResult = await runGeneratedTests(response, sourceFileName, testFileName, sourceFileContent, testFileContent)
         //edit flow to go here
         //update results after the edit flow
         resultsSummary.passedTests = resultsSummary.passedTests.concat(testResults.passedTests)
@@ -174,22 +176,27 @@ export async function main() {
   }
   await printResultsAndExit(resultsSummary)
 }
-
-export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string, testFileName: string, sourceFileContent: string, testFileContent: string): Promise<{ failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[]; completedTestFile: { content: string; path: string }; passingTestFile: { content: string; path: string } }> {
+export type RunGeneratedTestResult = { failedTests: FailedTestCaseWithTestBed[]; passedTests: TestCaseWithTestBed[]; completedTestFile: PathAndContent | undefined; passingTestFile: PathAndContent | undefined }
+export async function runGeneratedTests(response: GenerateJasmineResponse, sourceFileName: string, testFileName: string, sourceFileContent: string, testFileContent: string): Promise<RunGeneratedTestResult> {
   let tester = getTester();
   const lastDotIndex = sourceFileName.lastIndexOf('.');
   const fileNameWithoutExt = sourceFileName.substring(0, lastDotIndex);
   const fileExt = sourceFileName.substring(lastDotIndex + 1);
-  const tempTestName = `${fileNameWithoutExt}.deepunittemptest.${getConfig().testSuffix}.${fileExt}`;
-  const tempTestExists = fs.existsSync(tempTestName)
+  let tempTestName = `${fileNameWithoutExt}.deepunittemptest.${getConfig().testSuffix}.${fileExt}`;
+  let tempFileAlreadyExists = fs.existsSync(tempTestName);
+  
+  for(let i = 0; i<10 && !tempFileAlreadyExists; i++) {
+    tempTestName = `${fileNameWithoutExt}.deepunittemptest.${i}.${getConfig().testSuffix}.${fileExt}`;
+    tempFileAlreadyExists = fs.existsSync(tempTestName)
+  }
   let tempTestContent;
-  if(tempTestExists) {
+  if(tempFileAlreadyExists) {
     tempTestContent = fs.readFileSync(tempTestName, 'utf-8')
   }
   let passedTests: TestCaseWithTestBed[] = [];
   let failedTests: FailedTestCaseWithTestBed[]= []
-  let completedTestFile = { content: '', path: testFileName}
-  let passingTestFile = { content: '', path: testFileName}
+  let completedTestFile: PathAndContent | undefined
+  let passingTestFile: PathAndContent | undefined
   //here we will go thru the tests until we find one that fails.
   //If it fails we will send the last passing test and the rest of the tests in the response that are un run and have it generate tests that do not include the failing one
   let testsToRun: TestCaseWithTestBed[] = [].concat(response.testFileArray) //create a clone of response.testFileArray so response.testFileArray is not mutated
@@ -202,8 +209,8 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     if(singleTestRunResult.passed) {
       console.log('        Passed!')
       passedTests.push(currentTest)
-      completedTestFile.content = currentTest.testBed
-      passingTestFile.content = currentTest.testBed
+      completedTestFile = currentTest.testBed.length > 0 ? {content: currentTest.testBed, path: testFileName} : completedTestFile
+      passingTestFile = {content: currentTest.testBed, path: testFileName}
       const iterativeResultResponse = await sendIterativeResults({currentTest, singleTestRunResult, sourceFileName, sourceFileContent, testFileName, testFileContent, lastIterativeresultId})
       lastIterativeresultId = (iterativeResultResponse as {error?: string}).error ? undefined : iterativeResultResponse
     } else {
@@ -229,23 +236,23 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
       }
     }
   }
-  if(tempTestExists && tempTestContent) {
-    fs.writeFileSync(tempTestName, tempTestContent, 'utf-8')
+  if(tempFileAlreadyExists && tempTestContent) {
+    fs.writeFileSync(tempTestName, tempTestContent);
   }
   if(getConfig().includeFailingTests) {
     const lastTest = response.testFileArray[response.testFileArray.length - 1].testBed
-    completedTestFile.content = lastTest
+    completedTestFile = lastTest.length > 0 ? {content: lastTest, path: testFileName} : completedTestFile;
   }
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
 }
 export async function sendIterativeResults(data: SendIterativeResults): Promise<string | {error: string}> {
   return await Api.sendIterativeResults(data)
 }
-export function writeFinalTestFile(completedTestFile, passingTestFile) {
-  if(getConfig().includeFailingTests && completedTestFile.content && completedTestFile.path) {
+export function writeFinalTestFile(completedTestFile: PathAndContent | undefined, passingTestFile: PathAndContent | undefined) {
+  if(getConfig().includeFailingTests && completedTestFile && completedTestFile.content && completedTestFile.path && completedTestFile.content.length>0) {
     fs.writeFileSync(completedTestFile.path, completedTestFile.content, 'utf-8');
   } else {
-    if(passingTestFile.content && passingTestFile.path) {
+    if(passingTestFile && passingTestFile.content && passingTestFile.path && passingTestFile.c.length > 0) {
       fs.writeFileSync(passingTestFile.path, passingTestFile.content, 'utf-8')
     } else {
       console.log({message: 'passingTestFile path or content was empty!', passingTestFile, completedTestFile})
