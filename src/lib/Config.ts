@@ -35,6 +35,7 @@ export const userConfigurableFields: ConfigField[] = [
   { name: 'ignoredFiles', description: 'Please list any files you would like DeepUnit to ignore', type: 'array', required: false, defaultValue: '["main.ts", "app.module.ts"]'},
   { name: 'includeFailingTests', description: 'When DeepUnit runs autonomously should it include tests that fail?', type: 'boolean', required: true},
   { name: 'defaultBranch', description: 'What is this repositories default branch? Usually this is master, main or dev', type: 'string', required: true},
+  { name: 'monorepoDirectory', description: 'If you have a monorepo and the directory of this project is not the root please list the directory path. Leave this blank otherwise', type: 'string', required: false},
   { name: 'testCaseGoal', description: 'Specify the type/goal of testcases you want to cover. Examples are happy path, edgecase, 80% code coverage, detect bugs, etc', type: 'string', required: false},
   { name: 'useOpenAI', description: 'Would you like DeepUnit to use OpenAI or Open Source Models on Anyscale?', type: 'boolean', required: true, options: ["OpenAI", "Open Source with Anyscale"]},
   { name: 'testingLanguageOverride', description: 'If DeepUnit detects the testing language wrong you may set the testingLanguageOverride to "javascript" or "typescript". You may skip this field to have DeepUnit autodetect this based on your package.json', type: 'string', required: false, validator: /^(javascript|typescript)?$/},
@@ -220,6 +221,7 @@ export default class Config {
   platform: string = '';
   defaultBranch: string = ''
   testCaseGoal: string = '';
+  monorepoDirectory: string = '';
   useOpenAI: boolean = false;
   
   public constructor() {
@@ -251,6 +253,7 @@ export default class Config {
     this.defaultBranch = Config.getStringFromConfig('defaultBranch')
     this.testCaseGoal = Config.getStringFromConfig('testCaseGoal')
     this.useOpenAI = Config.getBoolFromConfig('useOpenAI', true);
+    this.monorepoDirectory = Config.getStringFromConfig('monorepoDirectory')
   }
   
   public static getUrl(): string {

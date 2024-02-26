@@ -66,6 +66,9 @@ DeepUnits config is stored in a file called `deepunit.config.json` which is auto
   // Specify the type/goal of testcases you want to cover. Examples are happy path, edgecase, 80% code coverage, detect bugs, etc.
   "testCaseGoal": "edge cases"
   
+  // f you have a monorepo and the directory of this project is not the root please list the directory path. Leave this blank otherwise
+  "monorepoDirectory": "repos/projectToTest"
+  
   // Choose to use either OpenAIs models or open source models such as Mixtral or LLaMa
   "useOpenAi": false
 }

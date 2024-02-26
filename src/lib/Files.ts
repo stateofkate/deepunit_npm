@@ -55,11 +55,32 @@ export class Files {
       }
     }
   }
-  public static async getFilesToTest(): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
+  public static handleMonoRepoDirectories(files: string[] | undefined, config: Config): string[] | undefined {
+    if(config.monorepoDirectory && files) {
+      console.log("Correcting monorepo directory paths for the directory: " + config.monorepoDirectory)
+      let correctedPaths: string[] = []
+      for (const file of files) {
+        if (file.startsWith(config.monorepoDirectory)) {
+          let correctedPath = file.substring(config.monorepoDirectory.length);
+          if (correctedPath.startsWith("/")) {
+            correctedPath = correctedPath.substring(1);
+          }
+          correctedPaths.push(correctedPath);
+        } else {
+          console.log('Unable to correct path for this file, weird. File: ' + file + ' config.monorepoDirectory: ' + config.monorepoDirectory)
+          correctedPaths.push(file);
+        }
+      }
+      return correctedPaths;
+    } else {
+      return files;
+    }
+  }
+  public static async getFilesToTest(config: Config): Promise<{ filesFlagReturn: { readyFilesToTest: string[]; flagType: string } }> {
     let filesToWriteTestsFor: string[] = [];
     const filesToDebugAndWriteTests: string[] | undefined = getBugFileFlag();
     // get files to filter with --f arg, returning direct paths
-    let filesToFilter: string[] | undefined = getFilesFlag();
+    let filesToFilter: string[] | undefined = this.handleMonoRepoDirectories(getFilesFlag(), config);
     if (getAbsolutePathsFlag() && filesToFilter) {
       filesToFilter = await Files.mapGitPathsToCurrentDirectory(filesToFilter);
     }
@@ -97,7 +118,7 @@ export class Files {
       });
 
       if (missingFiles.length > 0 && !getCIFlag()) {
-        await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.`);
+        await exitWithError(`${missingFiles.join(', ')} file(s) could not be found, only include valid file paths. Unable to continue, exiting.` + config.monorepoDirectory ? `\nYou have a monorepo configured in your config file at path: ${config.monorepoDirectory}, be sure to run DeepUnit from this directory or file paths will be incorrect. DeepUnit was run from ${process.cwd()}` : '');
       }
       filesToWriteTestsFor = getCIFlag() ? filesToFilter : existingFiles;//when running in github actions the input includes files that were deleted, so we will remove the deleted files from filesTofilter
     } else if (patternToFilter) {

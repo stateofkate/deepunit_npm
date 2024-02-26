@@ -376,7 +376,7 @@ export class LoadingIndicator {
   stop(): void {
     if (this.interval) {
       clearInterval(this.interval);
-      process.stdout.write('\r \r'); // Clear the line
+      process.stdout.write(`\rGenerating: ${Color.green('Complete!')}`); // Clear the line
     }
     console.log('\n')
   }
