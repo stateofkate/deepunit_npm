@@ -4,7 +4,7 @@ import fs from "./vsfs";
 import console, {Log} from './Log';
 export const logAnchor = console.anchor
 export class Printer {
-  public static CONFIG = new Config();
+  public static CONFIG: Config = new Config();
   public static readonly defaultWidth: number = 60;
   public static printOutro(): void {
     const LINE_DIVIDER = '#'.repeat(Printer.defaultWidth);

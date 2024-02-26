@@ -124,7 +124,7 @@ export function getTester(): Tester {
     return new JestTester()
   } else if (getConfig().testingFramework === TestingFrameworks.jasmine) {
     // Dynamic import for JasmineTester to handle circular dependency issues
-    const { JasmineTester } = require("./lib/testers/JasmineTester");
+    const { JasmineTester }: any = require("./lib/testers/JasmineTester");
     return new JasmineTester()
   } else {
     // Handle error for unsupported or undefined testing framework
@@ -145,9 +145,9 @@ export async function main(): Promise<void> {
 
     const sourceFileName = fileToTest;
 
-    const testFileName = Tester.getTestName(sourceFileName);
-    const testFileContent = getTestContent(testFileName);
-    const sourceFileContent = Files.getFileContent(sourceFileName);
+    const testFileName: string = Tester.getTestName(sourceFileName);
+    const testFileContent: string | undefined = getTestContent(testFileName);
+    const sourceFileContent: string = Files.getFileContent(sourceFileName);
     const prettierConfig: Object | undefined = Files.getPrettierConfig();
     let testCasesObject
     if (flagType == 'bugFlag' || flagType == 'bugFileFlag') {
@@ -270,7 +270,7 @@ export async function generateTest(testInput: GenerateTestOrReportInput, auth: A
   loadingIndicator.stop();
   return response;
 }
-export async function generateTestFlow(sourceFileName: string, sourceFileContent: string, testFileName: string, testFileContent: string, auth: Auth, prettierConfig?, testCasesObj?):Promise<GenerateTestFlowData> {
+export async function generateTestFlow(sourceFileName: string, sourceFileContent: string, testFileName: string, testFileContent: string, auth: Auth, prettierConfig?: any, testCasesObj?: any):Promise<GenerateTestFlowData> {
   const unsupportedFiles: (string | null)[] = [];
   //files already tested (enabled by statecode message passback)
   const alreadyTestedFiles: (string | null)[] = [];
@@ -318,7 +318,7 @@ export async function generateTestFlow(sourceFileName: string, sourceFileContent
 
 }
 
-export async function mainBugReportGeneration(sourceFileName, sourceFileContent, bugReportContent): Promise<any>{
+export async function mainBugReportGeneration(sourceFileName: string, sourceFileContent: string, bugReportContent: string): Promise<any>{
     let testCasesObj;
 
     const bugReportName = Tester.getBugReportName(sourceFileName);
@@ -351,7 +351,15 @@ export async function generateBugReport(testInput: GenerateTestOrReportInput): P
   return response;
 }
 export async function printResultsAndExit(testResults: ResultSummary): Promise<void> {
-  const {passedTests, failedTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, completedTestFiles, testCaseIts } = testResults;
+  const {passedTests, failedTests, serverDidNotSendTests, alreadyTestedFiles, unsupportedFiles, completedTestFiles, testCaseIts }: {
+    alreadyTestedFiles: string[];
+    unsupportedFiles: string[];
+    passedTests: TestCaseWithTestBed[];
+    failedTests: FailedTestCaseWithTestBed[],
+    testCaseIts: FunctionToTestCaseCode[],
+    serverDidNotSendTests: string[],
+    completedTestFiles: { path: string; content: string }[],
+  } = testResults;
   const testsWithErrors: string[] = []
   const passingTests: string[] = []
   for(const failedTest of failedTests) {

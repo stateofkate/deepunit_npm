@@ -1,8 +1,8 @@
 # Release Log
 
 ## 1.9.3
-Features
-- Add a deepunit
+Bugs
+- Fixes an issue with incorrect files
 
 ## 1.9.2
 Features

@@ -215,7 +215,7 @@ export default class Config {
   testingLanguageOverride: string = '';
   testingFrameworkOverride: string = '';
   isGitRepository: boolean = false;
-  private readonly undefinedVersion = '-1';
+  private readonly undefinedVersion: string = '-1';
   private versionCache: string = this.undefinedVersion;
   platform: string = '';
   defaultBranch: string = ''
@@ -264,7 +264,7 @@ export default class Config {
   /**
    * Get an boolean value from config (default to false, if the value is not exactly true, we also return false)
    */
-  private static getBoolFromConfig(configProperty: string, defaultVal = false): boolean {
+  private static getBoolFromConfig(configProperty: string, defaultVal: boolean = false): boolean {
     const configVal = Config.getValueFromConfigFile(configProperty);
     return typeof configVal === 'boolean' ? configVal : defaultVal;
   }
