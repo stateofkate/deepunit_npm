@@ -8,7 +8,7 @@ const originalConsole = {
 };
 
 export class Log {
-  public anchor = 'anchor'
+  public anchor: string = 'anchor'
   private static instance: Log;
   private logs: string = '';
 

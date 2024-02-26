@@ -70,7 +70,7 @@ export class Auth {
    * @param {vscode.ExtensionContext} context The extension context
    * @returns {string|null} The saved email or null if not found
    */
-  public static async getUserEmailFromVSCodeStorage(context): Promise<Auth | null> {
+  public static async getUserEmailFromVSCodeStorage(context: any): Promise<Auth | null> {
     if (isVsCode()) {
       const vscode = require('vscode')
       try {

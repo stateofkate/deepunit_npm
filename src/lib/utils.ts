@@ -97,7 +97,7 @@ export async function promptUserInput(prompt: string, backToUser: string): Promi
   });
 }
 
-export async function exitWithError(error: string, attempts = 0): Promise<void> {
+export async function exitWithError(error: string, attempts: number = 0): Promise<void> {
   console.error(error);
   console.log('Need help? Email support@deepunit.ai');
   attempts += 1;
@@ -109,7 +109,7 @@ export async function exitWithError(error: string, attempts = 0): Promise<void> 
 }
 
 export async function validateVersionIsUpToDate(): Promise<void> {
-  const { latestVersion } = await Api.getLatestVersion();
+  const { latestVersion }: any = await Api.getLatestVersion();
   const versionRegex = new RegExp(/^\d+\.\d+\.\d+$/);
   let needsUpdating;
   const CONFIG = new Config();

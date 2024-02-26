@@ -35,9 +35,9 @@ export function execSync(command: string, options?: any): string {
   }
 }
 export class Files {
-  public static hasFetched = false;
+  public static hasFetched: boolean = false;
   public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData): Promise<void> {
-    const testFileName = Tester.getTestName(sourceFileName);
+    const testFileName: string = Tester.getTestName(sourceFileName);
     if (testFileName && fs.existsSync(testFileName)) {
       if(isVsCode()) {
         console.log('Since the file exists already we wont modify it.')
@@ -126,7 +126,7 @@ export class Files {
       }
     }
 
-    const { filteredFiles, ignoredFiles } = Files.filterFiles(filesToWriteTestsFor);
+    const { filteredFiles, ignoredFiles }: any = Files.filterFiles(filesToWriteTestsFor);
 
     let readyFilesToTest: string[] = [];
     // we don't want to filter files if they have specified the exact files they want.
@@ -235,7 +235,7 @@ export class Files {
     }
   }
 
-  public static async getDiff(files: string[], attempt = 0): Promise<string[]> {
+  public static async getDiff(files: string[], attempt: number = 0): Promise<string[]> {
 
     /*
     scenarios:

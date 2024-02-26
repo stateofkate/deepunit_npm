@@ -2,10 +2,13 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
   "extends": [
-/*    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended"*/
   ],
   "rules": {
-    "@typescript-eslint/explicit-function-return-type": "error"
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "@typescript-eslint/typedef": ["error", {
+      "arrayDestructuring": true,
+      "parameter": true,
+      "memberVariableDeclaration": true
+    }]
   }
 }
