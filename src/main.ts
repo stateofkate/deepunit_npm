@@ -252,7 +252,7 @@ export function writeFinalTestFile(completedTestFile: PathAndContent | undefined
   if(getConfig().includeFailingTests && completedTestFile && completedTestFile.content && completedTestFile.path && completedTestFile.content.length>0) {
     fs.writeFileSync(completedTestFile.path, completedTestFile.content, 'utf-8');
   } else {
-    if(passingTestFile && passingTestFile.content && passingTestFile.path && passingTestFile.c.length > 0) {
+    if(passingTestFile && passingTestFile.content && passingTestFile.path && passingTestFile.content.length > 0) {
       fs.writeFileSync(passingTestFile.path, passingTestFile.content, 'utf-8')
     } else {
       console.log({message: 'passingTestFile path or content was empty!', passingTestFile, completedTestFile})
