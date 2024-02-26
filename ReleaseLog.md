@@ -1,5 +1,9 @@
 # Release Log
 
+## 1.9.3
+Features
+- Add a deepunit
+
 ## 1.9.2
 Features
 - Add a deepunit.ci.config.json file which will store CI options for when run in a CI context with the --ci flag 

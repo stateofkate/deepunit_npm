@@ -13,7 +13,7 @@ export class Printer {
     console.log('\nTo provide feedback, please run "npm run deepunit -- --feedback"');
   }
 
-  public static async printIntro() {
+  public static async printIntro(): Promise<void> {
     const version = await this.CONFIG.getVersion();
     const message = `Generating unit tests with DeepUnit.AI v${version}`;
     this.PrintMessageInBox(message)
@@ -49,7 +49,7 @@ export class Printer {
   
   
   
-  public static printIndented(fileNames: (string | null)[], summaryDescription: string) {
+  public static printIndented(fileNames: (string | null)[], summaryDescription: string): void {
     if (fileNames.length > 0) {
       console.log(summaryDescription);
       for (const test of fileNames) {
@@ -121,7 +121,7 @@ export class Printer {
     return summary;
   }
 
-  public static printFilesToTest(filePaths: string[]) {
+  public static printFilesToTest(filePaths: string[]): void {
     filePaths.forEach((filePath) => console.log(`- ${filePath}`));
     console.log(`Found ${filePaths.length} files to generate tests for.`);
   }

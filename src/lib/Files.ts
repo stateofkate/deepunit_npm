@@ -26,7 +26,7 @@ import {GenerateTestFlowData} from "../main";
  * @param command
  * @param options
  */
-export function execSync(command: string, options?: any) {
+export function execSync(command: string, options?: any): string {
   try {
     return unwrapped(command, options)
   } catch (e) {
@@ -36,7 +36,7 @@ export function execSync(command: string, options?: any) {
 }
 export class Files {
   public static hasFetched = false;
-  public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData) {
+  public static async writeTestBedIfNotExistingForVsCode(sourceFileName: string, data: GenerateTestFlowData): Promise<void> {
     const testFileName = Tester.getTestName(sourceFileName);
     if (testFileName && fs.existsSync(testFileName)) {
       if(isVsCode()) {
@@ -82,7 +82,7 @@ export class Files {
     // if we want to find specific files or just generate all files
     if (filesToFilter) {
       console.log('Finding files within --file flag');
-      let existingFiles: string[] = [];
+      const existingFiles: string[] = [];
       const missingFiles = filesToFilter.filter((filePath) => {
         const fileExists = fs.existsSync(filePath)
         if(fileExists) {
@@ -162,7 +162,7 @@ export class Files {
     const relativePath = currentDir.replace(gitRoot, '').replace(/^\//, ''); // Remove leading /
 
     let changedFiles: string[] = [];
-    let getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`];
+    const getChangedFileCmds = [`git -C ${gitRoot} diff --name-only`, `git -C ${gitRoot} diff --name-only --staged`];
 
     while (getChangedFileCmds.length > 0) {
       const currentCommand = getChangedFileCmds.pop() + ` -- ${relativePath ? relativePath + '/' : ''}`;
@@ -200,7 +200,7 @@ export class Files {
   }
 
   public static filterExtensions(files: string[]): string[] {
-    let filteredFiles: string[] = [];
+    const filteredFiles: string[] = [];
     for (const file of files) {
       const excludedSuffixes = [
         '.test.ts',
@@ -219,13 +219,13 @@ export class Files {
 
       const includedExtensions = ['.ts', '.js', '.tsx'];
 
-      if (includedExtensions.some((ext) => file.endsWith(ext)) && !excludedSuffixes.some((suffix) => file.endsWith(suffix))) {
+      if (includedExtensions.some((ext: string) => file.endsWith(ext)) && !excludedSuffixes.some((suffix: string) => file.endsWith(suffix))) {
         filteredFiles.push(file);
       }
     }
     return filteredFiles;
   }
-  public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string) {
+  public static hasUncommittedChanges(files: string[], targetBranch: string, remoteName: string): boolean {
     try {
       const status = execSync(`git status ${remoteName}/${targetBranch} --porcelain -- ${files.join(' ')}`).toString();
       return status !== '';
@@ -263,7 +263,7 @@ export class Files {
     }
     const targetBranchFlag: string = getTargetBranchFlagFlag()
     const targetBranch = targetBranchFlag ? targetBranchFlag : new Config().defaultBranch;
-    let diffCmd = []
+    const diffCmd = []
     if(targetBranchFlag) { //handles things for CICD pipelines
       //github/gitlab action
       diffCmd.push(`git diff ${remoteName}/${targetBranch}..HEAD -U0 -- ${files.join(' ')}`);
@@ -275,7 +275,7 @@ export class Files {
       diffCmd.push(`git diff HEAD -U0 -- ${files.join(' ')}`)
     }
     try {
-      let diff: string[] = [];
+      const diff: string[] = [];
       for(const diffCommand of diffCmd) {
         const diffString = execSync(diffCommand).toString()
         if(diffString.length>0){
@@ -319,7 +319,7 @@ export class Files {
     const prompt = `What is the name of the remote that we should compare your default branch ${new Config().defaultBranch} to? Your local repository is configured with these remotes: ${remotes.join(', ')} `;
     return askQuestion(prompt, 'origin');
   }
-  public static async setRemoteHead(remoteName: string) {
+  public static async setRemoteHead(remoteName: string): Promise<void> {
     const CONFIG = new Config();
     const branchName = CONFIG.defaultBranch;
 
@@ -382,7 +382,7 @@ export class Files {
 
     for (const file of filesWithValidExtensions) {
       const CONFIG = new Config();
-      if (!CONFIG.ignoredDirectories.some((ignoreDir) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
+      if (!CONFIG.ignoredDirectories.some((ignoreDir: string) => Files.isParentAncestorOfChild(ignoreDir, file)) && !CONFIG.ignoredFiles.some((ignoreFile) => file == ignoreFile)) {
         filteredFiles.push(file);
       } else {
         ignoredFiles;
@@ -391,13 +391,13 @@ export class Files {
     return { filteredFiles, ignoredFiles };
   }
 
-  public static isParentAncestorOfChild(parent: string, child: string) {
+  public static isParentAncestorOfChild(parent: string, child: string): boolean {
     const rel = path.relative(parent, child);
     return !rel.startsWith('../') && rel !== '..';
   }
 
   public static writeTestsToFiles(tests: { [key: string]: string }, filePathChunk: string): string[] {
-    let testPaths: string[] = [];
+    const testPaths: string[] = [];
     for (const [testFilePath, testCode] of Object.entries(tests)) {
       try {
         if (!fs.existsSync(testFilePath)) {
@@ -413,7 +413,7 @@ export class Files {
     return testPaths;
   }
 
-  public static writeFileSync(file: string, data: string, options?: any) {
+  public static writeFileSync(file: string, data: string, options?: any): void {
     try {
       fs.writeFileSync(file, data, options);
     } catch (e) {
@@ -451,7 +451,7 @@ export class Files {
       '.prettierrc.json',
     ];
 
-    let directoriesToCheck = [process.cwd()];
+    const directoriesToCheck = [process.cwd()];
     const CONFIG = new Config();
     if (CONFIG.isGitRepository) {
       const rootDirectory = this.getGitRootDirectory();
@@ -490,7 +490,7 @@ export class Files {
     return undefined;
   }
 
-  public static async updateConfigFile(propertyName: string, propertyValue: any) {
+  public static async updateConfigFile(propertyName: string, propertyValue: any): Promise<void> {
     const configPath = 'deepunit.config.json';
   
     // Check if the config file exists

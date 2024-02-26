@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import {TestCaseWithTestBed} from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
+import {SendIterativeResultResponse, TestCaseWithTestBed} from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import {
@@ -49,15 +49,15 @@ export enum ClientCode {
 
 
 
-let mockGenerationApiResponse: boolean = false;
+const mockGenerationApiResponse: boolean = false;
 
 export class Api {
-  public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0, auth?: Auth) {
+  public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0, auth?: Auth): Promise<any> {
     const headers = { 'Content-Type': 'application/json' };
 
-    let AUTH: Auth = auth ? auth : await Auth.checkForAuthFlagOrFile();
+    const AUTH: Auth = auth ? auth : await Auth.checkForAuthFlagOrFile();
     const CONFIG = new Config();
-    let data: ApiBaseData = {
+    const data: ApiBaseData = {
       scriptTarget: CONFIG.scriptTarget,
       frontendFramework: CONFIG.frontendFramework,
       frameworkVersion: CONFIG.frameworkVersion,
@@ -92,11 +92,11 @@ export class Api {
     return await this.post(ApiPaths.removeFailedTest, data);
   }
 
-  public static async generateTest(generateTestInput: GenerateTestOrReportInput, auth): Promise<any> {
+  public static async generateTest(generateTestInput: GenerateTestOrReportInput, auth: Auth): Promise<any> {
     if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return await exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
-    let data: GenerateTestData = {
+    const data: GenerateTestData = {
       sourceFileDiffs: generateTestInput.sourceFileDiff,
       sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent },
     };
@@ -123,7 +123,7 @@ export class Api {
     if (!generateTestInput.sourceFileName || !generateTestInput.sourceFileContent) {
       return exitWithError('Source file is required to exist with valid content in order to run DeepUnitAi');
     }
-    let data: GenerateBugReport = {
+    const data: GenerateBugReport = {
       sourceFileDiffs: generateTestInput.sourceFileDiff,
       sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent},
     };
@@ -160,7 +160,7 @@ export class Api {
     bugReportName: string,
     sourceFileName: string,
     sourceFileContent: string,
-  ) {
+  ): Promise<void> {
     const CONFIG = new Config();
     const data: SendBugResults = {
       bugReport,
@@ -178,7 +178,7 @@ export class Api {
     failedTestErrors: any,
     sourceFileName: string,
     sourceFileContent: string,
-  ) {
+  ): Promise<void> {
     const CONFIG = new Config();
     const data: SendResultDataPost = {
       failedTests,
@@ -190,11 +190,11 @@ export class Api {
     };
     await this.post(ApiPaths.sendResults, data);
   }
-  public static async sendIterativeResults(data: SendIterativeResults) {
+  public static async sendIterativeResults(data: SendIterativeResults): Promise<SendIterativeResultResponse> {
     return await this.post(ApiPaths.sendIterativeResults, data);
   }
 
-  public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number) {
+  public static async sendAnalytics(message: string, clientCode: ClientCode, attempts?: number): Promise<void> {
     const data: SendAnalyticsData = {
       logMessage: message,
       vscode: checkVSCodeFlag(),

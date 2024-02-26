@@ -44,7 +44,7 @@ export class Log {
 const LOGGER = Log.getInstance();
 export default LOGGER;
 
-declare var console: {
+declare let console: {
   log: typeof LOGGER.log;
   error: typeof LOGGER.error;
   warn: typeof LOGGER.warn;

@@ -1,6 +1,6 @@
 {
   "name": "deepunit",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "In beta. support@deepunit.ai",
   "main": "dist/main.js",
   "scripts": {
@@ -25,6 +25,9 @@
     "@nestjs/cli": "^10.1.18",
     "@types/jest": "^29.5.10",
     "@types/node": "^20.4.5",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "eslint": "^8.57.0",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
     "ts-jest": "^29.1.1",

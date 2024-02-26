@@ -36,7 +36,7 @@ export class JestTester extends Tester {
   }
 
   public runTest(filePath: string): JestTestRunResult {
-    let testResult: JestTestRunResult = {
+    const testResult: JestTestRunResult = {
       file: filePath,
       testFailedWithError: undefined,
       jestResult: undefined,
@@ -58,9 +58,9 @@ export class JestTester extends Tester {
   }
   
   
-  public static extractJSONs(text: string) {
-    let results = [];
-    let stack = [];
+  public static extractJSONs(text: string): any {
+    const results = [];
+    const stack = [];
     let startIdx = 0;
     let insideString = false; // Flag to indicate whether we are inside a JSON string
     let quoteChar = ''; // To store the type of quote (single or double)
