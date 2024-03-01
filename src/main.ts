@@ -186,7 +186,7 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
   let tempTestName = `${fileNameWithoutExt}.deepunittemptest.${getConfig().testSuffix}.${fileExt}`;
   let tempFileAlreadyExists = fs.existsSync(tempTestName);
   
-  for(let i = 0; i<10 && !tempFileAlreadyExists; i++) {
+  for(let i = 0; i<10 && tempFileAlreadyExists; i++) {
     tempTestName = `${fileNameWithoutExt}.deepunittemptest.${i}.${getConfig().testSuffix}.${fileExt}`;
     tempFileAlreadyExists = fs.existsSync(tempTestName)
   }
