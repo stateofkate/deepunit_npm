@@ -1,6 +1,5 @@
 import { Api, ClientCode } from './Api';
 import { createInterface } from 'readline';
-import { Printer } from './Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
