@@ -134,11 +134,12 @@ export function getTester(): Tester {
 
 export async function main(): Promise<void> {
   const auth: Auth = await setUp();
-  const filesToTestResult = await Files.getFilesToTest();
+  const filesToTestResult = await Files.getFilesToTest(getConfig());
   const filesToTest = filesToTestResult.filesFlagReturn.readyFilesToTest ?? [];
   if (filesToTest.length === 0) {
     console.log('We found no files to test. For complete documentation visit https://deepunit.ai/docs');
   }
+  console.log(`DeepUnit will run on the following files\n    ${filesToTest.join(`\n    `)}`)
   const flagType = filesToTestResult.filesFlagReturn.flagType ?? '';
   const resultsSummary: ResultSummary = {testCaseIts: [], completedTestFiles: [], alreadyTestedFiles: [], passedTests:[], failedTests: [], serverDidNotSendTests: [], unsupportedFiles: []}
   for (const fileToTest of filesToTest) {

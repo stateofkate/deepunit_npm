@@ -1,8 +1,12 @@
 # Release Log
 
 ## 1.9.3
+Features
+- Add support for monorepos, you can now configure your monorepo in the config file with field monorepoDirectory
 Bugs
 - Fixes an issue with incorrect files
+- Fixes an issue with loading animation
+- Fix an issue with not listing files before running on them
 
 ## 1.9.2
 Features
