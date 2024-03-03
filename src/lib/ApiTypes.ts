@@ -12,7 +12,8 @@ export type ApiBaseData = {
   platform: string | null;
   testCaseGoal?: string;
   testSuffix: string;
-  useOpenAI: boolean
+  useOpenAI: boolean;
+  useTurbo: boolean;
 };
 
 export type GenerateTestData = {

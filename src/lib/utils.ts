@@ -1,6 +1,5 @@
 import { Api, ClientCode } from './Api';
 import { createInterface } from 'readline';
-import { Printer } from './Printer';
 import { execSync } from 'child_process';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
@@ -178,7 +177,7 @@ export async function getYesOrNoAnswer(prompt: string): Promise<boolean> {
       rl.close()
       resolve(true);
     }
-    rl.question(prompt + ' (type y/n):', (answer: string) => {
+    rl.question(prompt + ' (type y/n): ', (answer: string) => {
       const booleanAnswer: boolean = yesAnswers.includes(answer.trim().toLowerCase())
       rl.close();
       resolve(booleanAnswer);

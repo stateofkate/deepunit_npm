@@ -38,6 +38,7 @@ export const userConfigurableFields: ConfigField[] = [
   { name: 'monorepoDirectory', description: 'If you have a monorepo and the directory of this project is not the root please list the directory path. Leave this blank otherwise', type: 'string', required: false},
   { name: 'testCaseGoal', description: 'Specify the type/goal of testcases you want to cover. Examples are happy path, edgecase, 80% code coverage, detect bugs, etc', type: 'string', required: false},
   { name: 'useOpenAI', description: 'Would you like DeepUnit to use OpenAI or Open Source Models on Anyscale?', type: 'boolean', required: true, options: ["OpenAI", "Open Source with Anyscale"]},
+  { name: 'useTurbo', description: 'If you answered yes to using OpenAI and are a paid user do you want to use turbo models? These models are faster at the expense of quality.', type: 'boolean', required: true, options: ["true", "false"]},
   { name: 'testingLanguageOverride', description: 'If DeepUnit detects the testing language wrong you may set the testingLanguageOverride to "javascript" or "typescript". You may skip this field to have DeepUnit autodetect this based on your package.json', type: 'string', required: false, validator: /^(javascript|typescript)?$/},
 ];
 
@@ -222,7 +223,8 @@ export default class Config {
   defaultBranch: string = ''
   testCaseGoal: string = '';
   monorepoDirectory: string = '';
-  useOpenAI: boolean = false;
+  useTurbo: boolean = false;
+  useOpenAI: boolean;
   
   public constructor() {
     this.detectProjectType();
@@ -254,6 +256,7 @@ export default class Config {
     this.testCaseGoal = Config.getStringFromConfig('testCaseGoal')
     this.useOpenAI = Config.getBoolFromConfig('useOpenAI', true);
     this.monorepoDirectory = Config.getStringFromConfig('monorepoDirectory')
+    this.useTurbo = Config.getBoolFromConfig('useTurbo', false)
   }
   
   public static getUrl(): string {

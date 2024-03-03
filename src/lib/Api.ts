@@ -68,6 +68,7 @@ export class Api {
       email: AUTH.getEmail(),
       platform: CONFIG.platform,
       useOpenAI: CONFIG.useOpenAI,
+      useTurbo: CONFIG.useTurbo,
       ...customData,
     };
 
@@ -82,6 +83,15 @@ export class Api {
     } catch (error: any) {
       if ((error as AxiosError).code == 'ECONNREFUSED') {
         return await exitWithError('Unable to connect to server, sorry for the inconvenience. Please try again.');
+      }
+      if ((error as AxiosError).code == 'ECONNRESET') {
+        console.error('Connection reset!')
+        if(attempts<1) {
+          attempts++;
+          console.log('Retrying, attempt: ' + attempts)
+          return this.post(path, customData, attempts, auth)
+        }
+        return await exitWithError('API call failed twice in a row. Please try again.');
       }
       console.error(`Request Failed with error: ${error}`);
       return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };

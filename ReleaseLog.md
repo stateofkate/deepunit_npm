@@ -3,6 +3,7 @@
 ## 1.9.3
 Features
 - Add support for monorepos, you can now configure your monorepo in the config file with field monorepoDirectory
+- Add a config to use turbo models
 Bugs
 - Fixes an issue with incorrect files
 - Fixes an issue with loading animation
