@@ -244,6 +244,9 @@ export async function runGeneratedTests(response: GenerateJasmineResponse, sourc
     const lastTest = response.testFileArray[response.testFileArray.length - 1].testBed
     completedTestFile = lastTest.length > 0 ? {content: lastTest, path: testFileName} : completedTestFile;
   }
+  if(!tempFileAlreadyExists) {
+    fs.rm(tempTestName, ()=>{})
+  }
   return {passedTests, failedTests, completedTestFile, passingTestFile}//the passingtestFile is for the vs Code extension as we will only include passing tests in this context
 }
 export type SendIterativeResultResponse = string | {error: string}
