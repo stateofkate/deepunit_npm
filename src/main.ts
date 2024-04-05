@@ -274,7 +274,7 @@ export async function generateTest(testInput: GenerateTestOrReportInput, auth: A
   loadingIndicator.stop();
   return response;
 }
-export async function generateTestFlow(sourceFileName: string, sourceFileContent: string, testFileName: string, testFileContent: string, auth: Auth, prettierConfig?: any, testCasesObj?: any):Promise<GenerateTestFlowData> {
+export async function generateTestFlow(sourceFileName: string, sourceFileContent: string, testFileName: string, testFileContent: string | undefined, auth: Auth, prettierConfig?: any, testCasesObj?: any):Promise<GenerateTestFlowData> {
   const unsupportedFiles: (string | null)[] = [];
   //files already tested (enabled by statecode message passback)
   const alreadyTestedFiles: (string | null)[] = [];

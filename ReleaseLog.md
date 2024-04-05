@@ -1,5 +1,9 @@
 # Release Log
 
+## 1.9.4
+Bugs
+- Fix types for generateTestFlow()
+
 ## 1.9.3
 Features
 - Add support for monorepos, you can now configure your monorepo in the config file with field monorepoDirectory
