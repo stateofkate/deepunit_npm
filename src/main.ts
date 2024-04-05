@@ -21,12 +21,13 @@ import {JestTester} from './lib/testers/JestTester';
 import {Api, ClientCode, StateCode} from './lib/Api';
 import {Auth} from './lib/Auth';
 import console, {Log} from './lib/Log';
-import fs, {FileSystem} from "./lib/vsfs";
-const ex = fs.existsSync('')
-export const logAnchor = console.anchor
+import fs from "./lib/vsfs";
 import {JasmineTester} from "./lib/testers/JasmineTester";
 import {SendIterativeResults} from "./lib/ApiTypes";
 import {Color} from "./lib/Color";
+
+const ex = fs.existsSync('')
+export const logAnchor = console.anchor
 
 export type ParsedTestCases = {caseString: string; input: string; output: string; explanation: string; type: string}
 export type TestCaseWithTestBed = {code?: string, testCase: ParsedTestCases, duplicate: boolean, testBed?: string, functionName?: string; sourceFileName: string}
@@ -298,7 +299,9 @@ export async function generateTestFlow(sourceFileName: string, sourceFileContent
   }
 
   const response: GenerateJasmineResponse = await generateTest(testInput, auth);
-  if (response.stateCode === StateCode.FileNotSupported) {
+  if (response.stateCode === StateCode.ConnectionFailure || response.stateCode === StateCode.ConnectionRefused) {
+    return {serverDidNotSendTests, unsupportedFiles, response, alreadyTestedFiles};
+  } else if (response.stateCode === StateCode.FileNotSupported) {
     unsupportedFiles.push(sourceFileName);
     return {serverDidNotSendTests, unsupportedFiles, response, alreadyTestedFiles};
   } else if (response.stateCode === StateCode.FileFullyTested) {

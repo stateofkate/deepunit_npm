@@ -1,5 +1,9 @@
 # Release Log
 
+## 1.9.5
+Bugs
+- Improved error handling
+
 ## 1.9.4
 Bugs
 - Fix types for generateTestFlow()
