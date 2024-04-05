@@ -26,7 +26,7 @@ export interface GenerateTestOrReportInput {
   sourceFileName: string | null;
   sourceFileContent: string | null;
   generatedFileName: string;
-  generatedFileContent: string;
+  generatedFileContent: string | undefined;
   functionsToTest?: string[];
   testCasesObj?: { [key: string]: string };
 }
