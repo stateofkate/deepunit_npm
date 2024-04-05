@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import {SendIterativeResultResponse, TestCaseWithTestBed} from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
+import { SendIterativeResultResponse, TestCaseWithTestBed } from '../main'; //importing this from main causes us to execute main which causes issues in unit tests. We should refactor this, but it's gonna be a big pain
 import { mockedGenerationConst } from '../main.consts';
 import { checkVSCodeFlag, debugMsg, exitWithError } from './utils';
 import {
@@ -14,11 +14,11 @@ import {
   FeedbackData,
   LogsData, SendIterativeResults,
 } from './ApiTypes';
-import {GenerateTestOrReportInput, RemoveFailedTestInput, SingleTestRunResult} from './testers/Tester';
-import {Auth} from "./Auth";
+import { GenerateTestOrReportInput, RemoveFailedTestInput, SingleTestRunResult } from './testers/Tester';
+import { Auth } from "./Auth";
 import Config from "./Config";
 import fs from "./vsfs";
-import console, {Log} from './Log';
+import console, { Log } from './Log';
 export const logAnchor = console.anchor
 
 enum ApiPaths {
@@ -36,6 +36,8 @@ enum ApiPaths {
   sendIterativeResults = '/generate-test/send-iterative-results',
 }
 export enum StateCode {
+  'ConnectionRefused' = -2,
+  'ConnectionFailure' = -1,
   'Success' = 0,
   'FileNotSupported' = 1,
   'FileFullyTested' = 2,
@@ -52,7 +54,56 @@ export enum ClientCode {
 const mockGenerationApiResponse: boolean = false;
 
 export class Api {
+  public static async postAndThrow<T>(path: ApiPaths | string, customData?: T, attempts: number = 0, auth?: Auth): Promise<any> {
+
+    const headers = { 'Content-Type': 'application/json' };
+
+    const AUTH: Auth = auth ? auth : await Auth.checkForAuthFlagOrFile();
+    const CONFIG = new Config();
+    const data: ApiBaseData = {
+      scriptTarget: CONFIG.scriptTarget,
+      frontendFramework: CONFIG.frontendFramework,
+      frameworkVersion: CONFIG.frameworkVersion,
+      testingFramework: CONFIG.testingFramework,
+      testCaseGoal: CONFIG.testCaseGoal,
+      testSuffix: CONFIG.testSuffix,
+      version: await CONFIG.getVersion(),
+      email: AUTH.getEmail(),
+      platform: CONFIG.platform,
+      useOpenAI: CONFIG.useOpenAI,
+      useTurbo: CONFIG.useTurbo,
+      ...customData,
+    };
+
+    try {
+      const apiPathToCall = `${CONFIG.apiHost}${path}`
+      debugMsg(CONFIG, `POST REQUEST ${apiPathToCall}`, data);
+      const response = mockGenerationApiResponse ? mockedGenerationConst : await axios.post(apiPathToCall, data, { headers });
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+      return response.data;
+    } catch (error: any) {
+      if ((error as AxiosError).code == 'ECONNREFUSED') {
+        return { stateCode: StateCode.ConnectionRefused, stateMessage: "The server refused to connect. I'm really sorry about that. Please try again, if this persists email support@deepunit.ai." }
+      }
+      if ((error as AxiosError).code == 'ECONNRESET') {
+        console.error('Connection reset!')
+        if (attempts < 1) {
+          attempts++;
+          console.log('Retrying, attempt: ' + attempts)
+          return this.postAndThrow(path, customData, attempts, auth)
+        }
+        return { stateCode: -1, stateMessage: "Unable to connect to the server. I'm really sorry about that. Please try again, if this persists email support@deepunit.ai." }
+
+      }
+      console.error(`Request Failed with error: ${error}`);
+      return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
+    }
+  }
+
   public static async post<T>(path: ApiPaths | string, customData?: T, attempts: number = 0, auth?: Auth): Promise<any> {
+
     const headers = { 'Content-Type': 'application/json' };
 
     const AUTH: Auth = auth ? auth : await Auth.checkForAuthFlagOrFile();
@@ -86,7 +137,7 @@ export class Api {
       }
       if ((error as AxiosError).code == 'ECONNRESET') {
         console.error('Connection reset!')
-        if(attempts<1) {
+        if (attempts < 1) {
           attempts++;
           console.log('Retrying, attempt: ' + attempts)
           return this.post(path, customData, attempts, auth)
@@ -97,7 +148,7 @@ export class Api {
       return { httpError: error?.response?.data?.statusCode, errorMessage: error?.response?.data?.message };
     }
   }
-  
+
   public static async removeFailedTest(data: { failedTest: TestCaseWithTestBed; lastPassingTest: TestCaseWithTestBed; unfinishedTests: TestCaseWithTestBed[]; testFileName: string; sourceFileName: string; singleTestRunResult: SingleTestRunResult; sourceFileContent: string; lastIterativeresultId: any; currentTest: TestCaseWithTestBed; testFileContent: string }): Promise<any> {
     return await this.post(ApiPaths.removeFailedTest, data);
   }
@@ -111,7 +162,7 @@ export class Api {
       sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent },
     };
 
-    if(generateTestInput.testCasesObj) {
+    if (generateTestInput.testCasesObj) {
       data.testCasesObj = generateTestInput.testCasesObj;
     }
     const CONFIG = new Config();
@@ -126,7 +177,7 @@ export class Api {
       data.functionsToTest = generateTestInput.functionsToTest;
     }
 
-    return await this.post(ApiPaths.generate, data, 0, auth);
+    return await this.postAndThrow(ApiPaths.generate, data, 0, auth);
   }
 
   public static async generateBugReport(generateTestInput: GenerateTestOrReportInput): Promise<any> {
@@ -135,7 +186,7 @@ export class Api {
     }
     const data: GenerateBugReport = {
       sourceFileDiffs: generateTestInput.sourceFileDiff,
-      sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent},
+      sourceFile: { [generateTestInput.sourceFileName]: generateTestInput.sourceFileContent },
     };
     const CONFIG = new Config();
     if (CONFIG.testingLanguageOverride) {
